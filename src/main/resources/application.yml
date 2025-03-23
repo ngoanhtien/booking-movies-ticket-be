@@ -1,0 +1,26 @@
+spring:
+  application:
+    name:movie-ticket
+  datasource:
+    url: jdbc:postgresql://localhost:5432/movie
+    username: postgres
+    password: 12345
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: Hikari
+      auto-commit: false
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+server:
+  port:8080
+
+security:
+  jwt:
+    secret: Y2JkN2M4NjU3NTM4Y2ZiNDEyMjU5NjM1ZGVhMDIwOGFiMzZiYjY0MTJmMDVlZTY3ZTQyMzZjMTA4YWIxODk3YzI4MTkxNTkzZjFmYmQ5ZGM5MTA1NmVmZjAyODExZTQxMGRlMWI1M2U5MDEzNDY1ZDJhMmZiODhmMDI0MWYyNWQ=
+    # Token is valid 24 hours
+    token-validity-in-seconds: 86400
