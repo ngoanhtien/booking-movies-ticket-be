@@ -1,4 +1,4 @@
-package com.booking.movieticket.entity.compositekeys;
+package com.booking.movieticket.entity.compositekey;
 
 import jakarta.persistence.Embeddable;
 import lombok.*;
@@ -11,7 +11,7 @@ import java.io.Serializable;
 @Setter
 @EqualsAndHashCode
 @Embeddable
-public class SeatRoomId implements Serializable {
+public class ShowtimeId implements Serializable {
+    private Long scheduleId;
     private Long roomId;
-    private Long seatId;
 }

@@ -1,6 +1,5 @@
 package com.booking.movieticket.exception;
 
-import com.booking.movieticket.repository.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

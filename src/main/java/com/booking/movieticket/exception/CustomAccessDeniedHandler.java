@@ -1,6 +1,5 @@
 package com.booking.movieticket.exception;
 
-import com.booking.movieticket.repository.ApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

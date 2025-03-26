@@ -1,4 +1,4 @@
-package com.booking.movieticket.entity.compositekeys;
+package com.booking.movieticket.entity.compositekey;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;

@@ -1,4 +1,4 @@
-package com.booking.movieticket.configuration.security;
+package com.booking.movieticket.configuration.security.jwt;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

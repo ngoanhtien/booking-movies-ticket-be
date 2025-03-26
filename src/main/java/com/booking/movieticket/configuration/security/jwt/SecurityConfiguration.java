@@ -1,4 +1,4 @@
-package com.booking.movieticket.configuration.security;
+package com.booking.movieticket.configuration.security.jwt;
 
 import com.booking.movieticket.exception.CustomAccessDeniedHandler;
 import lombok.RequiredArgsConstructor;

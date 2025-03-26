@@ -1,4 +1,4 @@
-package com.booking.movieticket.repository.user;
+package com.booking.movieticket.repository;
 
 import com.booking.movieticket.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;

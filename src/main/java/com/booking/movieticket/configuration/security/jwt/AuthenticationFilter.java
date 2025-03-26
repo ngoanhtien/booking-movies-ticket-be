@@ -1,6 +1,6 @@
-package com.booking.movieticket.configuration.security;
+package com.booking.movieticket.configuration.security.jwt;
 
-import com.booking.movieticket.repository.ApiResponse;
+import com.booking.movieticket.exception.ApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

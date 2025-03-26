@@ -4,7 +4,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/movie
     username: postgres
-    password: 12345
+    password: Abcd@1234
     driver-class-name: org.postgresql.Driver
     hikari:
       pool-name: Hikari

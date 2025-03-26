@@ -11,40 +11,34 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "foods")
+@Table( name = "foods" )
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Food {
+public class Food extends BaseEntity
+{
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "food_id")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_food")
+    @SequenceGenerator(name = "sequence_food")
+    @Column( name = "food_id" )
     private Long id;
 
-    @Column(name = "food_name")
+    @Column( name = "food_name" )
     private String name;
 
-    @Column(name = "price")
+    @Column( name = "price" )
     private double price;
 
-    @Column(name = "stock")
+    @Column( name = "stock" )
     private int stock;
 
-    @Column(name = "image_food")
+    @Column( name = "image_food" )
     private String image;
 
-    @Column(name = "description")
+    @Column( name = "description" )
     private String description;
 
-    @Column(name = "is_enabled")
-    private Boolean isEnabled;
-
-    @OneToMany(mappedBy = "food")
-    @JsonIgnore
+    @OneToMany( mappedBy = "food" )
     private Set<BillFood> billFoods = new HashSet<>();
-
-    @OneToMany(mappedBy = "food")
-    @JsonIgnore
-    private Set<FoodOrder> foodOrders = new HashSet<>();
 }

@@ -1,37 +1,33 @@
 package com.booking.movieticket.entity;
 
-import com.booking.movieticket.entity.compositekeys.ShowtimeId;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.booking.movieticket.entity.compositekey.ShowtimeId;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "showtimes")
+@Table( name = "showtimes" )
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Showtime implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
+public class Showtime extends BaseEntity
+{
     @EmbeddedId
     private ShowtimeId id;
 
+    @MapsId("scheduleId")
     @ManyToOne
-    @JoinColumn(name = "schedule_id", insertable = false, updatable = false)
+    @JoinColumn( name = "schedule_id", insertable = false, updatable = false )
     private Schedule schedule;
 
+    @MapsId( "roomId" )
     @ManyToOne
-    @JoinColumn(name = "room_id", insertable = false, updatable = false)
+    @JoinColumn( name = "room_id", insertable = false, updatable = false )
     private Room room;
 
-    @OneToMany(mappedBy = "showtime")
-    @JsonIgnore
+    @OneToMany( mappedBy = "showtime" )
     private Set<BillDetail> billDetails = new HashSet<>();
 }

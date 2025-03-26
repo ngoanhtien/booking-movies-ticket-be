@@ -1,4 +1,4 @@
-package com.booking.movieticket.repository;
+package com.booking.movieticket.exception;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
