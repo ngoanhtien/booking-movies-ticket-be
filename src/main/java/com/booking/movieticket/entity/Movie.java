@@ -13,65 +13,69 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table( name = "movies" )
+@Table(name = "movies")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Movie extends BaseEntity
-{
+public class Movie extends BaseEntity {
     @Id
-    @GeneratedValue( strategy = GenerationType.SEQUENCE, generator = "sequence_movie" )
-    @SequenceGenerator( name = "sequence_movie" )
-    @Column( name = "movie_id" )
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_movie")
+    @SequenceGenerator(name = "sequence_movie")
+    @Column(name = "movie_id")
     private Long id;
 
     @Nationalized
-    @Column( name = "name_movie", nullable = false )
+    @Column(name = "movie_name", nullable = false)
     private String name;
 
     @Nationalized
-    @Column( name = "summary", nullable = false )
+    @Column(name = "summary", nullable = false)
     private String summary;
 
-    @Column( name = "duration" )
+    @Nationalized
+    @Column(name = "description_long", nullable = false)
+    private String descriptionLong;
+
+    @Column(name = "director", nullable = false)
+    private String director;
+
+    @Column(name = "age_limit", nullable = false)
+    private Integer ageLimit;
+
+    @Column(name = "duration", nullable = false)
     private Integer duration;
 
-    @Column( name = "release_date", columnDefinition = "DATE" )
+    @Column(name = "release_date", columnDefinition = "DATE")
     private LocalDate releasedDate;
 
     @Nationalized
-    @Column( name = "author", nullable = false )
-    private String author;
-
-    @Nationalized
-    @Column( name = "actor", nullable = false )
-    private String actor;
-
-    @Nationalized
-    @Column( name = "language", nullable = false )
+    @Column(name = "language", nullable = false)
     private String language;
 
-    @Column( name = "trailer", columnDefinition = "VARCHAR(255)" )
+    @Column(name = "trailer", columnDefinition = "VARCHAR(255)")
     private String trailerUrl;
 
-    @Column( name = "movie_status" )
-    @Enumerated( EnumType.STRING )
+    @Column(name = "movie_status")
+    @Enumerated(EnumType.STRING)
     private StatusMovie status;
 
-    @Column( name = "image_small" )
+    @Column(name = "image_small")
     private String imageSmallUrl;
 
-    @Column( name = "image_large" )
+    @Column(name = "image_large")
     private String imageLargeUrl;
 
-    @OneToMany( mappedBy = "movie" )
+    @OneToMany(mappedBy = "movie")
     private Set<Schedule> schedules;
 
     @ManyToMany
-    @JoinTable( name = "category_movie", joinColumns = @JoinColumn( name = "movie_id", referencedColumnName = "id" ), inverseJoinColumns = @JoinColumn( name = "category_id", referencedColumnName = "id" ) )
+    @JoinTable(name = "category_movie", joinColumns = @JoinColumn(name = "movie_id", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "category_id", referencedColumnName = "id"))
     private Set<Category> categories = new HashSet<>();
 
-    @OneToMany( mappedBy = "movie" )
+    @OneToMany(mappedBy = "movie")
     private Set<Review> reviews = new HashSet<>();
+
+    @OneToMany(mappedBy = "movie")
+    private Set<Actor> actors = new HashSet<>();
 }

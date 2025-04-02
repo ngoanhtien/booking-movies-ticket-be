@@ -69,13 +69,10 @@ public class Room extends BaseEntity
     private Boolean isEnabled;
 
     @ManyToOne
-    @JoinColumn( name = "cinema_id", referencedColumnName = "cinema_id" )
-    private Cinema cinema;
+    @JoinColumn( name = "branch_id", referencedColumnName = "id" )
+    private Branch branch;
 
     @OneToMany( mappedBy = "room" )
     private Set<Showtime> showtimes = new HashSet<>();
-
-    @OneToMany( mappedBy = "room" )
-    private Set<RoomSeat> roomSeats = new HashSet<>();
 
 }

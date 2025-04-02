@@ -5,45 +5,28 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Nationalized;
-
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
-@Table( name = "cinemas" )
+@Table(name = "seats")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Cinema extends BaseEntity
-{
+public class Cinema {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_cinema")
-    @SequenceGenerator(name = "sequence_cinema")
-    @Column( name = "cinema_id" )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "cinema_id")
     private Long id;
 
-    @Column( name = "cinema_name" )
-    @Nationalized
+    @Column(name = "cinema_name")
     private String name;
 
-    @Column( name = "room_image" )
-    private String imageUrl;
-
-    @Column( name = "address", length = 500 )
-    @Nationalized
-    private String address;
-
-    @Column( name = "hotline" )
+    @Column(name = "hotline")
     private String hotline;
 
-    @Column( name = "description", length = 1000 )
-    @Nationalized
+    @Column(name = "description")
     private String description;
 
-    @OneToMany( mappedBy = "cinema" )
-    private Set<Room> rooms = new HashSet<>();
-
-    private Integer rating;
+    @Column(name = "is_enabled")
+    private Boolean isEnabled;
 }

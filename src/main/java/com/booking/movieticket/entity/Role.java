@@ -19,5 +19,6 @@ public class Role extends BaseEntity
     @SequenceGenerator(name = "sequence_role")
     private Long id;
 
+    @Column
     private String name;
 }
