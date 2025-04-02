@@ -69,7 +69,7 @@ public class Room extends BaseEntity
     private Boolean isEnabled;
 
     @ManyToOne
-    @JoinColumn( name = "branch_id", referencedColumnName = "id" )
+    @JoinColumn( name = "branch_id", referencedColumnName = "branch_id" )
     private Branch branch;
 
     @OneToMany( mappedBy = "room" )

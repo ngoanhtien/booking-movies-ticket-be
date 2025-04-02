@@ -27,6 +27,7 @@ public class SeatStatus {
     private Seat seat;
 
     @ManyToOne
-    @JoinColumn(name = "showtimes_id", referencedColumnName = "showtimes_id")
+    @JoinColumns( { @JoinColumn( name = "schedule_id", referencedColumnName = "schedule_id", insertable = false, updatable = false ),
+            @JoinColumn( name = "room_id", referencedColumnName = "room_id", insertable = false, updatable = false ) } )
     private Showtime showtime;
 }

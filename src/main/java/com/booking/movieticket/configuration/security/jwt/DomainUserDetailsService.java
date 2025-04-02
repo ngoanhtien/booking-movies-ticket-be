@@ -6,7 +6,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.catalina.Role;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -40,8 +39,10 @@ public class DomainUserDetailsService implements UserDetailsService
 
     private UserDetails getUserDetails( User userEntity )
     {
-        Set<SimpleGrantedAuthority> authorities = userEntity.getRoles().stream().map( Role::getName ).map( SimpleGrantedAuthority::new )
-                .collect( Collectors.toSet() );
+        Set<SimpleGrantedAuthority> authorities = userEntity.getRoles().stream()
+                .map(role -> role.getName())
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toSet());
         return new DomainUserDetails( userEntity.getId(), userEntity.getUsername(), userEntity.getPassword(), authorities );
     }
 

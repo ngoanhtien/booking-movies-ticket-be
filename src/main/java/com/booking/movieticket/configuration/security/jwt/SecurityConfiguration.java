@@ -34,19 +34,21 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         // @formatter:off
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource))
-            .sessionManagement(managementConfigure -> managementConfigure.sessionCreationPolicy(STATELESS))
-            .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .authorizeHttpRequests(authorizationRequests -> authorizationRequests
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/v1/login").permitAll()
-                .requestMatchers("/api/v1/test").permitAll()
-                .requestMatchers("/api/v1/**").authenticated()
-            )
-            .exceptionHandling(exceptionHandling -> exceptionHandling
-                    .accessDeniedHandler(customAccessDeniedHandler)
-            )
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                .sessionManagement(managementConfigure -> managementConfigure.sessionCreationPolicy(STATELESS))
+                .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .authorizeHttpRequests(authorizationRequests -> authorizationRequests
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/v1/login").permitAll()
+                        .requestMatchers("/auth/login").permitAll()
+                        .requestMatchers("/auth/register").permitAll()
+                        .requestMatchers("/api/v1/test").permitAll()
+                        .requestMatchers("/api/v1/**").authenticated()
+                )
+                .exceptionHandling(exceptionHandling -> exceptionHandling
+                        .accessDeniedHandler(customAccessDeniedHandler)
+                )
         ;
         return http.build();
         // @formatter:on

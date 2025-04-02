@@ -48,7 +48,7 @@ public class Branch extends BaseEntity {
     private Set<Room> rooms = new HashSet<>();
 
     @ManyToOne
-    @JoinColumn( name = "cinema_id", referencedColumnName = "id" )
+    @JoinColumn( name = "cinema_id", referencedColumnName = "cinema_id" )
     private Cinema cinema;
 
 }

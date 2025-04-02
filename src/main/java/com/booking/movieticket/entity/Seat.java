@@ -45,10 +45,10 @@ public class Seat extends BaseEntity {
     private Set<BillDetail> billDetails = new HashSet<>();
 
     @ManyToOne
-    @JoinColumn( name = "room_id", referencedColumnName = "id" )
+    @JoinColumn( name = "room_id", referencedColumnName = "room_id" )
     private Room room;
 
     @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "seat_status_id", referencedColumnName = "id")
+    @JoinColumn(name = "seat_status_id", referencedColumnName = "seat_status_id")
     private SeatStatus seatStatus;
 }

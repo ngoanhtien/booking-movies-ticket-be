@@ -70,7 +70,7 @@ public class Movie extends BaseEntity {
     private Set<Schedule> schedules;
 
     @ManyToMany
-    @JoinTable(name = "category_movie", joinColumns = @JoinColumn(name = "movie_id", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "category_id", referencedColumnName = "id"))
+    @JoinTable(name = "category_movie", joinColumns = @JoinColumn(name = "movie_id", referencedColumnName = "movie_id"), inverseJoinColumns = @JoinColumn(name = "category_id", referencedColumnName = "category_id"))
     private Set<Category> categories = new HashSet<>();
 
     @OneToMany(mappedBy = "movie")

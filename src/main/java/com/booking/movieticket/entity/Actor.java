@@ -28,6 +28,6 @@ public class Actor extends BaseEntity {
     private String actorName;
 
     @ManyToOne
-    @JoinColumn(name = "movie_id", referencedColumnName = "id")
+    @JoinColumn(name = "movie_id", referencedColumnName = "movie_id")
     private Movie movie;
 }

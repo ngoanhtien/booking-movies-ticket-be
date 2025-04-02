@@ -16,6 +16,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.GenericFilterBean;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Filters incoming requests and installs a Spring Security principal if a header corresponding to a valid user is
@@ -25,6 +27,11 @@ import java.io.IOException;
 public class AuthenticationFilter extends GenericFilterBean {
     public static final String AUTHORIZATION_HEADER = "Authorization";
     private final TokenProvider tokenProvider;
+    private final List<String> publicPaths = Arrays.asList(
+            "/api/v1/login",
+            "/auth/login",
+            "/auth/register"
+    );
 
     public AuthenticationFilter(TokenProvider tokenProvider) {
         this.tokenProvider = tokenProvider;
@@ -35,10 +42,14 @@ public class AuthenticationFilter extends GenericFilterBean {
                          ServletResponse servletResponse,
                          FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
-        if (httpServletRequest.getRequestURI().equals("/api/v1/login")) {
+        String requestURI = httpServletRequest.getRequestURI();
+
+        // Skip authentication for public paths
+        if (publicPaths.stream().anyMatch(requestURI::equals)) {
             filterChain.doFilter(servletRequest, servletResponse);
             return;
         }
+
         String jwt = resolveToken(httpServletRequest);
         if (StringUtils.hasText(jwt) && this.tokenProvider.validateToken(jwt)) {
             Authentication authentication = this.tokenProvider.getAuthentication(jwt);
