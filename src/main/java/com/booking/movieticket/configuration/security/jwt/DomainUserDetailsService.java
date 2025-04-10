@@ -37,13 +37,13 @@ public class DomainUserDetailsService implements UserDetailsService
         return getUserDetails( userEntity );
     }
 
-    private UserDetails getUserDetails( User userEntity )
-    {
-        Set<SimpleGrantedAuthority> authorities = userEntity.getRoles().stream()
-                .map(role -> role.getName())
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toSet());
-        return new DomainUserDetails( userEntity.getId(), userEntity.getUsername(), userEntity.getPassword(), authorities );
+    private UserDetails getUserDetails(User userEntity) {
+        SimpleGrantedAuthority authority = new SimpleGrantedAuthority(userEntity.getRole().getName());
+        return new DomainUserDetails(
+                userEntity.getId(),
+                userEntity.getUsername(),
+                userEntity.getPassword(),
+                Set.of(authority)
+        );
     }
-
 }

@@ -1,12 +1,9 @@
-package com.booking.movieticket.dto.auth;
+package com.booking.movieticket.dto.request;
 
-import com.booking.movieticket.entity.enums.SignupDevice;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
 
 @Data
 @AllArgsConstructor
@@ -30,13 +27,6 @@ public class RegisterRequest {
     @Size(min = 3, max = 100, message = "Full name must be between 3 and 100 characters")
     private String fullname;
 
-    @Past(message = "Date of birth must be in the past")
-    private LocalDate dob;
-
     @Pattern(regexp = "^\\d{10,11}$", message = "Phone number must be 10-11 digits")
     private String phone;
-
-    private String avatarUrl;
-
-    private SignupDevice signupDevice;
 }

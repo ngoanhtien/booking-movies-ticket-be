@@ -1,4 +1,4 @@
-package com.booking.movieticket.dto.auth;
+package com.booking.movieticket.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

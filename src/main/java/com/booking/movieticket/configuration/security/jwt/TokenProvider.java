@@ -33,11 +33,15 @@ public class TokenProvider
 
     long tokenValidityInMilliseconds;
 
+    @Value( "${security.jwt.token-refresh-in-seconds}")
+    Long tokenRefreshInSeconds;
+
     @PostConstruct
     protected void init()
     {
         this.tokenSecretKey = Base64.getEncoder().encodeToString( tokenSecretKey.getBytes() );
         this.tokenValidityInMilliseconds = 1000 * tokenValidityInSeconds;
+        this.tokenRefreshInSeconds = 1000 * tokenRefreshInSeconds;
     }
 
     public String createToken( Authentication authentication )
@@ -77,4 +81,17 @@ public class TokenProvider
         }
         return false;
     }
+
+    public String generateRefreshToken( Authentication authentication ){
+        String authorities = authentication.getAuthorities().stream().map( GrantedAuthority::getAuthority ).collect( Collectors.joining( "," ) );
+        Claims claims = Jwts.claims().setSubject( authentication.getName() );
+        claims.put( AUTHORITIES_KEY, authorities );
+        //todo put another claims
+        Long userId = ( (DomainUserDetails) authentication.getPrincipal() ).getUserId();
+        claims.put( USER_ID_KEY, userId );
+        Date now = new Date();
+        Date validity = new Date( now.getTime() + tokenRefreshInSeconds );
+        return Jwts.builder().setClaims( claims ).setIssuedAt( now ).setExpiration( validity ).signWith( SignatureAlgorithm.HS512, tokenSecretKey ).compact();
+    }
+
 }

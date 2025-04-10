@@ -1,6 +1,6 @@
 package com.booking.movieticket.configuration.security.jwt;
 
-import com.booking.movieticket.exception.ApiResponse;
+import com.booking.movieticket.dto.response.ApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -57,7 +57,7 @@ public class AuthenticationFilter extends GenericFilterBean {
             filterChain.doFilter(servletRequest, servletResponse);
         } else {
             HttpServletResponse httpServletResponse = (HttpServletResponse) servletResponse;
-            ApiResponse<Object> responseData = new ApiResponse<>(HttpStatus.UNAUTHORIZED.value(), "Authentication required");
+            ApiResponse<Object> responseData = new ApiResponse<>("Authentication required");
 
             httpServletResponse.setStatus(HttpServletResponse.SC_OK);
             httpServletResponse.setContentType("application/json");
