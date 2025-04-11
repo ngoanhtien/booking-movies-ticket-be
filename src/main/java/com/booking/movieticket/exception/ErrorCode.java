@@ -44,7 +44,8 @@ public enum ErrorCode {
     RESOURCE_NOT_FOUND(1040, "Không tìm thấy tài nguyên", HttpStatus.BAD_REQUEST),
     ITEM_NOT_FOUND(1041, "Không tìm thấy mục", HttpStatus.NOT_FOUND),
     FILE_SIZE_EXCEEDED(1042, "Kích thước tệp vượt quá giới hạn cho phép", HttpStatus.BAD_REQUEST),
-    INVALID_FILE_TYPE(1043, "Loại tệp không hợp lệ", HttpStatus.BAD_REQUEST);
+    INVALID_FILE_TYPE(1043, "Loại tệp không hợp lệ", HttpStatus.BAD_REQUEST),
+    EMAIL_NOT_EXISTED(1044, "Email không tồn tại", HttpStatus.BAD_REQUEST);
 
     ErrorCode(int code, String message, HttpStatusCode status) {
         this.code = code;

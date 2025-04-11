@@ -40,6 +40,10 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-mail
+	implementation("org.springframework.boot:spring-boot-starter-mail:3.4.2")
+	// https://mvnrepository.com/artifact/org.passay/passay
+	implementation("org.passay:passay:1.6.4")
 }
 
 tasks.named('test') {
