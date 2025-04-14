@@ -4,20 +4,14 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
-@Data
+@Setter
+@Getter
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class AuthResponse {
-    private String message;
-    private String accessToken;
-    private String refreshToken;
-    private String tokenType;
-    private Long userId;
+public class RegisterResponse {
     private String username;
-    private String email;
-    private String fullname;
-    private String role;
+    private String password;
 }

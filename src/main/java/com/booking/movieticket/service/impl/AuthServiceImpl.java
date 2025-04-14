@@ -100,11 +100,10 @@ public class AuthServiceImpl implements AuthService {
             user.setIsConfirmed(false); // Require confirmation
 
             // Add default role (USER)
-            Set<Role> roles = new HashSet<>();
+            Role roles = new Role();
             Role userRole = roleRepository.findByName("USER")
                     .orElseThrow(() -> new RuntimeException("Default role not found"));
-            roles.add(userRole);
-            user.setRoles(roles);
+            user.setRole(roles);
 
             // Save user to database
             userRepository.save(user);
