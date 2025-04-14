@@ -40,3 +40,8 @@ security:
 
 resetPasswordBody: "Kính gửi {0}\\n\\nBạn đã yếu cầu đặt lại mật khẩu cho tài khoản của mình trong trống tính năng \"Quên mật khẩu\".\\nChúng tôi xin xác nhận rằng mật khẩu đã được thay đổi có thể có cho tài: {1}\\nNếu bạn không thực hiện hiện yêu cầu yêu này, vui lòng liên hệ với chúng tôi ngay lập tức thời và đảm bảo an toàn tài khoản của bạn.\\n\\nCảm ơn bạn đã sử dụng dịch vụ của chúng tôi."
 resetPasswordSubject: "Thông báo thay đổi password"
+cloudinary:
+  cloud_name: a
+  api_key: 7
+  api_secret: a-a
+  secure: true

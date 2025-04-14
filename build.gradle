@@ -34,6 +34,7 @@ dependencies {
 	implementation 'jakarta.xml.bind:jakarta.xml.bind-api:3.0.1'
 	implementation 'org.glassfish.jaxb:jaxb-runtime:3.0.1'
 	implementation 'javax.xml.bind:jaxb-api:2.3.0'
+	implementation 'com.cloudinary:cloudinary-http44:1.31.0'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'org.postgresql:postgresql'
 	annotationProcessor 'org.projectlombok:lombok'
