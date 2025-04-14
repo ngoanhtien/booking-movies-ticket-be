@@ -1,5 +1,6 @@
 package com.booking.movieticket.controller;
 
+import com.booking.movieticket.dto.request.ResetPasswordRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.exception.ErrorCode;
@@ -36,8 +37,9 @@ public class ResetPasswordController {
     private PasswordEncoder passwordEncoder;
 
     @PostMapping("/")
-    public ResponseEntity<?> resetPassword(@Valid @RequestBody String mail) {
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest) {
         try {
+            String mail = resetPasswordRequest.getEmail();
             Optional<User> existedUser = userRepository.findByEmail(mail);
             if (existedUser.isPresent()) {
                 String newPass = resetPasswordService.resetPassword(existedUser.get());

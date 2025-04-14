@@ -40,11 +40,10 @@ public class SecurityConfiguration {
                 .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(authorizationRequests -> authorizationRequests
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/v1/login").permitAll()
                         .requestMatchers("/auth/login").permitAll()
                         .requestMatchers("/auth/register").permitAll()
-                        .requestMatchers("/api/v1/test").permitAll()
-                        .requestMatchers("/api/v1/**").authenticated()
+                        .requestMatchers("/resetPassword").permitAll()
+                        .requestMatchers("/**").authenticated()
                 )
                 .exceptionHandling(exceptionHandling -> exceptionHandling
                         .accessDeniedHandler(customAccessDeniedHandler)

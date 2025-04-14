@@ -3,7 +3,6 @@ package com.booking.movieticket.service;
 import com.booking.movieticket.dto.request.LoginRequest;
 import com.booking.movieticket.dto.request.RegisterRequest;
 import com.booking.movieticket.dto.response.LoginResponse;
-import com.booking.movieticket.dto.response.RegisterResponse;
 
 public interface AuthService {
     /**
@@ -20,5 +19,5 @@ public interface AuthService {
      * @param registerRequest registration details
      * @return authentication response with JWT token and user details
      */
-    RegisterResponse register(RegisterRequest registerRequest);
+    void register(RegisterRequest registerRequest);
 }

@@ -4,7 +4,6 @@ import com.booking.movieticket.configuration.security.jwt.TokenProvider;
 import com.booking.movieticket.dto.request.LoginRequest;
 import com.booking.movieticket.dto.request.RegisterRequest;
 import com.booking.movieticket.dto.response.LoginResponse;
-import com.booking.movieticket.dto.response.RegisterResponse;
 import com.booking.movieticket.entity.Role;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.entity.enums.MembershipLevel;
@@ -72,7 +71,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public RegisterResponse register(RegisterRequest registerRequest) {
+    public void register(RegisterRequest registerRequest) {
         // Check if username already exists
         if (userRepository.existsByUsername(registerRequest.getUsername())) {
             throw new AppException(ErrorCode.USER_EXISTED);
@@ -103,11 +102,6 @@ public class AuthServiceImpl implements AuthService {
 
             // Save user to database
             userRepository.save(user);
-
-            // Create and return RegisterResponse
-            return RegisterResponse.builder()
-                    .username(user.getUsername())
-                    .build();
         } catch (AppException e) {
             log.error("Registration error: {}", e.getMessage());
             throw e;
