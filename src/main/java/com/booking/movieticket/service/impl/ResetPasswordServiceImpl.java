@@ -3,7 +3,7 @@ package com.booking.movieticket.service.impl;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.repository.UserRepository;
 import com.booking.movieticket.service.ResetPasswordService;
-import com.booking.movieticket.utils.RandomStringGenerator;
+import com.booking.movieticket.util.RandomStringGenerator;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;

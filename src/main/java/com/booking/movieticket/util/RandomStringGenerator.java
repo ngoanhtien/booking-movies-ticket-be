@@ -1,4 +1,4 @@
-package com.booking.movieticket.utils;
+package com.booking.movieticket.util;
 
 import com.booking.movieticket.exception.ErrorCode;
 import org.passay.CharacterData;
