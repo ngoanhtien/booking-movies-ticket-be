@@ -28,9 +28,9 @@ public class AuthenticationFilter extends GenericFilterBean {
     public static final String AUTHORIZATION_HEADER = "Authorization";
     private final TokenProvider tokenProvider;
     private final List<String> publicPaths = Arrays.asList(
-            "/api/v1/login",
             "/auth/login",
-            "/auth/register"
+            "/auth/register",
+            "/resetPassword"
     );
 
     public AuthenticationFilter(TokenProvider tokenProvider) {
@@ -57,9 +57,9 @@ public class AuthenticationFilter extends GenericFilterBean {
             filterChain.doFilter(servletRequest, servletResponse);
         } else {
             HttpServletResponse httpServletResponse = (HttpServletResponse) servletResponse;
-            ApiResponse<Object> responseData = new ApiResponse<>("Authentication required");
+            ApiResponse<Object> responseData = new ApiResponse<>(HttpStatus.UNAUTHORIZED.value(), "Authentication required");
 
-            httpServletResponse.setStatus(HttpServletResponse.SC_OK);
+            httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // Changed from SC_OK to SC_UNAUTHORIZED (401)
             httpServletResponse.setContentType("application/json");
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.writeValue(httpServletResponse.getWriter(), responseData);
