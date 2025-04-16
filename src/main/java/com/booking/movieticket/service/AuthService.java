@@ -5,19 +5,8 @@ import com.booking.movieticket.dto.request.RegisterRequest;
 import com.booking.movieticket.dto.response.LoginResponse;
 
 public interface AuthService {
-    /**
-     * Authenticate a user with the provided credentials
-     *
-     * @param loginRequest login credentials
-     * @return authentication response with JWT token and user details
-     */
+
     LoginResponse login(LoginRequest loginRequest);
 
-    /**
-     * Register a new user
-     *
-     * @param registerRequest registration details
-     * @return authentication response with JWT token and user details
-     */
     void register(RegisterRequest registerRequest);
 }

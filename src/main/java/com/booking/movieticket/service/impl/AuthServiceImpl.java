@@ -64,50 +64,42 @@ public class AuthServiceImpl implements AuthService {
                     .role(role)
                     .build();
         } catch (Exception e) {
-            log.error("Authentication error: {}", e.getMessage());
-            throw new BadCredentialsException("Authentication failed: " + e.getMessage());
+            log.error(ErrorCode.INVALID_CREDENTIALS.getMessage());
+            throw new BadCredentialsException(ErrorCode.INVALID_CREDENTIALS.getMessage());
         }
     }
 
     @Override
     @Transactional
     public void register(RegisterRequest registerRequest) {
-        // Check if username already exists
         if (userRepository.existsByUsername(registerRequest.getUsername())) {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
-
-        // Check if email already exists
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            throw new AppException(ErrorCode.USER_EXISTED, "Email is already in use");
+            throw new AppException(ErrorCode.USER_EXISTED);
         }
-
         try {
-            // Find the USER role
             Role userRole = roleRepository.findByName("USER")
                     .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND, "Default USER role not found"));
-
-            // Create new user
             User user = new User();
             user.setUsername(registerRequest.getUsername());
             user.setEmail(registerRequest.getEmail());
             user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
             user.setFullname(registerRequest.getFullname());
             user.setPhone(registerRequest.getPhone());
-            user.setMembershipLevel(MembershipLevel.BASIC); // Default membership level
+            user.setMembershipLevel(MembershipLevel.BASIC);
             user.setIsConfirmed(false); // Require confirmation
             user.setIsDeleted(false); // Not deleted
             user.setIsEnabled(true); // Account is enabled
             user.setRole(userRole); // Set the USER role
 
-            // Save user to database
             userRepository.save(user);
         } catch (AppException e) {
             log.error("Registration error: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("Registration error: {}", e.getMessage());
-            throw new RuntimeException("Registration failed: " + e.getMessage());
+            log.error(ErrorCode.REGISTER_FAILED.getMessage());
+            throw new RuntimeException(ErrorCode.REGISTER_FAILED.getMessage());
         }
     }
 }

@@ -8,11 +8,12 @@ import com.booking.movieticket.repository.UserRepository;
 import com.booking.movieticket.service.MailSendService;
 import com.booking.movieticket.service.ResetPasswordService;
 import jakarta.validation.Valid;
-import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,21 +21,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Optional;
 
+@Slf4j
 @RestController
+@RequiredArgsConstructor
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @RequestMapping("/resetPassword")
-@Log4j2
 public class ResetPasswordController {
 
-    @Autowired
-    private UserRepository userRepository;
+    UserRepository userRepository;
 
-    @Autowired
-    private MailSendService mailSendService;
+    MailSendService mailSendService;
 
-    @Autowired
-    private ResetPasswordService resetPasswordService;
-
-    private PasswordEncoder passwordEncoder;
+    ResetPasswordService resetPasswordService;
 
     @PostMapping("/")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest) {

@@ -42,7 +42,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/auth/login").permitAll()
                         .requestMatchers("/auth/register").permitAll()
-                        .requestMatchers("/resetPassword").permitAll()
+                        .requestMatchers("/resetPassword/").permitAll()
                         .requestMatchers("/**").authenticated()
                 )
                 .exceptionHandling(exceptionHandling -> exceptionHandling

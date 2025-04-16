@@ -4,22 +4,23 @@ import com.booking.movieticket.entity.User;
 import com.booking.movieticket.repository.UserRepository;
 import com.booking.movieticket.service.ResetPasswordService;
 import com.booking.movieticket.utils.RandomStringGenerator;
-import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-@Log4j2
+@Slf4j
+@Transactional
 public class ResetPasswordServiceImpl implements ResetPasswordService {
 
     private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    public ResetPasswordServiceImpl(PasswordEncoder passwordEncoder) {
+    public ResetPasswordServiceImpl(PasswordEncoder passwordEncoder, UserRepository userRepository) {
         this.passwordEncoder = passwordEncoder;
+        this.userRepository = userRepository;
     }
 
     @Override
