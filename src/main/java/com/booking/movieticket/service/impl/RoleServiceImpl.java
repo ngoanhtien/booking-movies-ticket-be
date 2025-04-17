@@ -1,6 +1,7 @@
 package com.booking.movieticket.service.impl;
 
 import com.booking.movieticket.entity.Role;
+import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.repository.RoleRepository;
 import com.booking.movieticket.service.RoleService;
 import jakarta.persistence.EntityNotFoundException;
@@ -21,7 +22,7 @@ public class RoleServiceImpl implements RoleService
     @Override
     public Role findRoleById( Long id )
     {
-        return roleRepository.findRoleById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Role with id " + id + " not found"));
+        return roleRepository.findById(id)
+                .orElseThrow(() -> new AppException("Role with id " + id + " not found") );
     }
 }

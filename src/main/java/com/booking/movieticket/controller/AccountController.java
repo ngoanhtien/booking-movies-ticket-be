@@ -4,7 +4,6 @@ import com.booking.movieticket.dto.business.AccountDTO;
 import com.booking.movieticket.dto.request.AccountRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.entity.Role;
-import com.booking.movieticket.repository.AccountRepository;
 import com.booking.movieticket.service.AccountService;
 import com.booking.movieticket.service.ImageUploadService;
 import com.booking.movieticket.service.RoleService;
@@ -13,17 +12,14 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.beans.BeanUtils;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/account")
