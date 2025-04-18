@@ -19,7 +19,7 @@ public enum ErrorCode {
     SEND_EMAIL_ERROR(1009, "Lỗi gửi email!", HttpStatus.BAD_REQUEST),
     BAD_REQUEST(1010, "Yêu cầu không hợp lệ!", HttpStatus.BAD_REQUEST),
     VERIFY_CODE_INVALID(1011, "Mã xác minh không hợp lệ!", HttpStatus.BAD_REQUEST),
-    PASSWORD_INVALID(1012, "Mật khẩu không hợp lệ!", HttpStatus.BAD_REQUEST),
+    PASSWORD_INVALID(1012, "Mật khẩu phải ít nhất 8 ký tự!", HttpStatus.BAD_REQUEST),
     ACCESS_DENIED(1013, "Bạn không có quyền truy cập", HttpStatus.FORBIDDEN),
     INVALID_PASSWORD(1014, "Email hoặc mật khẩu không hợp lệ!", HttpStatus.BAD_REQUEST),
     POINT_TYPE_NOT_EXISTED(1015, "Loại điểm không tồn tại", HttpStatus.BAD_REQUEST),
@@ -45,7 +45,11 @@ public enum ErrorCode {
     ITEM_NOT_FOUND(1041, "Không tìm thấy mục", HttpStatus.NOT_FOUND),
     FILE_SIZE_EXCEEDED(1042, "Kích thước tệp vượt quá giới hạn cho phép", HttpStatus.BAD_REQUEST),
     INVALID_FILE_TYPE(1043, "Loại tệp không hợp lệ", HttpStatus.BAD_REQUEST),
-    EMAIL_NOT_EXISTED(1044, "Email không tồn tại", HttpStatus.BAD_REQUEST);
+    EMAIL_NOT_EXISTED(1044, "Email không tồn tại", HttpStatus.BAD_REQUEST),
+    REGISTER_FAILED(1045, "Đăng ký thất bại", HttpStatus.BAD_REQUEST),
+    USERNAME_INVALID(1046, "Tên người dùng phải ít nhất 5} ký tự", HttpStatus.BAD_REQUEST),
+    INVALID_KEY(1047, "Invalid message key", HttpStatus.BAD_REQUEST),
+    ;
 
     ErrorCode(int code, String message, HttpStatusCode status) {
         this.code = code;

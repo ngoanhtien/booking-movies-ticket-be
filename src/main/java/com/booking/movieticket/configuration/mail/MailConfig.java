@@ -2,10 +2,14 @@ package com.booking.movieticket.configuration.mail;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 import java.io.Serializable;
 
 @Getter
+@Component
+@Configuration
 public class MailConfig implements Serializable {
     @Value("${spring.mail.host}")
     private String host;

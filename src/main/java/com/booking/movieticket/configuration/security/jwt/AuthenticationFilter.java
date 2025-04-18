@@ -28,9 +28,9 @@ public class AuthenticationFilter extends GenericFilterBean {
     public static final String AUTHORIZATION_HEADER = "Authorization";
     private final TokenProvider tokenProvider;
     private final List<String> publicPaths = Arrays.asList(
-            "/api/v1/login",
             "/auth/login",
-            "/auth/register"
+            "/auth/register",
+            "/resetPassword/"
     );
 
     public AuthenticationFilter(TokenProvider tokenProvider) {

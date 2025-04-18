@@ -1,9 +1,9 @@
 package com.booking.movieticket.entity.enums;
 
 public enum StatusMovie {
-    DANG_CHIEU("Đang Chiếu"),
-    SAP_CHIEU("Sắp Chiếu"),
-    NGUNG_CHIEU("Ngừng Chiếu");
+    SHOWING("Đang Chiếu"),
+    UPCOMING("Sắp Chiếu"),
+    STOPPED("Ngừng Chiếu");
 
     private final String displayName;
 
