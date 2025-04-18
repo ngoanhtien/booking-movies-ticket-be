@@ -13,9 +13,8 @@ public class AppException extends RuntimeException {
         this.errorCode = errorCode;
     }
 
-    // Constructor chấp nhận ErrorCode với message động
     public AppException(ErrorCode errorCode, Object... args) {
-        super(errorCode.formatMessage(args).getFormattedMessage());  // Sử dụng errorCode sau khi định dạng message
+        super(errorCode.formatMessage(args).getFormattedMessage());
         this.errorCode = errorCode;
     }
 }

@@ -15,7 +15,6 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-
     private static final String MIN_ATTRIBUTE = "min";
 
     @ExceptionHandler(value = Exception.class)
@@ -59,7 +58,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         FieldError firstError = exception.getBindingResult().getFieldErrors().stream().findFirst().orElse(null);
 
-        // Trả về thông báo lỗi nếu tồn tại lỗi, ngược lại trả về thông báo mặc định
         String message = (firstError != null) ? firstError.getDefaultMessage() : "Invalid request";
 
         ApiResponse<?> apiResponse = ApiResponse.builder()

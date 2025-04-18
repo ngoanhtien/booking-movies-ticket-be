@@ -15,7 +15,8 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SeatStatus {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_seat_status")
+    @SequenceGenerator(name = "sequence_seat_status")
     @Column(name = "seat_status_id")
     private Long id;
 
@@ -27,7 +28,7 @@ public class SeatStatus {
     private Seat seat;
 
     @ManyToOne
-    @JoinColumns( { @JoinColumn( name = "schedule_id", referencedColumnName = "schedule_id", insertable = false, updatable = false ),
-            @JoinColumn( name = "room_id", referencedColumnName = "room_id", insertable = false, updatable = false ) } )
+    @JoinColumns({@JoinColumn(name = "schedule_id", referencedColumnName = "schedule_id", insertable = false, updatable = false),
+            @JoinColumn(name = "room_id", referencedColumnName = "room_id", insertable = false, updatable = false)})
     private Showtime showtime;
 }

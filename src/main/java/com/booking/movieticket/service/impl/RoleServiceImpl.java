@@ -2,6 +2,7 @@ package com.booking.movieticket.service.impl;
 
 import com.booking.movieticket.entity.Role;
 import com.booking.movieticket.exception.AppException;
+import com.booking.movieticket.exception.ErrorCode;
 import com.booking.movieticket.repository.RoleRepository;
 import com.booking.movieticket.service.RoleService;
 import jakarta.persistence.EntityNotFoundException;
@@ -15,14 +16,12 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
-public class RoleServiceImpl implements RoleService
-{
+public class RoleServiceImpl implements RoleService {
     RoleRepository roleRepository;
 
     @Override
-    public Role findRoleById( Long id )
-    {
+    public Role findRoleById(Long id) {
         return roleRepository.findById(id)
-                .orElseThrow(() -> new AppException("Role with id " + id + " not found") );
+                .orElseThrow(() -> new AppException(ErrorCode.SEND_EMAIL_ERROR));
     }
 }

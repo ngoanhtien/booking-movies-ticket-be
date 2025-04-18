@@ -48,12 +48,11 @@ public enum ErrorCode {
     EMAIL_NOT_EXISTED(1044, "Email không tồn tại", HttpStatus.BAD_REQUEST),
     REGISTER_FAILED(1045, "Đăng ký thất bại", HttpStatus.BAD_REQUEST),
     USERNAME_INVALID(1046, "Tên người dùng phải ít nhất 5} ký tự", HttpStatus.BAD_REQUEST),
-    INVALID_KEY(1047, "Invalid message key", HttpStatus.BAD_REQUEST),
-    ;
+    INVALID_KEY(1047, "Invalid message key", HttpStatus.BAD_REQUEST);
 
     ErrorCode(int code, String message, HttpStatusCode status) {
         this.code = code;
-        this.originalMessage = message;  // Lưu trữ message ban đầu
+        this.originalMessage = message;
         this.message = message;
         this.statusCode = status;
     }
@@ -61,11 +60,10 @@ public enum ErrorCode {
     private int code;
     private String message;
     private HttpStatusCode statusCode;
-    private final String originalMessage; // Lưu trữ message gốc (ban đầu)
+    private final String originalMessage;
 
-    // Phương thức để định dạng message và trả về ErrorCode
     public ErrorCode formatMessage(Object... args) {
-        this.message = String.format(this.originalMessage, args);  // Luôn sử dụng message gốc để định dạng
+        this.message = String.format(this.originalMessage, args);
         return this;
     }
 

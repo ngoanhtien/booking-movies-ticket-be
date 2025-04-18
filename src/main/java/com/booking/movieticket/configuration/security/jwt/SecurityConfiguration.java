@@ -21,8 +21,11 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfiguration {
+
     private final CorsConfigurationSource corsConfigurationSource;
+
     private final AuthenticationFilter authenticationFilter;
+
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
     @Bean

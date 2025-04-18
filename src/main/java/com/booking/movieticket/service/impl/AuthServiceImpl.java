@@ -40,8 +40,7 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse login(LoginRequest loginRequest) {
         try {
             // Create authentication token
-            UsernamePasswordAuthenticationToken authenticationToken =
-                    new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword());
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword());
 
             // Authenticate
             Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
@@ -52,17 +51,10 @@ public class AuthServiceImpl implements AuthService {
             String refreshJwt = tokenProvider.generateRefreshToken(authentication);
 
             // Get role from authorities
-            String role = authentication.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .findFirst()
-                    .orElse(""); // Get the first role if any
+            String role = authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).findFirst().orElse(""); // Get the first role if any
 
             // Create and return LoginResponse
-            return LoginResponse.builder()
-                    .accessToken(jwt)
-                    .refreshToken(refreshJwt)
-                    .role(role)
-                    .build();
+            return LoginResponse.builder().accessToken(jwt).refreshToken(refreshJwt).role(role).build();
         } catch (Exception e) {
             log.error(ErrorCode.INVALID_CREDENTIALS.getMessage());
             throw new BadCredentialsException(ErrorCode.INVALID_CREDENTIALS.getMessage());
@@ -79,8 +71,7 @@ public class AuthServiceImpl implements AuthService {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
         try {
-            Role userRole = roleRepository.findByName("USER")
-                    .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND, "Default USER role not found"));
+            Role userRole = roleRepository.findByName("USER").orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND, "Default USER role not found"));
             User user = new User();
             user.setUsername(registerRequest.getUsername());
             user.setEmail(registerRequest.getEmail());
@@ -89,8 +80,7 @@ public class AuthServiceImpl implements AuthService {
             user.setPhone(registerRequest.getPhone());
             user.setMembershipLevel(MembershipLevel.BASIC);
             user.setIsConfirmed(false); // Require confirmation
-            user.setIsDeleted(false); // Not deleted
-            user.setIsEnabled(true); // Account is enabled
+            user.setIsDeleted(true); // Account is enabled
             user.setRole(userRole); // Set the USER role
 
             userRepository.save(user);

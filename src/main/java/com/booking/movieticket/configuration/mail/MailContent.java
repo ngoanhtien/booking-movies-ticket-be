@@ -9,6 +9,7 @@ import org.springframework.context.annotation.PropertySource;
 @Configuration
 @PropertySource(ignoreResourceNotFound = true, value = "classpath:mailTemplate.properties")
 public class MailContent {
+
     @Value("${resetPasswordSubject}")
     private String subject;
 

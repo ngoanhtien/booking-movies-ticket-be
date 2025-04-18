@@ -1,4 +1,4 @@
-package com.booking.movieticket.entity;
+package com.booking.movieticket.entity.base;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Column;
@@ -20,11 +20,11 @@ import java.time.Instant;
 @Getter
 @Setter
 @MappedSuperclass
-@EntityListeners( AuditingEntityListener.class)
+@EntityListeners(AuditingEntityListener.class)
 @JsonIgnoreProperties(value = {"createdBy", "createdAt", "lastModifiedBy", "lastModifiedAt"}, allowGetters = true)
 @SQLRestriction("is_deleted IS DISTINCT FROM true")
-public class BaseEntity implements Serializable
-{
+public class BaseEntity implements Serializable {
+
     @Serial
     private static final long serialVersionUID = 1L;
 
@@ -46,7 +46,4 @@ public class BaseEntity implements Serializable
 
     @Column(name = "is_deleted")
     private Boolean isDeleted;
-
-    @Column(name = "is_enabled")
-    private Boolean isEnabled;
 }

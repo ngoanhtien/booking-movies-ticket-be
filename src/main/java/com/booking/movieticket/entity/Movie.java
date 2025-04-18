@@ -1,5 +1,6 @@
 package com.booking.movieticket.entity;
 
+import com.booking.movieticket.entity.base.BaseEntity;
 import com.booking.movieticket.entity.enums.StatusMovie;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -19,6 +20,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Movie extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_movie")
     @SequenceGenerator(name = "sequence_movie")

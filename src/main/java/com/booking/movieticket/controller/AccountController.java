@@ -26,14 +26,14 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 
 @RestController
-@RequestMapping( "/account" )
+@RequestMapping("/account")
 @RequiredArgsConstructor
-@FieldDefaults( makeFinal = true, level = AccessLevel.PRIVATE )
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @Slf4j
-@CrossOrigin( origins = "*" )
+@CrossOrigin(origins = "*")
 @Validated
-public class AccountController
-{
+public class AccountController {
+
     RoleService roleService;
 
     AccountService accountService;
@@ -41,55 +41,47 @@ public class AccountController
     ImageUploadService imageUploadService;
 
     @PostMapping
-    public ResponseEntity<?> createAccount( @ModelAttribute @Valid AccountRequest accountRequest,
-            @RequestParam( value = "imageAvatar", required = false ) MultipartFile imageAvatar )
-    {
+    public ResponseEntity<?> createAccount(@ModelAttribute @Valid AccountRequest accountRequest,
+                                           @RequestParam(value = "imageAvatar", required = false) MultipartFile imageAvatar) {
         AccountDTO accountDTO = new AccountDTO();
-        try
-        {
-            if ( accountRequest.getAvatarUrl() == null )
-            {
-                accountRequest.setAvatarUrl( imageUploadService.uploadImage( imageAvatar ) );
+        try {
+            if (accountRequest.getAvatarUrl() == null) {
+                accountRequest.setAvatarUrl(imageUploadService.uploadImage(imageAvatar));
             }
-            BeanUtils.copyProperties( accountRequest, accountDTO );
-            Role role = roleService.findRoleById( accountRequest.getRoleId() );
-            accountDTO.setRole( role );
+            BeanUtils.copyProperties(accountRequest, accountDTO);
+            Role role = roleService.findRoleById(accountRequest.getRoleId());
+            accountDTO.setRole(role);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>("Error: " + e.getMessage(), null));
         }
-        catch ( IOException e )
-        {
-            return ResponseEntity.status( HttpStatus.NOT_FOUND ).body( new ApiResponse<>( "Error: " + e.getMessage(), null ) );
-        }
-        return ResponseEntity.status( HttpStatus.CREATED ).body( new ApiResponse<>( "Thêm tài khoản thành công!", accountService.saveUser( accountDTO ) ) );
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Thêm tài khoản thành công!", accountService.saveUser(accountDTO)));
     }
 
     @GetMapping
-    public ResponseEntity<?> readAccounts( AccountFilterCriteria accountFilterCriteria,
-            @PageableDefault( size = 10, sort = "id", direction = Sort.Direction.DESC ) Pageable pageable )
-    {
-        return ResponseEntity.status( HttpStatus.OK )
-                .body( new ApiResponse<>( "Lấy danh sách tài khoản thành công!", accountService.findUsers( accountFilterCriteria, pageable ) ) );
+    public ResponseEntity<?> readAccounts(AccountFilterCriteria accountFilterCriteria,
+                                          @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ApiResponse<>("Lấy danh sách tài khoản thành công!", accountService.findUsers(accountFilterCriteria, pageable)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> readAccount( @PathVariable @Valid  Long id )
-    {
-        if(id == null || id < 0){
+    public ResponseEntity<?> readAccount(@PathVariable @Valid Long id) {
+        if (id == null || id < 0) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>("Id không hợp lệ!", null));
         }
-        return ResponseEntity.status( HttpStatus.OK ).body( new ApiResponse<>( "Lấy danh sách tài khoản thành công!", accountService.findUser( id ) ) );
+        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("Lấy danh sách tài khoản thành công!", accountService.findUser(id)));
     }
 
     @PutMapping
-    public ResponseEntity<?> updateAccount( @ModelAttribute @Valid AccountRequest accountRequest,
-            @RequestParam( value = "avataUrl", required = false ) MultipartFile imageAvatar )
-    {
+    public ResponseEntity<?> updateAccount(@ModelAttribute @Valid AccountRequest accountRequest,
+                                           @RequestParam(value = "avataUrl", required = false) MultipartFile imageAvatar) {
         AccountDTO accountDTO = new AccountDTO();
-        BeanUtils.copyProperties( accountRequest, accountDTO );
-        Role role = roleService.findRoleById( accountRequest.getRoleId() );
-        accountDTO.setRole( role );
-        return ResponseEntity.status( HttpStatus.ACCEPTED )
-                .body( new ApiResponse<>( "Cập nhật tài khoản thành công!", accountService.updateUser( accountDTO, imageAvatar ) ) );
+        BeanUtils.copyProperties(accountRequest, accountDTO);
+        Role role = roleService.findRoleById(accountRequest.getRoleId());
+        accountDTO.setRole(role);
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(new ApiResponse<>("Cập nhật tài khoản thành công!", accountService.updateUser(accountDTO, imageAvatar)));
     }
 
     @DeleteMapping("/{id}")

@@ -25,8 +25,11 @@ import java.util.List;
  */
 @Component
 public class AuthenticationFilter extends GenericFilterBean {
+
     public static final String AUTHORIZATION_HEADER = "Authorization";
+
     private final TokenProvider tokenProvider;
+
     private final List<String> publicPaths = Arrays.asList(
             "/auth/login",
             "/auth/register",

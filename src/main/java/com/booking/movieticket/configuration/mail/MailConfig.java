@@ -11,6 +11,7 @@ import java.io.Serializable;
 @Component
 @Configuration
 public class MailConfig implements Serializable {
+
     @Value("${spring.mail.host}")
     private String host;
 

@@ -1,5 +1,6 @@
 package com.booking.movieticket.entity;
 
+import com.booking.movieticket.entity.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,6 +18,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Branch extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_branch")
     @SequenceGenerator(name = "sequence_branch")
@@ -48,7 +50,7 @@ public class Branch extends BaseEntity {
     private Set<Room> rooms = new HashSet<>();
 
     @ManyToOne
-    @JoinColumn( name = "cinema_id", referencedColumnName = "cinema_id" )
+    @JoinColumn(name = "cinema_id", referencedColumnName = "cinema_id")
     private Cinema cinema;
 
 }

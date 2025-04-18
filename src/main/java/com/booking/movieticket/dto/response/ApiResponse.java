@@ -6,14 +6,17 @@ import lombok.*;
 
 @Getter
 @Setter
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Builder
 public class ApiResponse<T> {
+
     private Integer code;
+
     private String message;
+
     private T result;
 
     public ApiResponse(int code, String message) {
@@ -21,11 +24,11 @@ public class ApiResponse<T> {
         this.message = message;
     }
 
-    public ApiResponse( String message ){
+    public ApiResponse(String message) {
         this.message = message;
     }
 
-    public ApiResponse( String message, T result ){
+    public ApiResponse(String message, T result) {
         this.message = message;
         this.result = result;
     }
