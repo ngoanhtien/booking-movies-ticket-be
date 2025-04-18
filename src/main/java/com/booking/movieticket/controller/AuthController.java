@@ -4,13 +4,11 @@ import com.booking.movieticket.dto.request.LoginRequest;
 import com.booking.movieticket.dto.request.RegisterRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.dto.response.LoginResponse;
-import com.booking.movieticket.dto.response.RegisterResponse;
 import com.booking.movieticket.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -42,7 +40,7 @@ public class AuthController {
     @PostMapping("/register")
     public ApiResponse<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
         try {
-            return new ApiResponse<>("User registered successfully");
+            return new ApiResponse<>("User registered successfully!!!");
         } catch (RuntimeException e) {
             log.error("Registration error: {}", e.getMessage());
             return new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), e.getMessage());
