@@ -1,19 +1,20 @@
 package com.booking.movieticket.controller;
 
-import com.booking.movieticket.dto.business.UserDTO;
-import com.booking.movieticket.dto.dao.UserDAOCriteria;
+import com.booking.movieticket.dto.response.UserResponse;
+import com.booking.movieticket.dto.vo.UserCriteria;
 import com.booking.movieticket.dto.request.UserRequest;
 import com.booking.movieticket.dto.request.ResetPasswordRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
-import com.booking.movieticket.entity.Role;
 import com.booking.movieticket.entity.User;
+import com.booking.movieticket.mapper.UserMapper;
 import com.booking.movieticket.service.*;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -22,8 +23,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
 
 @RestController
 @RequestMapping("/account")
@@ -42,57 +41,36 @@ public class UserController {
 
     MailSendService mailSendService;
 
+    UserMapper userMapper;
+
     @PostMapping
-    public ResponseEntity<?> createAccount(@ModelAttribute @Valid UserRequest userRequest,
-                                           @RequestParam(value = "imageAvatar", required = false) MultipartFile imageAvatar) {
-        UserDTO userDTO = new UserDTO();
-        try {
-            if (userRequest.getAvatarUrl() == null) {
-                userRequest.setAvatarUrl(imageUploadService.uploadImage(imageAvatar));
-            }
-            BeanUtils.copyProperties(userRequest, userDTO);
-            Role role = roleService.findRoleById(userRequest.getRoleId());
-            userDTO.setRole(role);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>("Error: " + e.getMessage(), null));
-        }
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Thêm tài khoản thành công!", userService.saveUser(userDTO)));
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(@ModelAttribute @Valid UserRequest userRequest,
+                                                                @RequestParam(value = "imageAvatar", required = false) MultipartFile imageAvatar) {
+        return ResponseEntity.ok(new ApiResponse<>("Tạo tài khoản thành công", userService.saveUser(userMapper.toUser(userRequest), imageAvatar)));
     }
 
     @GetMapping
-    public ResponseEntity<?> readAccounts(UserDAOCriteria userDAOCriteria,
-                                          @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+    public ResponseEntity<ApiResponse<Page<User>>> readUsers(UserCriteria userCriteria,
+                                                       @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new ApiResponse<>("Lấy danh sách tài khoản thành công!", userService.findUsers(userDAOCriteria, pageable)));
+                .body(new ApiResponse<>("Lấy danh sách tài khoản thành công!", userService.findUsers(userCriteria, pageable)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> readAccount(@PathVariable @Valid Long id) {
-        if (id == null || id < 0) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse<>("Id không hợp lệ!", null));
-        }
+    public ResponseEntity<ApiResponse<User>> readUser(@PathVariable @Min(value = 1, message = "Id phải lớn hơn hoặc bằng 1") Long id) {
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("Lấy danh sách tài khoản thành công!", userService.findUser(id)));
     }
 
     @PutMapping
-    public ResponseEntity<?> updateAccount(@ModelAttribute @Valid UserRequest userRequest,
-                                           @RequestParam(value = "avataUrl", required = false) MultipartFile imageAvatar) {
-        UserDTO userDTO = new UserDTO();
-        BeanUtils.copyProperties(userRequest, userDTO);
-        Role role = roleService.findRoleById(userRequest.getRoleId());
-        userDTO.setRole(role);
+    public ResponseEntity<ApiResponse<String>> updateUser(@ModelAttribute @Valid UserRequest userRequest,
+                                        @RequestParam(value = "avataUrl", required = false) MultipartFile imageAvatar) {
+        userService.updateUser(userMapper.toUser(userRequest), imageAvatar);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(new ApiResponse<>("Cập nhật tài khoản thành công!", userService.updateUser(userDTO, imageAvatar)));
+                .body(new ApiResponse<>("Cập nhật tài khoản thành công!"));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteAccount(@PathVariable @Valid Long id) {
-        if (id == null || id < 0) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse<>("Id không hợp lệ!", null));
-        }
-
+    public ResponseEntity<?> deleteAccount(@PathVariable @Min(value = 1, message = "Id phải lớn hơn hoặc bằng 1") Long id) {
         try {
             userService.softDeleteUser(id);
             return ResponseEntity.status(HttpStatus.OK)

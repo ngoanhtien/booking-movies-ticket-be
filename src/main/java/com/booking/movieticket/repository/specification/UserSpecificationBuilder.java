@@ -1,11 +1,11 @@
 package com.booking.movieticket.repository.specification;
 
-import com.booking.movieticket.dto.dao.UserDAOCriteria;
+import com.booking.movieticket.dto.vo.UserCriteria;
 import com.booking.movieticket.entity.User;
 import org.springframework.data.jpa.domain.Specification;
 
 public class UserSpecificationBuilder {
-    public static Specification<User> findByCriteria(UserDAOCriteria criteria) {
+    public static Specification<User> findByCriteria(UserCriteria criteria) {
         return Specification.where(hasName(criteria.getName()));
     }
 

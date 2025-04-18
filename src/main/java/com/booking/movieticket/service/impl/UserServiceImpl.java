@@ -1,12 +1,15 @@
 package com.booking.movieticket.service.impl;
 
 import com.booking.movieticket.dto.business.UserDTO;
-import com.booking.movieticket.dto.dao.UserDAOCriteria;
+import com.booking.movieticket.dto.vo.UserCriteria;
+import com.booking.movieticket.dto.response.UserResponse;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.exception.ErrorCode;
+import com.booking.movieticket.mapper.UserMapper;
 import com.booking.movieticket.repository.UserRepository;
 import com.booking.movieticket.repository.specification.UserSpecificationBuilder;
+import com.booking.movieticket.service.RoleService;
 import com.booking.movieticket.service.UserService;
 import com.booking.movieticket.service.ImageUploadService;
 import com.booking.movieticket.util.RandomStringGenerator;
@@ -30,24 +33,35 @@ import java.util.Optional;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class UserServiceImpl implements UserService {
-    UserRepository userRepository;
+    RoleService roleService;
+
     ImageUploadService imageUploadService;
+
     PasswordEncoder passwordEncoder;
 
+    UserRepository userRepository;
+
+    UserMapper userMapper;
+
     @Override
-    public User saveUser(UserDTO userDTO) {
-        if (userRepository.existsByEmail(userDTO.getEmail())) {
+    public UserResponse saveUser(User user, MultipartFile imageAvatar) {
+        try {
+            if (user.getAvatarUrl() == null) {
+                user.setAvatarUrl(imageUploadService.uploadImage(imageAvatar));
+            }
+        } catch (IOException e) {
             throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
-        User user = new User();
-        BeanUtils.copyProperties(userDTO, user);
-        user.setIsDeleted(true);
-        return userRepository.save(user);
+        if (userRepository.existsByEmail(user.getEmail())) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
+        user.setIsDeleted(false);
+        return userMapper.toUserResponse(userRepository.save(user));
     }
 
     @Override
-    public Page<User> findUsers(UserDAOCriteria userDAOCriteria, Pageable pageable) {
-        return userRepository.findAll(UserSpecificationBuilder.findByCriteria(userDAOCriteria), pageable);
+    public Page<User> findUsers(UserCriteria userCriteria, Pageable pageable) {
+        return userRepository.findAll(UserSpecificationBuilder.findByCriteria(userCriteria), pageable);
     }
 
     @Override
@@ -56,26 +70,19 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public String updateUser(UserDTO userDTO, MultipartFile avatar) {
-        if (userDTO.getId() == null) {
+    public void updateUser(User userForUpdate, MultipartFile avatar) {
+        if (userForUpdate.getId() == null) {
             throw new AppException(ErrorCode.USER_DUPLICATE);
         }
-        Optional<User> user = userRepository.findById(userDTO.getId());
-        if (user.isEmpty()) {
-            throw new AppException(ErrorCode.USER_DUPLICATE);
-        }
+        User user = userRepository.findById(userForUpdate.getId()).orElseThrow(() -> new AppException(ErrorCode.USER_DUPLICATE));
         try {
-            if (userDTO.getAvatarUrl() == null) {
-                userDTO.setAvatarUrl(imageUploadService.uploadImage(avatar));
+            if (userForUpdate.getAvatarUrl() == null) {
+                user.setAvatarUrl(imageUploadService.uploadImage(avatar));
             }
         } catch (IOException e) {
-            log.error("lỗi khi xử lý ảnh: {}", String.valueOf(e));
-        } catch (Exception e) {
-            log.error(e.getMessage());
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
-        BeanUtils.copyProperties(userDTO, user.get());
-        userRepository.save(user.get());
-        return "Cập nhật thông tin thành công!";
+        userRepository.save(user);
     }
 
     @Override
