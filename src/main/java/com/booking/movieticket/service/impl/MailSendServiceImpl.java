@@ -1,4 +1,4 @@
-package com.booking.movieticket.service.nonimpl;
+package com.booking.movieticket.service.impl;
 
 import com.booking.movieticket.configuration.mail.MailConfig;
 import com.booking.movieticket.configuration.mail.MailContent;
