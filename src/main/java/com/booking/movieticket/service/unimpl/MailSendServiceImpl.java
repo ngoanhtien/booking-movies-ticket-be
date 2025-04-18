@@ -1,4 +1,4 @@
-package com.booking.movieticket.service.impl;
+package com.booking.movieticket.service.unimpl;
 
 import com.booking.movieticket.configuration.mail.MailConfig;
 import com.booking.movieticket.configuration.mail.MailContent;
@@ -6,7 +6,6 @@ import com.booking.movieticket.service.MailSendService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.stereotype.Service;

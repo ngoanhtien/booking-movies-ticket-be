@@ -1,4 +1,4 @@
-package com.booking.movieticket.configuration.security.jwt;
+package com.booking.movieticket.security.jwt;
 
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.repository.UserRepository;

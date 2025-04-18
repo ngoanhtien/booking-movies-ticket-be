@@ -1,10 +1,9 @@
-package com.booking.movieticket.controller;
+package com.booking.movieticket.security.jwt;
 
 import com.booking.movieticket.dto.request.LoginRequest;
 import com.booking.movieticket.dto.request.RegisterRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.dto.response.LoginResponse;
-import com.booking.movieticket.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

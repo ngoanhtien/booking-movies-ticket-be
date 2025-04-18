@@ -1,4 +1,4 @@
-package com.booking.movieticket.service;
+package com.booking.movieticket.security.jwt;
 
 import com.booking.movieticket.dto.request.LoginRequest;
 import com.booking.movieticket.dto.request.RegisterRequest;

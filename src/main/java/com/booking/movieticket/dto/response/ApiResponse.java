@@ -2,6 +2,7 @@ package com.booking.movieticket.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.*;
 
 @Getter
@@ -19,12 +20,12 @@ public class ApiResponse<T> {
 
     private T result;
 
-    public ApiResponse(int code, String message) {
-        this.code = code;
+    public ApiResponse(String message) {
         this.message = message;
     }
 
-    public ApiResponse(String message) {
+    public ApiResponse(Integer code, String message) {
+        this.code = code;
         this.message = message;
     }
 

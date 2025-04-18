@@ -1,6 +1,5 @@
-package com.booking.movieticket.configuration.security.jwt;
+package com.booking.movieticket.security.jwt;
 
-import com.booking.movieticket.exception.CustomAccessDeniedHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,7 +25,7 @@ public class SecurityConfiguration {
 
     private final AuthenticationFilter authenticationFilter;
 
-    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final ExceptionHandlingFilter exceptionHandlingFilter;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -40,6 +39,7 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(managementConfigure -> managementConfigure.sessionCreationPolicy(STATELESS))
+                .addFilterBefore(exceptionHandlingFilter, AuthenticationFilter.class)
                 .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(authorizationRequests -> authorizationRequests
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -48,9 +48,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/resetPassword/").permitAll()
                         .requestMatchers("/**").authenticated()
                 )
-                .exceptionHandling(exceptionHandling -> exceptionHandling
-                        .accessDeniedHandler(customAccessDeniedHandler)
-                )
+
         ;
         return http.build();
         // @formatter:on

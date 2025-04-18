@@ -1,4 +1,4 @@
-package com.booking.movieticket.configuration.security.jwt;
+package com.booking.movieticket.security.jwt;
 
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;

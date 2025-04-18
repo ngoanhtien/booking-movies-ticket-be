@@ -1,6 +1,5 @@
-package com.booking.movieticket.service.impl;
+package com.booking.movieticket.security.jwt;
 
-import com.booking.movieticket.configuration.security.jwt.TokenProvider;
 import com.booking.movieticket.dto.request.LoginRequest;
 import com.booking.movieticket.dto.request.RegisterRequest;
 import com.booking.movieticket.dto.response.LoginResponse;
@@ -11,7 +10,6 @@ import com.booking.movieticket.exception.ErrorCode;
 import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.repository.RoleRepository;
 import com.booking.movieticket.repository.UserRepository;
-import com.booking.movieticket.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -56,8 +54,8 @@ public class AuthServiceImpl implements AuthService {
             // Create and return LoginResponse
             return LoginResponse.builder().accessToken(jwt).refreshToken(refreshJwt).role(role).build();
         } catch (Exception e) {
-            log.error(ErrorCode.INVALID_CREDENTIALS.getMessage());
-            throw new BadCredentialsException(ErrorCode.INVALID_CREDENTIALS.getMessage());
+            log.error(ErrorCode.USER_DUPLICATE.getMessage());
+            throw new BadCredentialsException(ErrorCode.USER_DUPLICATE.getMessage());
         }
     }
 
@@ -65,13 +63,13 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void register(RegisterRequest registerRequest) {
         if (userRepository.existsByUsername(registerRequest.getUsername())) {
-            throw new AppException(ErrorCode.USER_EXISTED);
+            throw new AppException(ErrorCode.USER_DUPLICATE);
         }
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            throw new AppException(ErrorCode.USER_EXISTED);
+            throw new AppException(ErrorCode.USER_DUPLICATE);
         }
         try {
-            Role userRole = roleRepository.findByName("USER").orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND, "Default USER role not found"));
+            Role userRole = roleRepository.findByName("USER").orElseThrow(() -> new AppException(ErrorCode.USER_DUPLICATE));
             User user = new User();
             user.setUsername(registerRequest.getUsername());
             user.setEmail(registerRequest.getEmail());
@@ -88,8 +86,8 @@ public class AuthServiceImpl implements AuthService {
             log.error("Registration error: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error(ErrorCode.REGISTER_FAILED.getMessage());
-            throw new RuntimeException(ErrorCode.REGISTER_FAILED.getMessage());
+            log.error(ErrorCode.USER_DUPLICATE.getMessage());
+            throw new RuntimeException(ErrorCode.USER_DUPLICATE.getMessage());
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.booking.movieticket.service.impl;
+package com.booking.movieticket.service.unimpl;
 
 import com.booking.movieticket.service.ImageUploadService;
 import com.cloudinary.Cloudinary;

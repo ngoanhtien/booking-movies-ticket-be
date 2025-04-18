@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AccountRequest {
+public class UserRequest {
 
     private Long id;
 

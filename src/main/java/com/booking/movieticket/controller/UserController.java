@@ -1,13 +1,13 @@
 package com.booking.movieticket.controller;
 
-import com.booking.movieticket.dto.business.AccountDTO;
-import com.booking.movieticket.dto.filter.AccountFilterCriteria;
-import com.booking.movieticket.dto.request.AccountRequest;
+import com.booking.movieticket.dto.business.UserDTO;
+import com.booking.movieticket.dto.dao.UserDAOCriteria;
+import com.booking.movieticket.dto.request.UserRequest;
+import com.booking.movieticket.dto.request.ResetPasswordRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.entity.Role;
-import com.booking.movieticket.service.AccountService;
-import com.booking.movieticket.service.ImageUploadService;
-import com.booking.movieticket.service.RoleService;
+import com.booking.movieticket.entity.User;
+import com.booking.movieticket.service.*;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -32,36 +32,38 @@ import java.io.IOException;
 @Slf4j
 @CrossOrigin(origins = "*")
 @Validated
-public class AccountController {
+public class UserController {
 
     RoleService roleService;
 
-    AccountService accountService;
+    UserService userService;
 
     ImageUploadService imageUploadService;
 
+    MailSendService mailSendService;
+
     @PostMapping
-    public ResponseEntity<?> createAccount(@ModelAttribute @Valid AccountRequest accountRequest,
+    public ResponseEntity<?> createAccount(@ModelAttribute @Valid UserRequest userRequest,
                                            @RequestParam(value = "imageAvatar", required = false) MultipartFile imageAvatar) {
-        AccountDTO accountDTO = new AccountDTO();
+        UserDTO userDTO = new UserDTO();
         try {
-            if (accountRequest.getAvatarUrl() == null) {
-                accountRequest.setAvatarUrl(imageUploadService.uploadImage(imageAvatar));
+            if (userRequest.getAvatarUrl() == null) {
+                userRequest.setAvatarUrl(imageUploadService.uploadImage(imageAvatar));
             }
-            BeanUtils.copyProperties(accountRequest, accountDTO);
-            Role role = roleService.findRoleById(accountRequest.getRoleId());
-            accountDTO.setRole(role);
+            BeanUtils.copyProperties(userRequest, userDTO);
+            Role role = roleService.findRoleById(userRequest.getRoleId());
+            userDTO.setRole(role);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>("Error: " + e.getMessage(), null));
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Thêm tài khoản thành công!", accountService.saveUser(accountDTO)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Thêm tài khoản thành công!", userService.saveUser(userDTO)));
     }
 
     @GetMapping
-    public ResponseEntity<?> readAccounts(AccountFilterCriteria accountFilterCriteria,
+    public ResponseEntity<?> readAccounts(UserDAOCriteria userDAOCriteria,
                                           @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new ApiResponse<>("Lấy danh sách tài khoản thành công!", accountService.findUsers(accountFilterCriteria, pageable)));
+                .body(new ApiResponse<>("Lấy danh sách tài khoản thành công!", userService.findUsers(userDAOCriteria, pageable)));
     }
 
     @GetMapping("/{id}")
@@ -70,18 +72,18 @@ public class AccountController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>("Id không hợp lệ!", null));
         }
-        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("Lấy danh sách tài khoản thành công!", accountService.findUser(id)));
+        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("Lấy danh sách tài khoản thành công!", userService.findUser(id)));
     }
 
     @PutMapping
-    public ResponseEntity<?> updateAccount(@ModelAttribute @Valid AccountRequest accountRequest,
+    public ResponseEntity<?> updateAccount(@ModelAttribute @Valid UserRequest userRequest,
                                            @RequestParam(value = "avataUrl", required = false) MultipartFile imageAvatar) {
-        AccountDTO accountDTO = new AccountDTO();
-        BeanUtils.copyProperties(accountRequest, accountDTO);
-        Role role = roleService.findRoleById(accountRequest.getRoleId());
-        accountDTO.setRole(role);
+        UserDTO userDTO = new UserDTO();
+        BeanUtils.copyProperties(userRequest, userDTO);
+        Role role = roleService.findRoleById(userRequest.getRoleId());
+        userDTO.setRole(role);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(new ApiResponse<>("Cập nhật tài khoản thành công!", accountService.updateUser(accountDTO, imageAvatar)));
+                .body(new ApiResponse<>("Cập nhật tài khoản thành công!", userService.updateUser(userDTO, imageAvatar)));
     }
 
     @DeleteMapping("/{id}")
@@ -92,12 +94,27 @@ public class AccountController {
         }
 
         try {
-            accountService.toggleAccountStatus(id);
+            userService.softDeleteUser(id);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ApiResponse<>("Cập nhật trạng thái tài khoản thành công!", null));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ApiResponse<>("Error: " + e.getMessage(), null));
+        }
+    }
+
+    @PostMapping("/resetPassword")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest) {
+        try {
+            String mail = resetPasswordRequest.getEmail();
+            User existedUser = userService.findUserByEmail(mail);
+            String newPass = userService.resetPassword(existedUser);
+            mailSendService.sendMail(mail, newPass);
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Reset password successful"));
+        } catch (Exception e) {
+            log.error("Unexpected error during authentication: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Unexpected error: " + e.getMessage()));
         }
     }
 

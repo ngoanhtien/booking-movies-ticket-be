@@ -1,4 +1,4 @@
-package com.booking.movieticket.configuration.security.jwt;
+package com.booking.movieticket.security.jwt;
 
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -59,14 +59,7 @@ public class AuthenticationFilter extends GenericFilterBean {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             filterChain.doFilter(servletRequest, servletResponse);
         } else {
-            HttpServletResponse httpServletResponse = (HttpServletResponse) servletResponse;
-            ApiResponse<Object> responseData = new ApiResponse<>(HttpStatus.UNAUTHORIZED.value(), "Authentication required");
-
-            httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // Changed from SC_OK to SC_UNAUTHORIZED (401)
-            httpServletResponse.setContentType("application/json");
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.writeValue(httpServletResponse.getWriter(), responseData);
-            httpServletResponse.getWriter().flush();
+            throw new JwtAuthenticationException("Authentication required");
         }
     }
 

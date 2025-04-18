@@ -30,28 +30,7 @@ public class ResetPasswordController {
 
     UserRepository userRepository;
 
-    MailSendService mailSendService;
 
-    ResetPasswordService resetPasswordService;
 
-    @PostMapping("/")
-    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest) {
-        try {
-            String mail = resetPasswordRequest.getEmail();
-            Optional<User> existedUser = userRepository.findByEmail(mail);
-            if (existedUser.isPresent()) {
-                String newPass = resetPasswordService.resetPassword(existedUser.get());
-                mailSendService.sendMail(mail, newPass);
-            } else {
-                log.error("Not existed mail: {}", mail);
-                return ResponseEntity.status(ErrorCode.EMAIL_NOT_EXISTED.getCode())
-                        .body(new ApiResponse<>(ErrorCode.EMAIL_NOT_EXISTED.getFormattedMessage()));
-            }
-            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Reset password successful"));
-        } catch (Exception e) {
-            log.error("Unexpected error during authentication: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Unexpected error: " + e.getMessage()));
-        }
-    }
+
 }

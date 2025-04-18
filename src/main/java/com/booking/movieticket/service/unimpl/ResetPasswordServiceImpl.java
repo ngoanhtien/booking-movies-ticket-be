@@ -1,4 +1,4 @@
-package com.booking.movieticket.service.impl;
+package com.booking.movieticket.service.unimpl;
 
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.repository.UserRepository;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
-@Transactional
+
 public class ResetPasswordServiceImpl implements ResetPasswordService {
 
     private final PasswordEncoder passwordEncoder;
@@ -24,6 +24,7 @@ public class ResetPasswordServiceImpl implements ResetPasswordService {
     }
 
     @Override
+    @Transactional
     public String resetPassword(User user) {
         String newPass = RandomStringGenerator.generateRandomString();
         user.setPassword(passwordEncoder.encode(newPass));
