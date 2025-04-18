@@ -30,7 +30,7 @@ public class AuthenticationFilter extends GenericFilterBean {
     private final List<String> publicPaths = Arrays.asList(
             "/auth/login",
             "/auth/register",
-            "/resetPassword"
+            "/resetPassword/"
     );
 
     public AuthenticationFilter(TokenProvider tokenProvider) {

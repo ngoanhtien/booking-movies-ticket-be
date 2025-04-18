@@ -1,9 +1,9 @@
 spring:
   application: name:movie-ticket
   datasource:
-    url: jdbc:postgresql://localhost:5432/movie
+    url: jdbc:postgresql://movie-ticket.crm2sq0ssrzj.ap-southeast-2.rds.amazonaws.com/movie
     username: postgres
-    password: 12345
+    password: Anhtien123.
     driver-class-name: org.postgresql.Driver
     hikari:
       pool-name: Hikari
@@ -18,16 +18,25 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ngoanhtien902@gmail.com
-    password: Anhtien123.
+    username: hieumau.5899@gmail.com
+    password: Thuglife123!@#
     transport:
       protocol: smtp
     properties:
       mail:
+        debug: true
         smtp:
           auth: true
           starttls:
             enable: true
+logging:
+  level:
+    com:
+      sun:
+        mail: DEBUG
+    org:
+      springframework:
+        mail: DEBUG
 server:
   port: 8080
 
