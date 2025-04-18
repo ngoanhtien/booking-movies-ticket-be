@@ -40,7 +40,7 @@ public class AuthController {
     @PostMapping("/register")
     public ApiResponse<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
         try {
-            return new ApiResponse<>("User registered successfully!!!");
+            return new ApiResponse<>("User registered successfully");
         } catch (RuntimeException e) {
             log.error("Registration error: {}", e.getMessage());
             return new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), e.getMessage());
