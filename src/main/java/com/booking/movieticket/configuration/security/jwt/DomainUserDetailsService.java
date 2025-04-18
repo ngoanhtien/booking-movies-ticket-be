@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Authenticate a user from the database.
@@ -25,7 +24,6 @@ import java.util.stream.Collectors;
 @FieldDefaults( level = AccessLevel.PRIVATE, makeFinal = true )
 public class DomainUserDetailsService implements UserDetailsService
 {
-
     UserRepository userRepository;
 
     @Override
@@ -38,7 +36,7 @@ public class DomainUserDetailsService implements UserDetailsService
     }
 
     private UserDetails getUserDetails(User userEntity) {
-        SimpleGrantedAuthority authority = new SimpleGrantedAuthority(userEntity.getRole().getName());
+        SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + userEntity.getRole().getName());
         return new DomainUserDetails(
                 userEntity.getId(),
                 userEntity.getUsername(),
