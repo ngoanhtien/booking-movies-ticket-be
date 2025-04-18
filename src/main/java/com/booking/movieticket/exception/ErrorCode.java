@@ -56,15 +56,18 @@ public enum ErrorCode {
 
     ErrorCode(String message) {
         this.message = message;
+        this.originalMessage = message;
     }
 
     ErrorCode(int code, String message) {
         this.code = code;
         this.message = message;
+        this.originalMessage = message;
     }
 
     ErrorCode(int code, String message, HttpStatusCode status) {
         this.code = code;
+        this.originalMessage = message;
         this.message = message;
         this.statusCode = status;
     }
@@ -72,5 +75,14 @@ public enum ErrorCode {
     private int code;
     private String message;
     private HttpStatusCode statusCode;
+    private final String originalMessage;
 
+    public ErrorCode formatMessage(Object... args) {
+        this.message = String.format(this.originalMessage, args);
+        return this;
+    }
+
+    public String getFormattedMessage() {
+        return this.message;
+    }
 }

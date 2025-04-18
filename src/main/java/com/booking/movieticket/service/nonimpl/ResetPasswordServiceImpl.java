@@ -1,4 +1,4 @@
-package com.booking.movieticket.service.unimpl;
+package com.booking.movieticket.service.nonimpl;
 
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.repository.UserRepository;
