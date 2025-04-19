@@ -51,6 +51,9 @@ public enum ErrorCode {
 
     USER_NOT_FOUND(1000, "User không tìm thấy"),
     USER_DUPLICATE(1001, "User đã tồn tại"),
+    REGISTER_FAILED(1002, "Đăng ký thất bại",HttpStatus.INTERNAL_SERVER_ERROR),
+    MOVIE_NOT_FOUND(1003, "Không tìm thấy phim", HttpStatus.NOT_FOUND),
+    CINEMA_NOT_FOUND(1004, "Không tìm thấy rạp phim", HttpStatus.NOT_FOUND),
     //Lỗi ko xác định
     EXCEPTION(9999, "Lỗi không xác định.");
 
