@@ -55,7 +55,7 @@ public class AuthenticationFilter extends GenericFilterBean {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             filterChain.doFilter(servletRequest, servletResponse);
         } else {
-            throw new JwtAuthenticationException("Authentication required");
+            throw new JwtAuthenticationException("Token is not valid.");
         }
     }
 
