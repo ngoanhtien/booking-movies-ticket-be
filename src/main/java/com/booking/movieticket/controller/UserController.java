@@ -51,7 +51,7 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<User>>> readUsers(UserCriteria userCriteria,
-                                                       @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+                                                             @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ApiResponse<>("Lấy danh sách tài khoản thành công!", userService.findUsers(userCriteria, pageable)));
     }
@@ -63,7 +63,7 @@ public class UserController {
 
     @PutMapping
     public ResponseEntity<ApiResponse<String>> updateUser(@ModelAttribute @Valid UserRequest userRequest,
-                                        @RequestParam(value = "avataUrl", required = false) MultipartFile imageAvatar) {
+                                                          @RequestParam(value = "avataUrl", required = false) MultipartFile imageAvatar) {
         userService.updateUser(userMapper.toUser(userRequest), imageAvatar);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(new ApiResponse<>("Cập nhật tài khoản thành công!"));
@@ -71,21 +71,16 @@ public class UserController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAccount(@PathVariable @Min(value = 1, message = "Id phải lớn hơn hoặc bằng 1") Long id) {
-        try {
-            userService.softDeleteUser(id);
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ApiResponse<>("Cập nhật trạng thái tài khoản thành công!", null));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ApiResponse<>("Error: " + e.getMessage(), null));
-        }
+        userService.softDeleteUser(id);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ApiResponse<>("Cập nhật trạng thái tài khoản thành công!"));
     }
 
     @PostMapping("/resetPassword")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest) {
         try {
             String mail = resetPasswordRequest.getEmail();
-            User existedUser = userService.findUserByEmail(mail);
+            User existedUser = userService.findUser(mail);
             String newPass = userService.resetPassword(existedUser);
             mailSendService.sendMail(mail, newPass);
             return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Reset password successful"));

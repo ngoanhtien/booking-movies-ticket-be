@@ -21,5 +21,5 @@ public interface UserService {
 
     String resetPassword(User user);
 
-    User findUserByEmail(String email);
+    User findUser(String email);
 }

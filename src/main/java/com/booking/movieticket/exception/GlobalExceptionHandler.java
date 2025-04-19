@@ -15,8 +15,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-    private static final String MIN_ATTRIBUTE = "min";
-
+    
     @ExceptionHandler(value = Exception.class)
     ResponseEntity<ApiResponse<?>> handlingException() {
         return ResponseEntity.internalServerError().body(new ApiResponse<>(ErrorCode.EXCEPTION.getCode(), ErrorCode.EXCEPTION.getMessage()));
