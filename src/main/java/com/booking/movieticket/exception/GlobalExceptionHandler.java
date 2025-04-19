@@ -12,10 +12,13 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.util.List;
+import java.util.Map;
+
 @RestControllerAdvice
 @Slf4j
-public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-    
+public class GlobalExceptionHandler {
+
     @ExceptionHandler(value = Exception.class)
     ResponseEntity<ApiResponse<?>> handlingException() {
         return ResponseEntity.internalServerError().body(new ApiResponse<>(ErrorCode.EXCEPTION.getCode(), ErrorCode.EXCEPTION.getMessage()));
@@ -30,16 +33,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ApiResponse<?>> handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
-        log.error("MethodArgumentNotValidException caught: ", exception);
-
-        FieldError firstError = exception.getBindingResult().getFieldErrors().stream().findFirst().orElse(null);
-
-        String message = (firstError != null) ? firstError.getDefaultMessage() : "Invalid request";
-
-        ApiResponse<?> apiResponse = ApiResponse.builder()
-                .message(message)
-                .build();
-
+        List<Map<String, String>> errors = exception.getBindingResult().getFieldErrors().stream().map(error -> Map.of("field", error.getField(), "message", error.getDefaultMessage())).toList();
+        ApiResponse<?> apiResponse = ApiResponse.builder().message("Validation failed").result(errors).build();
         return ResponseEntity.badRequest().body(apiResponse);
     }
 }

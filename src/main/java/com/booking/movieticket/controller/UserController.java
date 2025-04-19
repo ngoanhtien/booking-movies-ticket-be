@@ -41,36 +41,36 @@ public class UserController {
     UserMapper userMapper;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<UserResponse>> createUser(@ModelAttribute @Valid UserRequest userRequest,
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody UserRequest userRequest,
                                                                 @RequestParam(value = "imageAvatar", required = false) MultipartFile imageAvatar) {
-        return ResponseEntity.ok(new ApiResponse<>("Tạo tài khoản thành công", userService.saveUser(userMapper.toUser(userRequest), imageAvatar)));
+        return ResponseEntity.ok(new ApiResponse<>("Account created successfully.", userService.saveUser(userMapper.toUser(userRequest), imageAvatar)));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<User>>> readUsers(UserCriteria userCriteria,
                                                              @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new ApiResponse<>("Lấy danh sách tài khoản thành công!", userService.findUsers(userCriteria, pageable)));
+                .body(new ApiResponse<>("User list fetched successfully.", userService.findUsers(userCriteria, pageable)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<User>> readUser(@PathVariable @Min(value = 1, message = "Id phải lớn hơn hoặc bằng 1") Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("Lấy danh sách tài khoản thành công!", userService.findUser(id)));
+    public ResponseEntity<ApiResponse<User>> readUser(@PathVariable @Min(value = 1, message = "Id must be greater than or equal to 1.") Long id) {
+        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("User details fetched successfully.", userService.findUser(id)));
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<String>> updateUser(@ModelAttribute @Valid UserRequest userRequest,
+    public ResponseEntity<ApiResponse<String>> updateUser(@Valid @RequestBody UserRequest userRequest,
                                                           @RequestParam(value = "avataUrl", required = false) MultipartFile imageAvatar) {
         userService.updateUser(userMapper.toUser(userRequest), imageAvatar);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(new ApiResponse<>("Cập nhật tài khoản thành công!"));
+                .body(new ApiResponse<>("User details fetched successfully."));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteAccount(@PathVariable @Min(value = 1, message = "Id phải lớn hơn hoặc bằng 1") Long id) {
+    public ResponseEntity<?> deleteAccount(@PathVariable @Min(value = 1, message = "Id must be greater than or equal to 1.") Long id) {
         userService.softDeleteUser(id);
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new ApiResponse<>("Cập nhật trạng thái tài khoản thành công!"));
+                .body(new ApiResponse<>("Account status updated successfully."));
     }
 
     @PostMapping("/resetPassword")
@@ -80,9 +80,9 @@ public class UserController {
             User existedUser = userService.findUser(mail);
             String newPass = userService.resetPassword(existedUser);
             mailSendService.sendMail(mail, newPass);
-            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Reset password successful"));
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Reset password successful."));
         } catch (Exception e) {
-            log.error("Unexpected error during authentication: {}", e.getMessage());
+            log.error("Unexpected error during authentication: {}.", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Unexpected error: " + e.getMessage()));
         }

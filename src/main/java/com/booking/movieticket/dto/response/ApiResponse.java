@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.*;
 
+@Data
 @Getter
 @Setter
 @AllArgsConstructor

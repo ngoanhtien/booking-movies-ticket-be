@@ -17,10 +17,8 @@ public abstract class UserMapper {
     @Autowired
     protected RoleService roleService;
 
-    @Mapping(target = "role", ignore = true)
     public abstract User toUser(UserRequest request);
 
-    @Mapping(target = "role", ignore = true)
     public abstract UserResponse toUserResponse(User user);
 
     @AfterMapping
