@@ -1,12 +1,11 @@
 package com.booking.movieticket.entity;
 
+import com.booking.movieticket.entity.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalTime;
 
 @Entity
 @Table(name = "actors")
@@ -15,6 +14,7 @@ import java.time.LocalTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Actor extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_actor")
     @SequenceGenerator(name = "sequence_actor")

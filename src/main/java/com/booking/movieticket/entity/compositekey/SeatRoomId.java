@@ -12,6 +12,8 @@ import java.io.Serializable;
 @EqualsAndHashCode
 @Embeddable
 public class SeatRoomId implements Serializable {
+
     private Long roomId;
+
     private Long seatId;
 }

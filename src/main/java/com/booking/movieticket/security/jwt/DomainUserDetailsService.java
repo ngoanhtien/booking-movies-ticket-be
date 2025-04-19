@@ -1,4 +1,4 @@
-package com.booking.movieticket.configuration.security.jwt;
+package com.booking.movieticket.security.jwt;
 
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.repository.UserRepository;
@@ -14,31 +14,28 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Authenticate a user from the database.
  */
-@Component( "userDetailsService" )
+@Component("userDetailsService")
 @Slf4j
 @RequiredArgsConstructor
-@FieldDefaults( level = AccessLevel.PRIVATE, makeFinal = true )
-public class DomainUserDetailsService implements UserDetailsService
-{
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class DomainUserDetailsService implements UserDetailsService {
 
     UserRepository userRepository;
 
     @Override
-    @Transactional( readOnly = true )
-    public UserDetails loadUserByUsername( String username ) throws UsernameNotFoundException
-    {
-        log.debug( "Authentication {}", username );
-        User userEntity = userRepository.findByUsername( username ).orElseThrow( () -> new UsernameNotFoundException( username ) );
-        return getUserDetails( userEntity );
+    @Transactional(readOnly = true)
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        log.debug("Authentication {}", username);
+        User userEntity = userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(username));
+        return getUserDetails(userEntity);
     }
 
     private UserDetails getUserDetails(User userEntity) {
-        SimpleGrantedAuthority authority = new SimpleGrantedAuthority(userEntity.getRole().getName());
+        SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + userEntity.getRole().getName());
         return new DomainUserDetails(
                 userEntity.getId(),
                 userEntity.getUsername(),

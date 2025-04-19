@@ -1,5 +1,6 @@
 package com.booking.movieticket.entity;
 
+import com.booking.movieticket.entity.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,13 +11,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table( name = "roles" )
+@Table(name = "roles")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Role extends BaseEntity
-{
+public class Role extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_role")
     @SequenceGenerator(name = "sequence_role")

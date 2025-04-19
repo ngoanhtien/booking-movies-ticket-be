@@ -1,14 +1,10 @@
-package com.booking.movieticket.configuration.security.jwt;
+package com.booking.movieticket.security.jwt;
 
-import com.booking.movieticket.dto.response.ApiResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -25,8 +21,11 @@ import java.util.List;
  */
 @Component
 public class AuthenticationFilter extends GenericFilterBean {
+
     public static final String AUTHORIZATION_HEADER = "Authorization";
+
     private final TokenProvider tokenProvider;
+
     private final List<String> publicPaths = Arrays.asList(
             "/auth/login",
             "/auth/register",
@@ -56,14 +55,7 @@ public class AuthenticationFilter extends GenericFilterBean {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             filterChain.doFilter(servletRequest, servletResponse);
         } else {
-            HttpServletResponse httpServletResponse = (HttpServletResponse) servletResponse;
-            ApiResponse<Object> responseData = new ApiResponse<>(HttpStatus.UNAUTHORIZED.value(), "Authentication required");
-
-            httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // Changed from SC_OK to SC_UNAUTHORIZED (401)
-            httpServletResponse.setContentType("application/json");
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.writeValue(httpServletResponse.getWriter(), responseData);
-            httpServletResponse.getWriter().flush();
+            throw new JwtAuthenticationException("Authentication required");
         }
     }
 

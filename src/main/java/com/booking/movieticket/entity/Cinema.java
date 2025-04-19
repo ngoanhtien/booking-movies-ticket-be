@@ -13,8 +13,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Cinema {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_cinema")
+    @SequenceGenerator(name = "sequence_cinema")
     @Column(name = "cinema_id")
     private Long id;
 

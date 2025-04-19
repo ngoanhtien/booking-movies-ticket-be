@@ -1,5 +1,6 @@
 package com.booking.movieticket.entity;
 
+import com.booking.movieticket.entity.base.BaseEntity;
 import com.booking.movieticket.entity.enums.StatusBill;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -11,37 +12,37 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table( name = "bill" )
+@Table(name = "bill")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Bill extends BaseEntity
-{
+public class Bill extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_bill")
     @SequenceGenerator(name = "sequence_bill")
-    @Column( name = "bill_id" )
+    @Column(name = "bill_id")
     private Long id;
 
-    @Enumerated( EnumType.STRING )
-    @Column( name = "status_bill" )
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status_bill")
     private StatusBill status;
 
-    @Column( name = "bill_code" )
+    @Column(name = "bill_code")
     private String billCode;
 
     @ManyToOne
-    @JoinColumn( name = "promotion_id" )
+    @JoinColumn(name = "promotion_id")
     private Promotion promotion;
 
-    @OneToMany( mappedBy = "bill" )
+    @OneToMany(mappedBy = "bill")
     private Set<BillDetail> billDetails = new HashSet<>();
 
-    @OneToMany( mappedBy = "bill" )
+    @OneToMany(mappedBy = "bill")
     private Set<BillFood> billFoods = new HashSet<>();
 
     @ManyToOne
-    @JoinColumn( name = "user_id", referencedColumnName = "id" )
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 }

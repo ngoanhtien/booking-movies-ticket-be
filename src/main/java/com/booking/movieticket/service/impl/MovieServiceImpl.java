@@ -25,7 +25,7 @@ public class MovieServiceImpl implements MovieService {
             return movieRepository.findByStatus(StatusMovie.SHOWING);
         } catch (Exception e) {
             log.error("Error fetching showing movies: {}", e.getMessage());
-            throw new AppException(ErrorCode.RESOURCE_NOT_FOUND, "Error fetching showing movies");
+            throw new AppException(ErrorCode.USER_DUPLICATE);
         }
     }
 
@@ -35,7 +35,7 @@ public class MovieServiceImpl implements MovieService {
             return movieRepository.findByStatus(StatusMovie.UPCOMING);
         } catch (Exception e) {
             log.error("Error fetching upcoming movies: {}", e.getMessage());
-            throw new AppException(ErrorCode.RESOURCE_NOT_FOUND, "Error fetching upcoming movies");
+            throw new AppException(ErrorCode.USER_DUPLICATE);
         }
     }
 }

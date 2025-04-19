@@ -1,5 +1,6 @@
 package com.booking.movieticket.entity;
 
+import com.booking.movieticket.entity.base.BaseEntity;
 import com.booking.movieticket.entity.enums.TypeSeat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -17,8 +18,10 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Seat extends BaseEntity {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_seat")
+    @SequenceGenerator(name = "sequence_seat")
     @Column(name = "seat_id")
     private Long id;
 
@@ -34,8 +37,8 @@ public class Seat extends BaseEntity {
     @Column(name = "column_screen_label")
     private String columnScreenLabel;
 
-    @Enumerated( EnumType.STRING )
-    @Column( name = "type_seat" )
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type_seat")
     private TypeSeat typeSeat;
 
     @Column(name = "price_seat")
@@ -45,7 +48,7 @@ public class Seat extends BaseEntity {
     private Set<BillDetail> billDetails = new HashSet<>();
 
     @ManyToOne
-    @JoinColumn( name = "room_id", referencedColumnName = "room_id" )
+    @JoinColumn(name = "room_id", referencedColumnName = "room_id")
     private Room room;
 
     @OneToOne(cascade = CascadeType.ALL)

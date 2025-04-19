@@ -15,41 +15,17 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-
     private static final String MIN_ATTRIBUTE = "min";
 
     @ExceptionHandler(value = Exception.class)
-    ResponseEntity<ApiResponse<?>> handlingRuntimeException(RuntimeException exception) {
-        log.error("Exception: ", exception);
-        ApiResponse<?> apiResponse = new ApiResponse<>();
-
-        apiResponse.setCode(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode());
-        apiResponse.setMessage(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage());
-
-        return ResponseEntity.badRequest().body(apiResponse);
+    ResponseEntity<ApiResponse<?>> handlingException() {
+        return ResponseEntity.internalServerError().body(new ApiResponse<>(ErrorCode.EXCEPTION.getCode(), ErrorCode.EXCEPTION.getMessage()));
     }
 
     @ExceptionHandler(value = AppException.class)
     ResponseEntity<ApiResponse<?>> handlingAppException(AppException exception) {
         ErrorCode errorCode = exception.getErrorCode();
-        ApiResponse<?> apiResponse = new ApiResponse<>();
-
-        apiResponse.setCode(errorCode.getCode());
-        apiResponse.setMessage(errorCode.getMessage());
-
-        return ResponseEntity.status(errorCode.getStatusCode()).body(apiResponse);
-    }
-
-    @ExceptionHandler(value = AccessDeniedException.class)
-    ResponseEntity<ApiResponse<?>> handlingAccessDeniedException(AccessDeniedException exception) {
-        log.error("Access Denied: ", exception);
-        ErrorCode errorCode = ErrorCode.UNAUTHORIZED;
-
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.builder()
-                        .code(errorCode.getCode())
-                        .message(errorCode.getMessage())
-                        .build());
+        return ResponseEntity.status(errorCode.getStatusCode()).body(new ApiResponse<>(errorCode.getCode(), errorCode.getMessage()));
     }
 
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
@@ -59,11 +35,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         FieldError firstError = exception.getBindingResult().getFieldErrors().stream().findFirst().orElse(null);
 
-        // Trả về thông báo lỗi nếu tồn tại lỗi, ngược lại trả về thông báo mặc định
         String message = (firstError != null) ? firstError.getDefaultMessage() : "Invalid request";
 
         ApiResponse<?> apiResponse = ApiResponse.builder()
-                .code(ErrorCode.BAD_REQUEST.getCode())
                 .message(message)
                 .build();
 

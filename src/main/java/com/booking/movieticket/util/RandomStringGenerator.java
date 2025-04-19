@@ -1,4 +1,4 @@
-package com.booking.movieticket.utils;
+package com.booking.movieticket.util;
 
 import com.booking.movieticket.exception.ErrorCode;
 import org.passay.CharacterData;
@@ -24,7 +24,7 @@ public class RandomStringGenerator {
         CharacterData specialChars = new CharacterData() {
             @Override
             public String getErrorCode() {
-                return ErrorCode.UNCATEGORIZED_EXCEPTION.getFormattedMessage();
+                return ErrorCode.USER_NOT_FOUND.getFormattedMessage();
             }
 
             public String getCharacters() {

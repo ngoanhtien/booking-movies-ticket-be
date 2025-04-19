@@ -13,6 +13,7 @@ import java.io.Serializable;
 @EqualsAndHashCode
 @Embeddable
 public class ShowtimeId implements Serializable {
+
     @Column(name = "schedule_id")
     private Long scheduleId;
 

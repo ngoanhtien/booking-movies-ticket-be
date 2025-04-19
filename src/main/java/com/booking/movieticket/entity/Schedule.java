@@ -1,5 +1,6 @@
 package com.booking.movieticket.entity;
 
+import com.booking.movieticket.entity.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,8 +19,10 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Schedule extends BaseEntity {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_schedule")
+    @SequenceGenerator(name = "sequence_schedule")
     @Column(name = "schedule_id")
     private Long id;
 
