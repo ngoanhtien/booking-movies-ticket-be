@@ -1,13 +1,14 @@
 package com.booking.movieticket.controller;
 
+import com.booking.movieticket.dto.request.ResetPasswordRequest;
+import com.booking.movieticket.dto.request.UserRequest;
+import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.dto.response.UserResponse;
 import com.booking.movieticket.dto.vo.UserCriteria;
-import com.booking.movieticket.dto.request.UserRequest;
-import com.booking.movieticket.dto.request.ResetPasswordRequest;
-import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.mapper.UserMapper;
-import com.booking.movieticket.service.*;
+import com.booking.movieticket.service.MailSendService;
+import com.booking.movieticket.service.UserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
@@ -33,11 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Validated
 public class UserController {
 
-    RoleService roleService;
-
     UserService userService;
-
-    ImageUploadService imageUploadService;
 
     MailSendService mailSendService;
 
