@@ -25,7 +25,7 @@ public class SecurityConfiguration {
 
     private final AuthenticationFilter authenticationFilter;
 
-    private final ExceptionHandlingFilter exceptionHandlingFilter;
+//    private final ExceptionHandlingFilter exceptionHandlingFilter;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -39,7 +39,6 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(managementConfigure -> managementConfigure.sessionCreationPolicy(STATELESS))
-                .addFilterBefore(exceptionHandlingFilter, AuthenticationFilter.class)
                 .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(authorizationRequests -> authorizationRequests
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()

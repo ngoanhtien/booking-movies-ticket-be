@@ -6,6 +6,7 @@ import com.booking.movieticket.dto.response.LoginResponse;
 import com.booking.movieticket.entity.Role;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.entity.enums.MembershipLevel;
+import com.booking.movieticket.entity.enums.SignupDevice;
 import com.booking.movieticket.exception.ErrorCode;
 import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.repository.RoleRepository;
@@ -77,17 +78,15 @@ public class AuthServiceImpl implements AuthService {
             user.setFullname(registerRequest.getFullname());
             user.setPhone(registerRequest.getPhone());
             user.setMembershipLevel(MembershipLevel.BASIC);
-            user.setIsConfirmed(false); // Require confirmation
-            user.setIsDeleted(true); // Account is enabled
-            user.setRole(userRole); // Set the USER role
+            user.setIsConfirmed(false);
+            user.setIsDeleted(false);
+            user.setSignupDevice(SignupDevice.NORMAL);
+            user.setRole(userRole);
 
             userRepository.save(user);
         } catch (AppException e) {
             log.error("Registration error: {}", e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            log.error(ErrorCode.USER_DUPLICATE.getMessage());
-            throw new RuntimeException(ErrorCode.USER_DUPLICATE.getMessage());
+            throw new AppException(ErrorCode.REGISTER_FAILED);
         }
     }
 }

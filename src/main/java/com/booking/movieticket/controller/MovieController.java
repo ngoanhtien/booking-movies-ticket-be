@@ -9,6 +9,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -34,4 +35,11 @@ public class MovieController {
         List<Movie> movies = movieService.getUpcomingMovies();
         return ResponseEntity.ok(new ApiResponse<>("Successfully retrieved upcoming movies", movies));
     }
+
+    @GetMapping("/detail/{id}")
+    public ResponseEntity<ApiResponse<?>> getMovieDetail(@PathVariable Long id) {
+        Movie movieInfo = movieService.findMovie(id);
+        return ResponseEntity.ok(new ApiResponse<>("Get movie information successfully", movieInfo));
+    }
+
 }

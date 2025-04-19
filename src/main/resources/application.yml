@@ -1,5 +1,5 @@
 spring:
-  application: name:movie-ticket
+  application: movie-ticket
   datasource:
     url: jdbc:postgresql://movie-ticket.crm2sq0ssrzj.ap-southeast-2.rds.amazonaws.com/movie
     username: postgres
@@ -37,6 +37,9 @@ logging:
     org:
       springframework:
         mail: DEBUG
+        security:
+          web:
+            FilterChainProxy: DEBUG
 server:
   port: 8080
 
