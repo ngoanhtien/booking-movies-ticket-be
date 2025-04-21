@@ -29,10 +29,6 @@ public class Room extends BaseEntity {
     @Nationalized
     private String name;
 
-    @Column(name = "location")
-    @Nationalized
-    private String location;
-
     @Column(name = "seat_numbers")
     private Integer seatNumbers;
 

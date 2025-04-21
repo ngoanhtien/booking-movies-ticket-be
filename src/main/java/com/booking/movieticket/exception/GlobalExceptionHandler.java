@@ -18,7 +18,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(value = Exception.class)
     ResponseEntity<ApiResponse<?>> handlingException() {
-        return ResponseEntity.internalServerError().body(new ApiResponse<>(ErrorCode.EXCEPTION.getCode(), ErrorCode.EXCEPTION.getMessage()));
+        return ResponseEntity.internalServerError().body(new ApiResponse<>(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode(), ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage()));
     }
 
     @ExceptionHandler(value = AppException.class)

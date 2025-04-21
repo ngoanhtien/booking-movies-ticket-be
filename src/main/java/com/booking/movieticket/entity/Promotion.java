@@ -25,7 +25,7 @@ public class Promotion extends BaseEntity {
     @Column(name = "info")
     private String info;
 
-    @Column(name = "image_prom")
+    @Column(name = "image_prom", columnDefinition = "TEXT")
     private String imageUrl;
 
     @Column(name = "discount")
