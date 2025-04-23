@@ -29,11 +29,8 @@ public class Schedule extends BaseEntity {
     @Column(name = "schedule_date")
     private LocalDate date;
 
-    @Column(name = "schedule_time")
-    private LocalTime time;
-
-    @Column(name = "time_end")
-    private LocalTime timeEnd;
+    @Column(name = "schedule_time_start")
+    private LocalTime timeStart;
 
     @Column(name = "price_ticket")
     private Double price;

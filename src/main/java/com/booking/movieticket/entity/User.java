@@ -30,14 +30,12 @@ public class User extends BaseEntity {
     private Long id;
 
     @Column(columnDefinition = "VARCHAR(50)")
-    @Size(min = 5, max = 50, message = "USERNAME_INVALID")
     private String username;
 
     @Column(columnDefinition = "VARCHAR(50)")
     private String email;
 
     @Column(columnDefinition = "VARCHAR(1000)")
-    @Size(min = 8, max = 1000, message = "PASSWORD_INVALID")
     private String password;
 
     @Nationalized

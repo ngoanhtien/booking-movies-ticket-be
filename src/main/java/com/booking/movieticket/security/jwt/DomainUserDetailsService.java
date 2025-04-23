@@ -35,7 +35,7 @@ public class DomainUserDetailsService implements UserDetailsService {
     }
 
     private UserDetails getUserDetails(User userEntity) {
-        SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + userEntity.getRole().getName());
+        SimpleGrantedAuthority authority = new SimpleGrantedAuthority(userEntity.getRole().getName());
         return new DomainUserDetails(
                 userEntity.getId(),
                 userEntity.getUsername(),

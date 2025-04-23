@@ -27,16 +27,13 @@ public class Movie extends BaseEntity {
     @Column(name = "movie_id")
     private Long id;
 
-    @Nationalized
     @Column(name = "movie_name", nullable = false)
     private String name;
 
-    @Nationalized
     @Column(name = "summary", nullable = false)
     private String summary;
 
-    @Nationalized
-    @Column(name = "description_long", nullable = false)
+    @Column(name = "description_long", nullable = false, columnDefinition = "TEXT")
     private String descriptionLong;
 
     @Column(name = "director", nullable = false)
@@ -55,17 +52,17 @@ public class Movie extends BaseEntity {
     @Column(name = "language", nullable = false)
     private String language;
 
-    @Column(name = "trailer", columnDefinition = "VARCHAR(255)")
+    @Column(name = "trailer", columnDefinition = "TEXT")
     private String trailerUrl;
 
     @Column(name = "movie_status")
     @Enumerated(EnumType.STRING)
     private StatusMovie status;
 
-    @Column(name = "image_small")
+    @Column(name = "image_small", columnDefinition = "TEXT")
     private String imageSmallUrl;
 
-    @Column(name = "image_large")
+    @Column(name = "image_large", columnDefinition = "TEXT")
     private String imageLargeUrl;
 
     @OneToMany(mappedBy = "movie")

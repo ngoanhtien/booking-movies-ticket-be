@@ -33,10 +33,10 @@ public class Food extends BaseEntity {
     @Column(name = "stock")
     private int stock;
 
-    @Column(name = "image_food")
-    private String image;
+    @Column(name = "image_food", columnDefinition = "TEXT")
+    private String imageUrl;
 
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @OneToMany(mappedBy = "food")

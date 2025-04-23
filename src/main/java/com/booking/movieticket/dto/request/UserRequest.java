@@ -16,24 +16,24 @@ public class UserRequest {
 
     private Long id;
 
-    @NotBlank(message = "Tên người dùng không được để trống.")
-    @Size(min = 3, max = 50, message = "Tên người dùng phải từ 3 đến 50 ký tự.")
+    @NotBlank(message = "Username must not be blank.")
+    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters.")
     private String username;
 
-    @NotBlank(message = "Email không được để trống.")
-    @Email(message = "Email không hợp lệ.")
+    @NotBlank(message = "Email must not be blank.")
+    @Email(message = "Invalid email format.")
     private String email;
 
     private String fullName;
 
-    @Past(message = "Ngày sinh phải là một ngày trong quá khứ.")
+    @Past(message = "Date of birth must be in the past.")
     private LocalDate dob;
 
-    @NotBlank(message = "Số điện thoại không được để trống.")
-    @Pattern(regexp = "^\\+?[0-9. ()-]{7,25}$", message = "Số điện thoại không hợp lệ.")
+    @NotBlank(message = "Phone number must not be blank.")
+    @Pattern(regexp = "^\\+?[0-9. ()-]{7,25}$", message = "Invalid phone number format.")
     private String phone;
 
-    @URL(message = "URL ảnh đại diện không hợp lệ.")
+    @URL(message = "Invalid phone number format.")
     private String avatarUrl;
 
     private String signupDevice;

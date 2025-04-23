@@ -24,6 +24,6 @@ public class Category extends BaseEntity {
     private String name;
 
     @Nationalized
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 }

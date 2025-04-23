@@ -87,9 +87,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void softDeleteUser(Long id) {
-        User user = findUser(id);
-        user.setIsDeleted(!user.getIsDeleted());
-        userRepository.save(user);
+        try {
+            User user = findUser(id);
+            user.setIsDeleted(!user.getIsDeleted());
+            userRepository.save(user);
+        } catch (Exception e) {
+            throw e;
+        }
     }
 
     @Override
@@ -101,7 +105,8 @@ public class UserServiceImpl implements UserService {
         return newPass;
     }
 
-    public User findUserByEmail(String email) {
+    @Override
+    public User findUser(String email) {
         return userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_DUPLICATE));
     }
 }

@@ -29,7 +29,7 @@ public class Branch extends BaseEntity {
     @Nationalized
     private String name;
 
-    @Column(name = "room_image")
+    @Column(name = "room_image", columnDefinition = "TEXT")
     private String imageUrl;
 
     @Column(name = "address", length = 500)
@@ -39,8 +39,7 @@ public class Branch extends BaseEntity {
     @Column(name = "hotline")
     private String hotline;
 
-    @Column(name = "description", length = 1000)
-    @Nationalized
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "rating")

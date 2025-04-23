@@ -1,5 +1,6 @@
 package com.booking.movieticket.security.jwt;
 
+import jakarta.servlet.Filter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,7 +40,7 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(managementConfigure -> managementConfigure.sessionCreationPolicy(STATELESS))
-                .addFilterBefore(exceptionHandlingFilter, AuthenticationFilter.class)
+                .addFilterBefore(exceptionHandlingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(authorizationRequests -> authorizationRequests
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()

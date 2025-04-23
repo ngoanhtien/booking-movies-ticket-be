@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "seats")
+@Table(name = "cinemas")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,7 +26,7 @@ public class Cinema {
     @Column(name = "hotline")
     private String hotline;
 
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "is_enabled")

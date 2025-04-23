@@ -1,5 +1,6 @@
+
 spring:
-  application: name:movie-ticket
+  application: movie-ticket
   datasource:
     url: jdbc:postgresql://movie-ticket.crm2sq0ssrzj.ap-southeast-2.rds.amazonaws.com/movie
     username: postgres
@@ -11,7 +12,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
+    show-sql: true
     properties:
       hibernate:
         format_sql: true
@@ -37,8 +38,12 @@ logging:
     org:
       springframework:
         mail: DEBUG
+        security: TRACE
+    org.springframework.security.web.FilterChainProxy: TRACE
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+
 server:
-  port: 8080
+  port: 8081
 
 security:
   jwt:
@@ -47,10 +52,11 @@ security:
     token-validity-in-seconds: 86400
     token-refresh-in-seconds: 2629743
 
-resetPasswordBody: "Kính gửi {0}\\n\\nBạn đã yếu cầu đặt lại mật khẩu cho tài khoản của mình trong trống tính năng \"Quên mật khẩu\".\\nChúng tôi xin xác nhận rằng mật khẩu đã được thay đổi có thể có cho tài: {1}\\nNếu bạn không thực hiện hiện yêu cầu yêu này, vui lòng liên hệ với chúng tôi ngay lập tức thời và đảm bảo an toàn tài khoản của bạn.\\n\\nCảm ơn bạn đã sử dụng dịch vụ của chúng tôi."
-resetPasswordSubject: "Thông báo thay đổi password"
+resetPasswordBody: "Dear {0},\n\nYou have requested to reset your account password using the \"Forgot Password\" feature.\nWe confirm that the password has been successfully changed for the account: {1}.\nIf you did not make this request, please contact us immediately to ensure the security of your account.\n\nThank you for using our services."
+resetPasswordSubject: "Password Change Notification"
+
 cloudinary:
-  cloud_name: a
-  api_key: 7
-  api_secret: a-a
+  cloud_name: bnsfbnn
+  api_key: 699739212132192
+  api_secret: 8GoUJ59v1jiRXtt6z2-R90vP2sc
   secure: true
