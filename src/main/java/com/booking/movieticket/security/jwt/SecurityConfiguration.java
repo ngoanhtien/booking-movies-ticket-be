@@ -46,7 +46,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/auth/login").permitAll()
                         .requestMatchers("/auth/register").permitAll()
-                        .requestMatchers("/resetPassword/").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/account/resetPassword").permitAll()
                         .requestMatchers("/**").authenticated()
                 )
 
