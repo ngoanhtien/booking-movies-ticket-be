@@ -29,7 +29,8 @@ public class AuthenticationFilter extends OncePerRequestFilter {
 
     private final List<String> publicPaths = Arrays.asList(
             "/auth/login",
-            "/auth/register"
+            "/auth/register",
+            "/account/resetPassword"
     );
 
     public AuthenticationFilter(TokenProvider tokenProvider) {
@@ -54,9 +55,7 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             filterChain.doFilter(httpServletRequest, httpServletResponse);
         } else {
-            if (!requestURI.equals( "/account/resetPassword" )) {
-                throw new JwtAuthenticationException("Token is not valid.");
-            }
+            throw new JwtAuthenticationException("Token is not valid.");
         }
     }
 
