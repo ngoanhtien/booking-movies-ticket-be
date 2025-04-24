@@ -63,14 +63,18 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void register(RegisterRequest registerRequest) {
+        ErrorCode errorCode = null;
         if (userRepository.existsByUsername(registerRequest.getUsername())) {
-            throw new AppException(ErrorCode.USER_DUPLICATE);
+            errorCode = ErrorCode.USER_DUPLICATE;
+            throw new AppException(errorCode);
         }
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            throw new AppException(ErrorCode.USER_DUPLICATE);
+            errorCode = ErrorCode.USER_DUPLICATE;
+            throw new AppException(errorCode);
         }
         try {
-            Role userRole = roleRepository.findByName("USER").orElseThrow(() -> new AppException(ErrorCode.USER_DUPLICATE));
+            Role userRole = roleRepository.findById(registerRequest.getRoleId())
+                    .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
             User user = new User();
             user.setUsername(registerRequest.getUsername());
             user.setEmail(registerRequest.getEmail());

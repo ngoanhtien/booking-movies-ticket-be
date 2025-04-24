@@ -54,6 +54,7 @@ public enum ErrorCode {
     REGISTER_FAILED(1002, "Đăng ký thất bại",HttpStatus.INTERNAL_SERVER_ERROR),
     MOVIE_NOT_FOUND(1003, "Không tìm thấy phim", HttpStatus.NOT_FOUND),
     CINEMA_NOT_FOUND(1004, "Không tìm thấy rạp phim", HttpStatus.NOT_FOUND),
+    ROLE_NOT_FOUND(1005, "Role not found", HttpStatus.NOT_FOUND),
     //Lỗi ko xác định
     UNCATEGORIZED_EXCEPTION(9999, "Lỗi không xác định.");
 
