@@ -18,8 +18,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: hieumau.5899@gmail.com
-    password: Thuglife123!@#
+    username: tien.ngo1@ntq-solution.com.vn
+    password: yyxh vdkc kppf enku
     transport:
       protocol: smtp
     properties:

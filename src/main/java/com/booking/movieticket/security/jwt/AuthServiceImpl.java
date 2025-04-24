@@ -49,11 +49,8 @@ public class AuthServiceImpl implements AuthService {
             String jwt = tokenProvider.createToken(authentication);
             String refreshJwt = tokenProvider.generateRefreshToken(authentication);
 
-            // Get role from authorities
-            String role = authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).findFirst().orElse(""); // Get the first role if any
-
             // Create and return LoginResponse
-            return LoginResponse.builder().accessToken(jwt).refreshToken(refreshJwt).role(role).build();
+            return LoginResponse.builder().accessToken(jwt).refreshToken(refreshJwt).build();
         } catch (Exception e) {
             log.error(ErrorCode.USER_DUPLICATE.getMessage());
             throw new BadCredentialsException(ErrorCode.USER_DUPLICATE.getMessage());
