@@ -1,5 +1,6 @@
 package com.booking.movieticket.dto.request;
 
+import com.booking.movieticket.entity.enums.Role;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -19,5 +20,5 @@ public class LoginRequest {
     @Size(min = 6, max = 100, message = "Password must be between 6 and 100 characters")
     private String password;
 
-    private Long roleId;
+    private Role role;
 }

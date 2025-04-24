@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -133,7 +134,7 @@ public class ShowtimeServiceImpl implements ShowtimeService {
 
                     // Convert showtimes to DTOs
                     List<ShowtimeDTO> showtimeDTOs = branchShowtimes.stream()
-                            .map(this::convertToShowtimeDTO)
+                            .map(showtime -> convertToShowtimeDTO(showtime, movie.getDuration()))
                             .collect(Collectors.toList());
 
                     return BranchWithShowtimesDTO.builder()
@@ -162,15 +163,20 @@ public class ShowtimeServiceImpl implements ShowtimeService {
 
     /**
      * Helper method to convert a Showtime entity to a ShowtimeDTO
+     * Calculates the end time based on the start time and movie duration
      */
-    private ShowtimeDTO convertToShowtimeDTO(Showtime showtime) {
+    private ShowtimeDTO convertToShowtimeDTO(Showtime showtime, Integer movieDuration) {
+        LocalTime startTime = showtime.getSchedule().getTimeStart();
+        LocalTime endTime = startTime.plusMinutes(movieDuration);
+
         return ShowtimeDTO.builder()
                 .scheduleId(showtime.getId().getScheduleId())
                 .roomId(showtime.getId().getRoomId())
                 .roomName(showtime.getRoom().getName())
                 .roomType(showtime.getRoom().getRoomType().toString())
                 .scheduleDate(showtime.getSchedule().getDate())
-                .scheduleTime(showtime.getSchedule().getTimeStart())
+                .scheduleTime(startTime)
+                .scheduleEndTime(endTime)
                 .price(showtime.getSchedule().getPrice())
                 .build();
     }

@@ -47,8 +47,8 @@ server:
 security:
   jwt:
     secret: Y2JkN2M4NjU3NTM4Y2ZiNDEyMjU5NjM1ZGVhMDIwOGFiMzZiYjY0MTJmMDVlZTY3ZTQyMzZjMTA4YWIxODk3YzI4MTkxNTkzZjFmYmQ5ZGM5MTA1NmVmZjAyODExZTQxMGRlMWI1M2U5MDEzNDY1ZDJhMmZiODhmMDI0MWYyNWQ=
-    # Token is valid 24 hours
-    token-validity-in-seconds: 86400
+    # Token is valid 24 hours (86400)
+    token-validity-in-seconds: 2629743
     token-refresh-in-seconds: 2629743
 
 resetPasswordBody: "Dear {0},\n\nYou have requested to reset your account password using the \"Forgot Password\" feature.\nWe confirm that the password has been successfully changed for the account: {1}.\nIf you did not make this request, please contact us immediately to ensure the security of your account.\n\nThank you for using our services."
