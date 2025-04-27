@@ -6,12 +6,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface ShowtimeService {
-    /**
-     * Get all showtimes for a specific movie organized by branches
-     * @param movieId ID of the movie
-     * @return ShowtimeResponse containing movie info and showtimes by branch
-     */
-    ShowtimeResponse getShowtimesByMovie(Long movieId);
 
     /**
      * Get all showtimes for a specific movie on a specific date organized by branches
@@ -20,6 +14,15 @@ public interface ShowtimeService {
      * @return ShowtimeResponse containing movie info and showtimes by branch for the specified date
      */
     ShowtimeResponse getShowtimesByMovieAndDate(Long movieId, LocalDate date);
+
+    /**
+     * Get all showtimes for a specific movie on a specific date, optionally filtered by cinema, organized by branches
+     * @param movieId ID of the movie
+     * @param date Date for which to retrieve showtimes
+     * @param cinemaId Optional ID of cinema to filter by
+     * @return ShowtimeResponse containing movie info and showtimes by branch for the specified criteria
+     */
+    ShowtimeResponse getShowtimesByMovieAndDateAndCinema(Long movieId, LocalDate date, Long cinemaId);
 
     /**
      * Get all available dates for a specific movie that has showtimes

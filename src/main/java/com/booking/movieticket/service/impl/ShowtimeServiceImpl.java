@@ -35,34 +35,11 @@ public class ShowtimeServiceImpl implements ShowtimeService {
 
     @Override
     @Transactional(readOnly = true)
-    public ShowtimeResponse getShowtimesByMovie(Long movieId) {
-        try {
-            Movie movie = findMovieById(movieId);
-
-            // Get all showtimes for the movie
-            List<Showtime> showtimes = showtimeRepository.findByMovieIdOrderByBranchAndSchedule(movieId);
-
-            // Process and return the response
-            return buildShowtimeResponse(movie, showtimes);
-        } catch (AppException e) {
-            log.error("AppException fetching showtimes: {}", e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            log.error("Unexpected error fetching showtimes: {}", e.getMessage(), e);
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Error fetching showtimes for movie: " + movieId);
-        }
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public ShowtimeResponse getShowtimesByMovieAndDate(Long movieId, LocalDate date) {
         try {
             Movie movie = findMovieById(movieId);
-
             // Get showtimes for the movie on the specified date
             List<Showtime> showtimes = showtimeRepository.findByMovieIdAndDateOrderByBranchAndTime(movieId, date);
-
-            // Process and return the response
             return buildShowtimeResponse(movie, showtimes);
         } catch (AppException e) {
             log.error("AppException fetching showtimes by date: {}", e.getMessage());
@@ -71,6 +48,52 @@ public class ShowtimeServiceImpl implements ShowtimeService {
             log.error("Unexpected error fetching showtimes by date: {}", e.getMessage(), e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION,
                     "Error fetching showtimes for movie: " + movieId + " on date: " + date);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ShowtimeResponse getShowtimesByMovieAndDateAndCinema(Long movieId, LocalDate date, Long cinemaId) {
+        try {
+            log.info("Starting to fetch showtimes for movie ID: {} on date: {} {}",
+                    movieId, date, cinemaId != null ? "with cinema ID: " + cinemaId : "for all cinemas");
+
+            Movie movie = findMovieById(movieId);
+
+            // Get showtimes for the movie on the specified date, optionally filtered by cinema
+            List<Showtime> showtimes = showtimeRepository.findByMovieIdAndDateAndCinemaIdOrderByBranchAndTime(
+                    movieId, date, cinemaId);
+
+            log.info("Found {} showtimes for movie on date {} {}",
+                    showtimes.size(), date,
+                    cinemaId != null ? "at cinema ID: " + cinemaId : "across all cinemas");
+
+            // Debug: Log details of each showtime
+            if (showtimes.isEmpty()) {
+                log.warn("No showtimes found for the specified criteria");
+            } else {
+                for (Showtime showtime : showtimes) {
+                    log.debug("Showtime: scheduleId={}, roomId={}, date={}, time={}, branch={}, cinema={}",
+                            showtime.getId().getScheduleId(),
+                            showtime.getId().getRoomId(),
+                            showtime.getSchedule().getDate(),
+                            showtime.getSchedule().getTimeStart(),
+                            showtime.getRoom().getBranch().getName(),
+                            showtime.getRoom().getBranch().getCinema().getName());
+                }
+            }
+
+            // Process and return the response
+            ShowtimeResponse response = buildShowtimeResponse(movie, showtimes);
+            log.info("Built response with {} branches", response.getBranches().size());
+            return response;
+        } catch (AppException e) {
+            log.error("AppException fetching showtimes by date and cinema: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION,
+                    "Error fetching showtimes for movie: " + movieId + " on date: " + date +
+                            (cinemaId != null ? " and cinema: " + cinemaId : ""));
         }
     }
 

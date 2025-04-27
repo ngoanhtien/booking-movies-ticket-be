@@ -1,9 +1,9 @@
 spring:
   application: movie-ticket
   datasource:
-    url: jdbc:postgresql://movie-ticket.crm2sq0ssrzj.ap-southeast-2.rds.amazonaws.com/movie
+    url: jdbc:postgresql://localhost:5432/movie
     username: postgres
-    password: Anhtien123.
+    password: 123456
     driver-class-name: org.postgresql.Driver
     hikari:
       pool-name: Hikari

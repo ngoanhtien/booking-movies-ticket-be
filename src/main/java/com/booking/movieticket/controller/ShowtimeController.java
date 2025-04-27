@@ -25,19 +25,6 @@ public class ShowtimeController {
     ShowtimeService showtimeService;
 
     /**
-     * Get all showtimes for a specific movie
-     * @param movieId ID of the movie
-     * @return API response with showtimes organized by branch
-     */
-    @GetMapping("/{movieId}")
-    public ResponseEntity<ApiResponse<?>> getShowtimesByMovie(@PathVariable Long movieId) {
-        log.info("Fetching showtimes for movie with ID: {}", movieId);
-        ShowtimeResponse showtimeResponse = showtimeService.getShowtimesByMovie(movieId);
-        return ResponseEntity.ok(new ApiResponse<>(
-                "Successfully retrieved showtimes for movie", showtimeResponse));
-    }
-
-    /**
      * Get all showtimes for a specific movie on a specific date
      * @param movieId ID of the movie
      * @param date Date for which to retrieve showtimes (format: yyyy-MM-dd)
@@ -51,6 +38,24 @@ public class ShowtimeController {
         ShowtimeResponse showtimeResponse = showtimeService.getShowtimesByMovieAndDate(movieId, date);
         return ResponseEntity.ok(new ApiResponse<>(
                 "Successfully retrieved showtimes for movie on specified date", showtimeResponse));
+    }
+
+    /**
+     * Get all showtimes for a specific movie on a specific date, optionally filtered by cinema
+     * @param movieId ID of the movie
+     * @param date Date for which to retrieve showtimes (format: yyyy-MM-dd)
+     * @param cinemaId Optional ID of the cinema to filter by
+     * @return API response with showtimes organized by branch for the specified criteria
+     */
+    @GetMapping("/{movieId}/filter")
+    public ResponseEntity<ApiResponse<?>> getShowtimesByMovieAndDate(
+            @PathVariable Long movieId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) Long cinemaId) {
+        ShowtimeResponse showtimeResponse = showtimeService.getShowtimesByMovieAndDateAndCinema(movieId, date, cinemaId);
+
+        return ResponseEntity.ok(new ApiResponse<>(
+                "Successfully retrieved showtimes for movie based on specified criteria", showtimeResponse));
     }
 
     /**
