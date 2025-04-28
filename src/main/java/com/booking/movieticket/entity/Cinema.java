@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "cinemas")
 @Getter
@@ -31,4 +34,7 @@ public class Cinema {
 
     @Column(name = "is_enabled")
     private Boolean isEnabled;
+
+    @OneToMany(mappedBy = "cinema")
+    private Set<Branch> branches = new HashSet<>();
 }
