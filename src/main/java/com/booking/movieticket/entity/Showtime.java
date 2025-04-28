@@ -29,6 +29,6 @@ public class Showtime extends BaseEntity {
     @JoinColumn(name = "room_id", insertable = false, updatable = false)
     private Room room;
 
-    @OneToMany(mappedBy = "seat")
+    @OneToMany(mappedBy = "showtime")
     private Set<ShowtimeSeat> showtimeSeats = new HashSet<>();
 }
