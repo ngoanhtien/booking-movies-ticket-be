@@ -31,4 +31,7 @@ public class Showtime extends BaseEntity {
 
     @OneToMany(mappedBy = "showtime")
     private Set<BillDetail> billDetails = new HashSet<>();
+
+    @OneToMany(mappedBy = "showtime")
+    private Set<SeatStatus> SeatStatus = new HashSet<>();
 }

@@ -14,20 +14,6 @@ import java.util.List;
 public interface ShowtimeRepository extends JpaRepository<Showtime, ShowtimeId> {
 
     /**
-     * Find all showtimes for a specific movie, ordered by branch, date, and time
-     * Only returns active (not deleted and enabled) showtimes
-     */
-    @Query("SELECT st FROM Showtime st " +
-            "JOIN st.schedule s " +
-            "JOIN st.room r " +
-            "JOIN r.branch b " +
-            "WHERE s.movie.id = :movieId " +
-            "AND st.isDeleted = false " +
-            "AND (s.date >= CURRENT_DATE) " +
-            "ORDER BY b.id, s.date, s.timeStart")
-    List<Showtime> findByMovieIdOrderByBranchAndSchedule(@Param("movieId") Long movieId);
-
-    /**
      * Find showtimes for a specific movie on a specific date, ordered by branch and time
      */
     @Query("SELECT st FROM Showtime st " +
@@ -41,4 +27,21 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, ShowtimeId> 
     List<Showtime> findByMovieIdAndDateOrderByBranchAndTime(
             @Param("movieId") Long movieId,
             @Param("date") LocalDate date);
+
+    /**
+     * Find showtimes for a specific movie on a specific date, optionally filtered by cinema, ordered by branch and time
+     */
+    @Query("SELECT st FROM Showtime st " +
+            "JOIN st.schedule s " +
+            "JOIN st.room r " +
+            "JOIN r.branch b " +
+            "WHERE s.movie.id = :movieId " +
+            "AND s.date = :date " +
+            "AND st.isDeleted = false " +
+            "AND (:cinemaId IS NULL OR b.cinema.id = :cinemaId) " +
+            "ORDER BY b.id, s.timeStart")
+    List<Showtime> findByMovieIdAndDateAndCinemaIdOrderByBranchAndTime(
+            @Param("movieId") Long movieId,
+            @Param("date") LocalDate date,
+            @Param("cinemaId") Long cinemaId);
 }

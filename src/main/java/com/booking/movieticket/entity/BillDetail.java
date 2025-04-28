@@ -21,10 +21,12 @@ public class BillDetail extends BaseEntity {
             @JoinColumn(name = "room_id", referencedColumnName = "room_id", insertable = false, updatable = false)})
     private Showtime showtime;
 
+    @MapsId("billId")
     @ManyToOne
     @JoinColumn(name = "bill_id", insertable = false, updatable = false)
     private Bill bill;
 
+    @MapsId("seatId")
     @ManyToOne
     @JoinColumn(name = "seat_id", insertable = false, updatable = false)
     private Seat seat;
