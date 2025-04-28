@@ -13,21 +13,15 @@ import lombok.*;
 @AllArgsConstructor
 public class BillDetail extends BaseEntity {
 
-    @EmbeddedId
-    private BillDetailId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    private Long id;
 
-    @ManyToOne
-    @JoinColumns({@JoinColumn(name = "schedule_id", referencedColumnName = "schedule_id", insertable = false, updatable = false),
-            @JoinColumn(name = "room_id", referencedColumnName = "room_id", insertable = false, updatable = false)})
-    private Showtime showtime;
-
-    @MapsId("billId")
     @ManyToOne
     @JoinColumn(name = "bill_id", insertable = false, updatable = false)
     private Bill bill;
 
-    @MapsId("seatId")
     @ManyToOne
-    @JoinColumn(name = "seat_id", insertable = false, updatable = false)
-    private Seat seat;
+    @JoinColumn(name = "showtime_seat_id", insertable = false, updatable = false)
+    private ShowtimeSeat showtimeSeat;
 }

@@ -29,9 +29,6 @@ public class Showtime extends BaseEntity {
     @JoinColumn(name = "room_id", insertable = false, updatable = false)
     private Room room;
 
-    @OneToMany(mappedBy = "showtime")
-    private Set<BillDetail> billDetails = new HashSet<>();
-
-    @OneToMany(mappedBy = "showtime")
-    private Set<SeatStatus> SeatStatus = new HashSet<>();
+    @OneToMany(mappedBy = "seat")
+    private Set<ShowtimeSeat> showtimeSeats = new HashSet<>();
 }

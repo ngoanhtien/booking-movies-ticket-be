@@ -7,28 +7,37 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
-@Table(name = "seat_status")
+@Table(name = "showtime_seat")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SeatStatus {
+public class ShowtimeSeat {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_seat_status")
     @SequenceGenerator(name = "sequence_seat_status")
-    @Column(name = "seat_status_id")
+    @Column(name = "showtime_seat_id")
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "name")
-    private StatusSeat name;
+    @Column(name = "status")
+    private StatusSeat status;
 
-    @OneToOne(mappedBy = "seatStatus")
+    @ManyToOne
+    @JoinColumn(name = "seat_id", referencedColumnName = "seat_id")
     private Seat seat;
 
     @ManyToOne
     @JoinColumns({@JoinColumn(name = "schedule_id", referencedColumnName = "schedule_id", insertable = false, updatable = false),
             @JoinColumn(name = "room_id", referencedColumnName = "room_id", insertable = false, updatable = false)})
     private Showtime showtime;
+
+    private Double price;
+
+    @OneToMany(mappedBy = "showtimeSeat")
+    private Set<BillDetail> billDetails = new HashSet<>();
 }
