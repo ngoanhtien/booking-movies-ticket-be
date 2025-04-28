@@ -3,14 +3,19 @@ package com.booking.movieticket.service.impl;
 import com.booking.movieticket.configuration.mail.MailConfig;
 import com.booking.movieticket.configuration.mail.MailContent;
 import com.booking.movieticket.service.MailSendService;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.mail.SimpleMailMessage;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StreamUtils;
 
-import java.text.MessageFormat;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 @Service
@@ -25,6 +30,16 @@ public class MailSendServiceImpl implements MailSendService {
     @Override
     public void sendMail(String mailTo, String newPass) {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        ClassPathResource resource = new ClassPathResource( "mailtemplate/resetpassword/index.html" );
+        String bodyContent = "";
+        try {
+            bodyContent = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Format the HTML body with parameters
+//        String completeBody = MessageFormat.format(bodyContent, mailTo, newPass);
 
         // Configure the mail sender with properties from MailConfig
         mailSender.setHost(mailConfig.getHost());
@@ -38,16 +53,19 @@ public class MailSendServiceImpl implements MailSendService {
         props.put("mail.smtp.auth", mailConfig.getAuth());
         props.put("mail.smtp.starttls.enable", mailConfig.getTls());
 
-        // Create and send the message
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setSubject(mailContent.getSubject());
-        message.setFrom(mailConfig.getUsername());
-        message.setTo(mailTo);
+        try {
+            // Create a MIME message instead of SimpleMailMessage to support HTML
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-        // Format the email body with parameters
-        String completeBody = MessageFormat.format(mailContent.getBody(), mailTo, newPass);
-        message.setText(completeBody);
+            helper.setSubject(mailContent.getSubject());
+            helper.setFrom(mailConfig.getUsername());
+            helper.setTo(mailTo);
+            helper.setText(bodyContent, true); // The second parameter 'true' indicates HTML content
 
-        mailSender.send(message);
+            mailSender.send(mimeMessage);
+        } catch ( MessagingException e) {
+            throw new RuntimeException("Failed to send email", e);
+        }
     }
 }
