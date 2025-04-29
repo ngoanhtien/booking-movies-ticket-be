@@ -32,6 +32,9 @@ public class Cinema {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "logo_url", columnDefinition = "VARCHAR(1000)")
+    private String logoUrl;
+
     @OneToMany(mappedBy = "cinema")
     private Set<Branch> branches = new HashSet<>();
 }
