@@ -51,10 +51,14 @@ public enum ErrorCode {
 
     USER_NOT_FOUND(1000, "User không tìm thấy"),
     USER_DUPLICATE(1001, "User đã tồn tại"),
-    REGISTER_FAILED(1002, "Đăng ký thất bại",HttpStatus.INTERNAL_SERVER_ERROR),
+    REGISTER_FAILED(1002, "Đăng ký thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
     MOVIE_NOT_FOUND(1003, "Không tìm thấy phim", HttpStatus.NOT_FOUND),
     CINEMA_NOT_FOUND(1004, "Không tìm thấy rạp phim", HttpStatus.NOT_FOUND),
+    CINEMA_LOGO_NOT_FOUND(1005, "Không tìm thấy logo rạp phim", HttpStatus.NOT_FOUND),
+    CINEMA_ID_NOT_FOUND(1006, "CinemaId not found", HttpStatus.NOT_FOUND),
     ROLE_NOT_FOUND(1005, "Role not found", HttpStatus.NOT_FOUND),
+    MOVIE_LOGO_NOT_FOUND(1007, "Không tìm thấy logo rạp phim", HttpStatus.NOT_FOUND),
+    MOVIE_ID_NOT_FOUND(1008, "CinemaId not found", HttpStatus.NOT_FOUND),
     //Lỗi ko xác định
     UNCATEGORIZED_EXCEPTION(9999, "Lỗi không xác định.");
 

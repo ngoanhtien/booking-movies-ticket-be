@@ -12,6 +12,7 @@ import java.util.Map;
 
 @Service
 public class ImageUploadServiceImpl implements ImageUploadService {
+
     @Autowired
     private Cloudinary cloudinary;
 
@@ -20,8 +21,7 @@ public class ImageUploadServiceImpl implements ImageUploadService {
             long startTime = System.currentTimeMillis();
             Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
             long endTime = System.currentTimeMillis();
-            System.out.println("Upload time: " + (endTime - startTime) + "ms");
-            return uploadResult.get("url").toString(); // Trả về URL của ảnh đã tải lên
+            return uploadResult.get("url").toString();
         }
         return "file is null";
     }

@@ -1,18 +1,14 @@
 package com.booking.movieticket.dto.response;
 
-import com.booking.movieticket.entity.Actor;
-import com.booking.movieticket.entity.Category;
-import com.booking.movieticket.entity.Review;
 import com.booking.movieticket.entity.Schedule;
 import com.booking.movieticket.entity.enums.StatusMovie;
 import lombok.Getter;
 
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.Set;
 
 @Getter
-public class MovieResponse {
+public class CategoryResponse {
     private String name;
 
     private String summary;

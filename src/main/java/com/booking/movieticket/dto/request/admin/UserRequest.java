@@ -1,4 +1,4 @@
-package com.booking.movieticket.dto.request;
+package com.booking.movieticket.dto.request.admin;
 
 import com.booking.movieticket.entity.enums.MembershipLevel;
 import jakarta.validation.constraints.*;
