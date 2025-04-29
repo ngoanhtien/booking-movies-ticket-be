@@ -32,9 +32,6 @@ public class Cinema {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "is_enabled")
-    private Boolean isEnabled;
-
     @OneToMany(mappedBy = "cinema")
     private Set<Branch> branches = new HashSet<>();
 }

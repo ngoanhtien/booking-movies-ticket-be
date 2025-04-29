@@ -1,24 +1,22 @@
 package com.booking.movieticket.service.impl;
 
-import com.booking.movieticket.dto.business.UserDTO;
-import com.booking.movieticket.dto.vo.UserCriteria;
 import com.booking.movieticket.dto.response.UserResponse;
+import com.booking.movieticket.dto.vo.UserCriteria;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.exception.ErrorCode;
 import com.booking.movieticket.mapper.UserMapper;
 import com.booking.movieticket.repository.UserRepository;
 import com.booking.movieticket.repository.specification.UserSpecificationBuilder;
+import com.booking.movieticket.service.ImageUploadService;
 import com.booking.movieticket.service.RoleService;
 import com.booking.movieticket.service.UserService;
-import com.booking.movieticket.service.ImageUploadService;
 import com.booking.movieticket.util.RandomStringGenerator;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,14 +24,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class UserServiceImpl implements UserService {
-    RoleService roleService;
 
     ImageUploadService imageUploadService;
 
