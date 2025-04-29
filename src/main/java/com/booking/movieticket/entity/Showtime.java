@@ -3,7 +3,10 @@ package com.booking.movieticket.entity;
 import com.booking.movieticket.entity.base.BaseEntity;
 import com.booking.movieticket.entity.compositekey.ShowtimeId;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -29,6 +32,16 @@ public class Showtime extends BaseEntity {
     @JoinColumn(name = "room_id", insertable = false, updatable = false)
     private Room room;
 
-    @OneToMany(mappedBy = "showtime")
+    @OneToMany(mappedBy = "showtime", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ShowtimeSeat> showtimeSeats = new HashSet<>();
+
+    public void addShowtimeSeat(ShowtimeSeat showtimeSeat) {
+        showtimeSeats.add(showtimeSeat);
+        showtimeSeat.setShowtime(this);
+    }
+
+    public void removeShowtimeSeat(ShowtimeSeat showtimeSeat) {
+        showtimeSeats.remove(showtimeSeat);
+        showtimeSeat.setShowtime(null);
+    }
 }

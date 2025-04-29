@@ -45,6 +45,16 @@ public class Seat extends BaseEntity {
     @JoinColumn(name = "room_id", referencedColumnName = "room_id")
     private Room room;
 
-    @OneToMany(mappedBy = "seat")
+    @OneToMany(mappedBy = "seat", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ShowtimeSeat> showtimeSeats = new HashSet<>();
+
+    public void addShowtimeSeat(ShowtimeSeat showtimeSeat) {
+        showtimeSeats.add(showtimeSeat);
+        showtimeSeat.setSeat(this);
+    }
+
+    public void removeShowtimeSeat(ShowtimeSeat showtimeSeat) {
+        showtimeSeats.remove(showtimeSeat);
+        showtimeSeat.setSeat(null);
+    }
 }

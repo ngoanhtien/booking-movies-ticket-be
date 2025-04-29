@@ -18,10 +18,10 @@ public class BillDetail extends BaseEntity {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "bill_id", insertable = false, updatable = false)
+    @JoinColumn(name = "bill_id")
     private Bill bill;
 
     @ManyToOne
-    @JoinColumn(name = "showtime_seat_id", insertable = false, updatable = false)
+    @JoinColumn(name = "showtime_seat_id")
     private ShowtimeSeat showtimeSeat;
 }

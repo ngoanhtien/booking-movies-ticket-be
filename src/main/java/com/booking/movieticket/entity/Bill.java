@@ -36,7 +36,7 @@ public class Bill extends BaseEntity {
     @JoinColumn(name = "promotion_id")
     private Promotion promotion;
 
-    @OneToMany(mappedBy = "bill")
+    @OneToMany(mappedBy = "bill", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<BillDetail> billDetails = new HashSet<>();
 
     @OneToMany(mappedBy = "bill")
@@ -45,4 +45,14 @@ public class Bill extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
+
+    public void addBillDetail(BillDetail billDetail) {
+        billDetails.add(billDetail);
+        billDetail.setBill(this);
+    }
+
+    public void removeBillDetail(BillDetail billDetail) {
+        billDetails.remove(billDetail);
+        billDetail.setBill(null);
+    }
 }

@@ -1,5 +1,6 @@
 package com.booking.movieticket.entity;
 
+import com.booking.movieticket.entity.compositekey.ShowtimeSeatId;
 import com.booking.movieticket.entity.enums.StatusSeat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -17,16 +18,11 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ShowtimeSeat {
-    @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_seat_status")
-    @SequenceGenerator(name = "sequence_seat_status")
-    @Column(name = "showtime_seat_id")
-    private Long id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
-    private StatusSeat status;
+    @EmbeddedId
+    private ShowtimeSeatId id;
 
+    @MapsId("seatId")
     @ManyToOne
     @JoinColumn(name = "seat_id", referencedColumnName = "seat_id")
     private Seat seat;
@@ -36,8 +32,22 @@ public class ShowtimeSeat {
             @JoinColumn(name = "room_id", referencedColumnName = "room_id", insertable = false, updatable = false)})
     private Showtime showtime;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private StatusSeat status;
+
     private Double price;
 
-    @OneToMany(mappedBy = "showtimeSeat")
+    @OneToMany(mappedBy = "showtimeSeat", cascade = CascadeType.ALL)
     private Set<BillDetail> billDetails = new HashSet<>();
+
+    public void addBillDetail(BillDetail billDetail) {
+        billDetails.add(billDetail);
+        billDetail.setShowtimeSeat(this);
+    }
+
+    public void removeBillDetail(BillDetail billDetail) {
+        billDetails.remove(billDetail);
+        billDetail.setShowtimeSeat(null);
+    }
 }
