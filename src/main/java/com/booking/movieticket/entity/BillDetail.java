@@ -1,9 +1,11 @@
 package com.booking.movieticket.entity;
 
 import com.booking.movieticket.entity.base.BaseEntity;
-import com.booking.movieticket.entity.compositekey.BillDetailId;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "bill_detail")
