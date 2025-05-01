@@ -36,7 +36,7 @@ public class Bill extends BaseEntity {
     @JoinColumn(name = "promotion_id")
     private Promotion promotion;
 
-    @OneToMany(mappedBy = "bill", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "bill")
     private Set<BillDetail> billDetails = new HashSet<>();
 
     @OneToMany(mappedBy = "bill")

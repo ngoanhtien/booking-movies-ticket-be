@@ -32,7 +32,7 @@ public class Showtime extends BaseEntity {
     @JoinColumn(name = "room_id", insertable = false, updatable = false)
     private Room room;
 
-    @OneToMany(mappedBy = "showtime", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "showtime")
     private Set<ShowtimeSeat> showtimeSeats = new HashSet<>();
 
     public void addShowtimeSeat(ShowtimeSeat showtimeSeat) {

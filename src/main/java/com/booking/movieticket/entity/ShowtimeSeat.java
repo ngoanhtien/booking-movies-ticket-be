@@ -1,6 +1,6 @@
 package com.booking.movieticket.entity;
 
-import com.booking.movieticket.entity.compositekey.ShowtimeSeatId;
+import com.booking.movieticket.entity.base.BaseEntity;
 import com.booking.movieticket.entity.enums.StatusSeat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -12,24 +12,30 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "showtime_seat")
+@Table(name = "showtime_seat",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"seat_id", "schedule_id", "room_id"})
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ShowtimeSeat {
+public class ShowtimeSeat extends BaseEntity {
 
-    @EmbeddedId
-    private ShowtimeSeatId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_showtime_seat")
+    @SequenceGenerator(name = "sequence_showtime_seat")
+    @Column(name = "showtime_seat_id")
+    private Long id;
 
-    @MapsId("seatId")
     @ManyToOne
     @JoinColumn(name = "seat_id", referencedColumnName = "seat_id")
     private Seat seat;
 
     @ManyToOne
-    @JoinColumns({@JoinColumn(name = "schedule_id", referencedColumnName = "schedule_id", insertable = false, updatable = false),
-            @JoinColumn(name = "room_id", referencedColumnName = "room_id", insertable = false, updatable = false)})
+    @JoinColumns({@JoinColumn(name = "schedule_id", referencedColumnName = "schedule_id"),
+            @JoinColumn(name = "room_id", referencedColumnName = "room_id")})
     private Showtime showtime;
 
     @Enumerated(EnumType.STRING)
