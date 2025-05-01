@@ -1,5 +1,6 @@
 package com.booking.movieticket.service;
 
+import com.booking.movieticket.dto.response.ShowtimeDetailResponse;
 import com.booking.movieticket.dto.response.ShowtimeResponse;
 
 import java.time.LocalDate;
@@ -30,4 +31,12 @@ public interface ShowtimeService {
      * @return List of available dates
      */
     List<LocalDate> getAvailableDatesByMovie(Long movieId);
+
+    /**
+     * Get detailed information for a specific showtime, including all seats
+     * @param scheduleId ID of the schedule
+     * @param roomId ID of the room
+     * @return Detailed showtime information including seats
+     */
+    ShowtimeDetailResponse getShowtimeDetail(Long scheduleId, Long roomId);
 }

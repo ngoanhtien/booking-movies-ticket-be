@@ -27,6 +27,4 @@ public class ShowtimeDTO {
 
     @JsonFormat(pattern = "HH:mm")
     private LocalTime scheduleEndTime;
-
-    private Double price;
 }
