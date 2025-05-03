@@ -8,10 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -40,6 +37,19 @@ public class MovieController {
     public ResponseEntity<ApiResponse<?>> getMovieDetail(@PathVariable Long id) {
         Movie movieInfo = movieService.findMovie(id);
         return ResponseEntity.ok(new ApiResponse<>("Get movie information successfully", movieInfo));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<?>> searchMovies(@RequestParam(required = false) String query) {
+        if (query == null || query.trim().isEmpty()) {
+            // If query is empty, return top 5 showing movies
+            List<Movie> topMovies = movieService.getTopShowingMovies(5);
+            return ResponseEntity.ok(new ApiResponse<>("Successfully retrieved top showing movies", topMovies));
+        } else {
+            // Otherwise search by query
+            List<Movie> movies = movieService.searchMovies(query);
+            return ResponseEntity.ok(new ApiResponse<>("Successfully searched movies", movies));
+        }
     }
 
 }

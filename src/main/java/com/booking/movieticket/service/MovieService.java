@@ -10,4 +10,8 @@ public interface MovieService {
     List<Movie> getUpcomingMovies();
 
     Movie findMovie(Long id);
+
+    List<Movie> searchMovies(String searchTerm);
+
+    List<Movie> getTopShowingMovies(int limit);
 }

@@ -1,6 +1,5 @@
 package com.booking.movieticket.service.impl;
 
-import com.booking.movieticket.dto.response.MovieResponse;
 import com.booking.movieticket.entity.Movie;
 import com.booking.movieticket.entity.enums.StatusMovie;
 import com.booking.movieticket.exception.AppException;
@@ -10,6 +9,8 @@ import com.booking.movieticket.service.MovieService;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -44,6 +45,28 @@ public class MovieServiceImpl implements MovieService {
     @Override
     public Movie findMovie(@NotNull Long id) {
         return movieRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
+    }
+
+    @Override
+    public List<Movie> searchMovies(String searchTerm) {
+        try {
+            Pageable pageable = PageRequest.of(0, 10);
+            return movieRepository.searchMoviesByName(searchTerm, pageable);
+        } catch (Exception e) {
+            log.error("Error searching movies: {}", e.getMessage());
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    @Override
+    public List<Movie> getTopShowingMovies(int limit) {
+        try {
+            Pageable pageable = PageRequest.of(0, limit);
+            return movieRepository.findTopShowingMovies(pageable);
+        } catch (Exception e) {
+            log.error("Error fetching top showing movies: {}", e.getMessage());
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
     }
 
 }
