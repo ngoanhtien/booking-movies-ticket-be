@@ -1,7 +1,14 @@
 package com.booking.movieticket.service.impl;
 
+import com.booking.movieticket.dto.criteria.CategoryCriteria;
+import com.booking.movieticket.dto.request.admin.CategoryRequest;
+import com.booking.movieticket.dto.response.admin.CategoryResponse;
+import com.booking.movieticket.entity.Category;
 import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.exception.ErrorCode;
+import com.booking.movieticket.mapper.CategoryMapper;
+import com.booking.movieticket.repository.CategoryRepository;
+import com.booking.movieticket.repository.specification.CategorySpecificationBuilder;
 import com.booking.movieticket.service.CategoryService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +17,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +31,9 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Category getCategoryById(Long id) {
+        if (id == null) {
+            throw new AppException(ErrorCode.CATEGORY_NOT_FOUND);
+        }
         return categoryRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
     }
 
@@ -37,34 +50,39 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional
     public void updateCategory(CategoryRequest categoryRequest) {
-        Category categoryForUpdate = categoryMapper.toCategory(categoryRequest);
-        if (categoryForUpdate.getId() == null) {
-            throw new AppException(ErrorCode.CATEGORY_ID_NOT_FOUND);
+        if (categoryRequest.getId() == null) {
+            throw new AppException(ErrorCode.CATEGORY_NOT_FOUND);
         }
-        Category category = categoryRepository.findById(categoryForUpdate.getId())
+        Category category = categoryRepository.findById(categoryRequest.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
 
-        // Cập nhật các trường của category
-        category.setName(categoryForUpdate.getName());
-        category.setDescription(categoryForUpdate.getDescription());
-
+        categoryMapper.updateCategoryFromRequest(categoryRequest, category);
         categoryRepository.save(category);
     }
 
     @Override
     public void activateCategory(Long id) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
-        category.setIsDeleted(false);
-        categoryRepository.save(category);
+        updateCategoryStatus(id, false);
     }
 
     @Override
     public void deactivateCategory(Long id) {
+        updateCategoryStatus(id, true);
+    }
+
+    private void updateCategoryStatus(Long id, boolean isDeleted) {
+        if (id == null) {
+            throw new AppException(ErrorCode.CATEGORY_NOT_FOUND);
+        }
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
-        category.setIsDeleted(true); // Sửa bug: trước đây đang set false
+        if (Objects.equals(category.getIsDeleted(), isDeleted)) {
+            return;
+        }
+        category.setIsDeleted(isDeleted);
         categoryRepository.save(category);
     }
+
 }

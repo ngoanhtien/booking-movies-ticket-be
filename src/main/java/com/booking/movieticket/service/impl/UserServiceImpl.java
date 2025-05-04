@@ -1,6 +1,6 @@
 package com.booking.movieticket.service.impl;
 
-import com.booking.movieticket.dto.response.UserResponse;
+import com.booking.movieticket.dto.response.admin.UserResponse;
 import com.booking.movieticket.dto.criteria.UserCriteria;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.exception.AppException;

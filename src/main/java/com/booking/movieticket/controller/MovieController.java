@@ -1,9 +1,9 @@
 package com.booking.movieticket.controller;
 
 import com.booking.movieticket.dto.criteria.MovieCriteria;
-import com.booking.movieticket.dto.request.admin.MovieTungRequest;
+import com.booking.movieticket.dto.request.admin.MovieRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
-import com.booking.movieticket.dto.response.MovieResponse;
+import com.booking.movieticket.dto.response.admin.MovieResponse;
 import com.booking.movieticket.entity.Movie;
 import com.booking.movieticket.service.MovieService;
 import jakarta.validation.Valid;
@@ -18,25 +18,30 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-@Slf4j
 @RestController
+@RequestMapping("/movie")
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
-@RequestMapping("/movie")
+@Slf4j
+@CrossOrigin(origins = "*")
+@Validated
 public class MovieController {
 
     MovieService movieService;
 
     @GetMapping("")
-    public ResponseEntity<ApiResponse<Page<Movie>>> getAllMovie(MovieCriteria movieCriteria,
-                                                                @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+    public ResponseEntity<ApiResponse<Page<Movie>>> getAllMovies(MovieCriteria movieCriteria,
+                                                                 @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new ApiResponse<>("Movie fetched successfully.", movieService.getAllMovie(movieCriteria, pageable)));
+                .body(new ApiResponse<>("Movie fetched successfully.", movieService.getAllMovies(movieCriteria, pageable)));
     }
 
     @GetMapping("/{id}")
@@ -45,17 +50,20 @@ public class MovieController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<MovieResponse>> createUser(@Valid @RequestBody MovieTungRequest movieRequest,
-                                                                 @RequestParam(value = "imageSmallUrl", required = false) MultipartFile imageSmallUrl,
-                                                                 @RequestParam(value = "imageLargeUrl", required = false) MultipartFile imageLargeUrl) {
-        return ResponseEntity.ok(new ApiResponse<>("Movie created successfully.", movieService.createMovie(movieRequest, imageSmallUrl, imageLargeUrl)));
+    public ResponseEntity<ApiResponse<MovieResponse>> createMovie(@Valid @RequestBody MovieRequest movieRequest,
+                                                                  @RequestParam(value = "imageSmallUrl", required = false) MultipartFile imageSmallUrl,
+                                                                  @RequestParam(value = "imageLargeUrl", required = false) MultipartFile imageLargeUrl,
+                                                                  BindingResult bindingResult) throws MethodArgumentNotValidException {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>("Movie created successfully.", movieService.createMovie(movieRequest, imageSmallUrl, imageLargeUrl, bindingResult)));
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<String>> updateCinema(@Valid @RequestBody MovieTungRequest movieRequest,
-                                                            @RequestParam(value = "imageSmallUrl", required = false) MultipartFile imageSmallUrl,
-                                                            @RequestParam(value = "imageLargeUrl", required = false) MultipartFile imageLargeUrl) {
-        movieService.updateMovie(movieRequest, imageSmallUrl, imageLargeUrl);
+    public ResponseEntity<ApiResponse<String>> updateMovie(@Valid @RequestBody MovieRequest movieRequest,
+                                                           @RequestParam(value = "imageSmallUrl", required = false) MultipartFile imageSmallUrl,
+                                                           @RequestParam(value = "imageLargeUrl", required = false) MultipartFile imageLargeUrl,
+                                                           BindingResult bindingResult) throws MethodArgumentNotValidException {
+        movieService.updateMovie(movieRequest, imageSmallUrl, imageLargeUrl, bindingResult);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(new ApiResponse<>("Cinema updated successfully."));
     }

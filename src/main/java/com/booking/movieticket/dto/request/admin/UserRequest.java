@@ -33,7 +33,7 @@ public class UserRequest {
     @Pattern(regexp = "^\\+?[0-9. ()-]{7,25}$", message = "Invalid phone number format.")
     private String phone;
 
-    @URL(message = "Invalid phone number format.")
+    @URL(message = "Avatar URL must be valid.")
     private String avatarUrl;
 
     private String signupDevice;

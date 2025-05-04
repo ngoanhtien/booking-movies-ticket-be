@@ -3,7 +3,7 @@ package com.booking.movieticket.controller;
 import com.booking.movieticket.dto.criteria.CinemaCriteria;
 import com.booking.movieticket.dto.request.admin.CinemaRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
-import com.booking.movieticket.dto.response.CinemaResponse;
+import com.booking.movieticket.dto.response.admin.CinemaResponse;
 import com.booking.movieticket.entity.Cinema;
 import com.booking.movieticket.service.CinemaService;
 import jakarta.validation.Valid;
@@ -18,7 +18,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,10 +36,10 @@ public class CinemaController {
     CinemaService cinemaService;
 
     @GetMapping("")
-    public ResponseEntity<ApiResponse<Page<Cinema>>> getAllCinema(CinemaCriteria cinemaCriteria,
-                                                                  @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+    public ResponseEntity<ApiResponse<Page<Cinema>>> getAllCinemas(CinemaCriteria cinemaCriteria,
+                                                                   @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new ApiResponse<>("Cinema fetched successfully.", cinemaService.getAllCinema(cinemaCriteria, pageable)));
+                .body(new ApiResponse<>("Cinema fetched successfully.", cinemaService.getAllCinemas(cinemaCriteria, pageable)));
     }
 
     @GetMapping("/{id}")
@@ -46,15 +48,17 @@ public class CinemaController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<CinemaResponse>> createUser(@Valid @RequestBody CinemaRequest cinemaRequest,
-                                                                  @RequestParam(value = "logoUrl", required = false) MultipartFile logoUrl) {
-        return ResponseEntity.ok(new ApiResponse<>("Cinema created successfully.", cinemaService.createCinema(cinemaRequest, logoUrl)));
+    public ResponseEntity<ApiResponse<CinemaResponse>> createCinema(@Valid @RequestBody CinemaRequest cinemaRequest,
+                                                                    @RequestParam(value = "logoUrl", required = false) MultipartFile logoUrl,
+                                                                    BindingResult bindingResult) throws MethodArgumentNotValidException {
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Cinema created successfully.", cinemaService.createCinema(cinemaRequest, logoUrl, bindingResult)));
     }
 
     @PutMapping
     public ResponseEntity<ApiResponse<String>> updateCinema(@Valid @RequestBody CinemaRequest cinemaRequest,
-                                                            @RequestParam(value = "logoUrl", required = false) MultipartFile logoUrl) {
-        cinemaService.updateCinema(cinemaRequest, logoUrl);
+                                                            @RequestParam(value = "logoUrl", required = false) MultipartFile logoUrl,
+                                                            BindingResult bindingResult) throws MethodArgumentNotValidException {
+        cinemaService.updateCinema(cinemaRequest, logoUrl, bindingResult);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(new ApiResponse<>("Cinema updated successfully."));
     }

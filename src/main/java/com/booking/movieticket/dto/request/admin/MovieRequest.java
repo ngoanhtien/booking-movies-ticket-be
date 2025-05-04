@@ -14,7 +14,7 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MovieTungRequest {
+public class MovieRequest {
 
     private Long id;
 
@@ -34,38 +34,37 @@ public class MovieTungRequest {
     @Size(min = 2, max = 225, message = "Movie director must be between 2 and 225 characters.")
     private String director;
 
-    @NotNull(message = "Age limit must not be null.")
-    @Min(value = 0, message = "Age limit must be at least 0.")
-    @Max(value = 21, message = "Age limit cannot exceed 21.")
+    @NotNull(message = "Movie age limit must not be null.")
+    @Min(value = 0, message = "Movie age limit must be at least 0.")
+    @Max(value = 21, message = "Movie age limit cannot exceed 21.")
     private Integer ageLimit;
 
-    @NotNull(message = "Duration must not be null.")
-    @Min(value = 10, message = "Duration must be at least 10 minutes.")
-    @Max(value = 300, message = "Duration cannot exceed 300 minutes.")
+    @NotNull(message = "Movie duration must not be null.")
+    @Min(value = 10, message = "Movie duration must be at least 10 minutes.")
+    @Max(value = 300, message = "Movie duration cannot exceed 300 minutes.")
     private Integer duration;
 
-    @NotNull(message = "Release date must not be null.")
+    @NotNull(message = "Movie release date must not be null.")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    @Future(message = "Release date must be in the future.")
+    @Future(message = "Movie release date must be in the future.")
     private LocalDate releasedDate;
 
-    @NotBlank(message = "Language must not be blank.")
+    @NotBlank(message = "Movie language must not be blank.")
     private String language;
 
-    @URL(message = "Trailer URL must be valid.")
+    @URL(message = "Movie trailer URL must be valid.")
     private String trailerUrl;
 
     @NotNull(message = "Movie status must not be null.")
     private StatusMovie status;
 
-    @URL(message = "Small image URL must be valid.")
     private String imageSmallUrl;
-
-    @URL(message = "Large image URL must be valid.")
+    
     private String imageLargeUrl;
 
     @NotEmpty(message = "At least one category must be selected.")
     private Set<Long> categoryIds;
 
+    @NotEmpty(message = "At least one 4 actor must be selected.")
     private Set<Long> actorIds;
 }

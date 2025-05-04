@@ -1,7 +1,7 @@
 package com.booking.movieticket.mapper;
 
 import com.booking.movieticket.dto.request.admin.UserRequest;
-import com.booking.movieticket.dto.response.UserResponse;
+import com.booking.movieticket.dto.response.admin.UserResponse;
 import com.booking.movieticket.entity.Role;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.service.RoleService;

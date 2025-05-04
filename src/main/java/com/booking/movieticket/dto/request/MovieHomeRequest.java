@@ -9,7 +9,7 @@ import java.time.LocalDate;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class MovieRequest {
+public class MovieHomeRequest {
     private Long movieId;
 
     private LocalDate date;

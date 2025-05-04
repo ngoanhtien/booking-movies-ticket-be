@@ -1,13 +1,17 @@
 package com.booking.movieticket.service.impl;
 
 import com.booking.movieticket.dto.criteria.MovieCriteria;
-import com.booking.movieticket.dto.request.admin.MovieTungRequest;
-import com.booking.movieticket.dto.response.MovieResponse;
+import com.booking.movieticket.dto.request.admin.MovieRequest;
+import com.booking.movieticket.dto.response.admin.MovieResponse;
+import com.booking.movieticket.entity.Actor;
+import com.booking.movieticket.entity.Category;
 import com.booking.movieticket.entity.Movie;
 import com.booking.movieticket.entity.enums.StatusMovie;
 import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.exception.ErrorCode;
 import com.booking.movieticket.mapper.MovieMapper;
+import com.booking.movieticket.repository.ActorRepository;
+import com.booking.movieticket.repository.CategoryRepository;
 import com.booking.movieticket.repository.MovieRepository;
 import com.booking.movieticket.repository.specification.MovieSpecificationBuilder;
 import com.booking.movieticket.service.ImageUploadService;
@@ -20,10 +24,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -32,66 +40,70 @@ import java.util.List;
 public class MovieServiceImpl implements MovieService {
 
     MovieRepository movieRepository;
+    ActorRepository actorRepository;
+    CategoryRepository categoryRepository;
     MovieMapper movieMapper;
     ImageUploadService imageUploadService;
 
     @Override
     public Movie getMovieById(Long id) {
+        if (id == null) {
+            throw new AppException(ErrorCode.MOVIE_NOT_FOUND);
+        }
         return movieRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
     }
 
     @Override
-    public Page<Movie> getAllMovie(MovieCriteria movieCriteria, Pageable pageable) {
+    public Page<Movie> getAllMovies(MovieCriteria movieCriteria, Pageable pageable) {
         return movieRepository.findAll(MovieSpecificationBuilder.findByCriteria(movieCriteria), pageable);
     }
 
     @Override
-    public MovieResponse createMovie(MovieTungRequest movieRequest, MultipartFile movieSmallImgUrl, MultipartFile movieLargeImgUrl) {
-        Movie movie = movieMapper.toMovie(movieRequest);
-        try {
-            if (movie.getImageSmallUrl() == null && movie.getImageLargeUrl() == null) {
-                movie.setImageLargeUrl(imageUploadService.uploadImage(movieLargeImgUrl));
-                movie.setImageSmallUrl(imageUploadService.uploadImage(movieSmallImgUrl));
-            }
-        } catch (IOException e) {
-            throw new AppException(ErrorCode.MOVIE_LOGO_NOT_FOUND);
+    public MovieResponse createMovie(MovieRequest movieRequest, MultipartFile movieSmallImgUrl, MultipartFile movieLargeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+        validateImages(movieSmallImgUrl, movieLargeImgUrl, bindingResult);
+        if (bindingResult.hasErrors()) {
+            throw new MethodArgumentNotValidException(null, bindingResult);
         }
-        movie.setIsDeleted(false);
-        return movieMapper.toMovieResponse(movieRepository.save(movie));
+        try {
+            Movie movie = movieMapper.toMovie(movieRequest);
+            movieMapper.mapRelations(movie, movieRequest, categoryRepository, actorRepository);
+            processAndSetImages(movie, movieSmallImgUrl, movieLargeImgUrl);
+            movie.setIsDeleted(false);
+            return movieMapper.toMovieResponse(movieRepository.save(movie));
+        } catch (IOException e) {
+            throw new AppException(ErrorCode.MOVIE_NOT_FOUND);
+        }
     }
 
     @Override
-    public void updateMovie(MovieTungRequest movieRequest, MultipartFile movieSmallImgUrl, MultipartFile movieLargeImgUrl) {
-        Movie movieForUpdate = movieMapper.toMovie(movieRequest);
-        if (movieForUpdate.getId() == null) {
-            throw new AppException(ErrorCode.MOVIE_NOT_FOUND);
+    @Transactional
+    public void updateMovie(MovieRequest movieRequest, MultipartFile movieSmallImgUrl, MultipartFile movieLargeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+        validateImages(movieSmallImgUrl, movieLargeImgUrl, bindingResult);
+        if (bindingResult.hasErrors()) {
+            throw new MethodArgumentNotValidException(null, bindingResult);
         }
-        Movie movie = movieRepository.findById(movieForUpdate.getId()).orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
         try {
-            if (movieForUpdate.getImageSmallUrl() != null && movieForUpdate.getImageLargeUrl() != null) {
-                movie.setImageSmallUrl(imageUploadService.uploadImage(movieSmallImgUrl));
-                movie.setImageLargeUrl(imageUploadService.uploadImage(movieLargeImgUrl));
-            } else {
-
+            if (movieRequest.getId() == null) {
+                throw new AppException(ErrorCode.MOVIE_NOT_FOUND);
             }
+            Movie movie = movieRepository.findById(movieRequest.getId())
+                    .orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
+            movieMapper.mapRelations(movie, movieRequest, categoryRepository, actorRepository);
+            processAndSetImages(movie, movieSmallImgUrl, movieLargeImgUrl);
+            movieRepository.save(movie);
         } catch (IOException e) {
-            throw new AppException(ErrorCode.USER_NOT_FOUND);
+            throw new AppException(ErrorCode.UPLOAD_IMAGE_FAILED);
         }
-        movieRepository.save(movie);
     }
 
     @Override
     public void activateMovie(Long id) {
-        Movie movie = movieRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
-        movie.setIsDeleted(false);
-        movieRepository.save(movie);
+        updateMovieStatus(id, false);
     }
 
     @Override
     public void deactivateMovie(Long id) {
-        Movie movie = movieRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
-        movie.setIsDeleted(true);
-        movieRepository.save(movie);
+        updateMovieStatus(id, true);
     }
 
     @Override
@@ -119,4 +131,36 @@ public class MovieServiceImpl implements MovieService {
         return movieRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
     }
 
+    private void validateImages(MultipartFile movieSmallImgUrl, MultipartFile movieLargeImgUrl, BindingResult bindingResult) {
+        if (movieSmallImgUrl == null || movieSmallImgUrl.isEmpty()) {
+            bindingResult.rejectValue("movieSmallImgUrl", "movie.smallImage.required", "Small image is required");
+        }
+
+        if (movieLargeImgUrl == null || movieLargeImgUrl.isEmpty()) {
+            bindingResult.rejectValue("movieLargeImgUrl", "movie.largeImage.required", "Large image is required");
+        }
+    }
+
+    private void processAndSetImages(Movie movie, MultipartFile movieSmallImgUrl, MultipartFile movieLargeImgUrl) throws IOException {
+        if (movieSmallImgUrl != null && !movieSmallImgUrl.isEmpty()) {
+            movie.setImageSmallUrl(imageUploadService.uploadImage(movieSmallImgUrl));
+        }
+
+        if (movieLargeImgUrl != null && !movieLargeImgUrl.isEmpty()) {
+            movie.setImageLargeUrl(imageUploadService.uploadImage(movieLargeImgUrl));
+        }
+    }
+
+    private void updateMovieStatus(Long id, boolean isDeleted) {
+        if (id == null) {
+            throw new AppException(ErrorCode.MOVIE_NOT_FOUND);
+        }
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
+        if (Objects.equals(movie.getIsDeleted(), isDeleted)) {
+            return;
+        }
+        movie.setIsDeleted(isDeleted);
+        movieRepository.save(movie);
+    }
 }

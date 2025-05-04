@@ -1,11 +1,8 @@
-package com.booking.movieticket.dto.response;
+package com.booking.movieticket.dto.response.admin;
 
-import com.booking.movieticket.entity.Role;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
 
 @Data
 @AllArgsConstructor

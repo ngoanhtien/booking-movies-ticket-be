@@ -2,7 +2,7 @@ package com.booking.movieticket.service;
 
 import com.booking.movieticket.dto.criteria.CategoryCriteria;
 import com.booking.movieticket.dto.request.admin.CategoryRequest;
-import com.booking.movieticket.dto.response.CategoryResponse;
+import com.booking.movieticket.dto.response.admin.CategoryResponse;
 import com.booking.movieticket.entity.Category;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

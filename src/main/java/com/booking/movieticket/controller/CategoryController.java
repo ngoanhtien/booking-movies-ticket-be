@@ -1,6 +1,9 @@
 package com.booking.movieticket.controller;
 
+import com.booking.movieticket.dto.criteria.CategoryCriteria;
+import com.booking.movieticket.dto.request.admin.CategoryRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
+import com.booking.movieticket.dto.response.admin.CategoryResponse;
 import com.booking.movieticket.entity.Category;
 import com.booking.movieticket.service.CategoryService;
 import jakarta.validation.Valid;
@@ -26,11 +29,12 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "*")
 @Validated
 public class CategoryController {
+
     CategoryService categoryService;
 
     @GetMapping("")
     public ResponseEntity<ApiResponse<Page<Category>>> getAllCategories(CategoryCriteria categoryCriteria,
-                                                                        @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+                                                                        @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ApiResponse<>("Categories fetched successfully.", categoryService.getAllCategories(categoryCriteria, pageable)));
     }
@@ -42,7 +46,7 @@ public class CategoryController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(@Valid @RequestBody CategoryRequest categoryRequest) {
-        return ResponseEntity.ok(new ApiResponse<>("Category created successfully.", categoryService.createCategory(categoryRequest)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Category created successfully.", categoryService.createCategory(categoryRequest)));
     }
 
     @PutMapping

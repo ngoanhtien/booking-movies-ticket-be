@@ -3,7 +3,7 @@ package com.booking.movieticket.controller;
 import com.booking.movieticket.dto.request.ResetPasswordRequest;
 import com.booking.movieticket.dto.request.admin.UserRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
-import com.booking.movieticket.dto.response.UserResponse;
+import com.booking.movieticket.dto.response.admin.UserResponse;
 import com.booking.movieticket.dto.criteria.UserCriteria;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.mapper.UserMapper;
