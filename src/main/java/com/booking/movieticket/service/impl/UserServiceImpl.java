@@ -103,6 +103,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User findUser(String email) {
-        return userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_DUPLICATE));
+        return userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
     }
 }
