@@ -1,9 +1,10 @@
+
 spring:
   application: movie-ticket
   datasource:
-    url: jdbc:postgresql://localhost:5432/movie
+    url: jdbc:postgresql://movie-ticket.crm2sq0ssrzj.ap-southeast-2.rds.amazonaws.com/movie
     username: postgres
-    password: 123456
+    password: Anhtien123.
     driver-class-name: org.postgresql.Driver
     hikari:
       pool-name: Hikari
@@ -18,8 +19,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: tien.ngo1@ntq-solution.com.vn
-    password: yyxh vdkc kppf enku
+    username: hieumau.5899@gmail.com
+    password: Thuglife123!@#
     transport:
       protocol: smtp
     properties:
@@ -42,13 +43,13 @@ logging:
     org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
 
 server:
-  port: 8080
+  port: 8081
 
 security:
   jwt:
     secret: Y2JkN2M4NjU3NTM4Y2ZiNDEyMjU5NjM1ZGVhMDIwOGFiMzZiYjY0MTJmMDVlZTY3ZTQyMzZjMTA4YWIxODk3YzI4MTkxNTkzZjFmYmQ5ZGM5MTA1NmVmZjAyODExZTQxMGRlMWI1M2U5MDEzNDY1ZDJhMmZiODhmMDI0MWYyNWQ=
-    # Token is valid 24 hours (86400)
-    token-validity-in-seconds: 2629743
+    # Token is valid 24 hours
+    token-validity-in-seconds: 86400
     token-refresh-in-seconds: 2629743
 
 resetPasswordBody: "Dear {0},\n\nYou have requested to reset your account password using the \"Forgot Password\" feature.\nWe confirm that the password has been successfully changed for the account: {1}.\nIf you did not make this request, please contact us immediately to ensure the security of your account.\n\nThank you for using our services."

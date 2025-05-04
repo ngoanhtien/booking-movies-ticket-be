@@ -9,8 +9,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,14 +24,14 @@ public class AuthController {
     AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest loginRequest) {
+    public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
         LoginResponse loginResponse = authService.login(loginRequest);
-        return ResponseEntity.ok(new ApiResponse<>("Authentication successful", loginResponse));
+        return new ApiResponse<>("Authentication successful", loginResponse);
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<String>> register(@Valid @RequestBody RegisterRequest registerRequest) {
+    public ApiResponse<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
         authService.register(registerRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Registration successful"));
+        return new ApiResponse<>("User registered successfully");
     }
 }

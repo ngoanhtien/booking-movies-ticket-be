@@ -9,8 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -20,10 +18,5 @@ public class CinemaServiceImpl implements CinemaService {
     @Override
     public Cinema findCinema(Long id) {
         return cinemaRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.CINEMA_NOT_FOUND));
-    }
-
-    @Override
-    public List<Cinema> findAllCinema() {
-        return cinemaRepository.findAll();
     }
 }
