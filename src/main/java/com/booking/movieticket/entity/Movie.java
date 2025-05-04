@@ -69,12 +69,19 @@ public class Movie extends BaseEntity {
     private Set<Schedule> schedules;
 
     @ManyToMany
-    @JoinTable(name = "category_movie", joinColumns = @JoinColumn(name = "movie_id", referencedColumnName = "movie_id"), inverseJoinColumns = @JoinColumn(name = "category_id", referencedColumnName = "category_id"))
+    @JoinTable(
+            name = "category_movie",
+            joinColumns = @JoinColumn(name = "movie_id", referencedColumnName = "movie_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id", referencedColumnName = "category_id"))
     private Set<Category> categories = new HashSet<>();
 
     @OneToMany(mappedBy = "movie")
     private Set<Review> reviews = new HashSet<>();
 
-    @OneToMany(mappedBy = "movie")
+    @ManyToMany
+    @JoinTable(
+            name = "actor_movie",
+            joinColumns = @JoinColumn(name = "movie_id", referencedColumnName = "movie_id"),
+            inverseJoinColumns = @JoinColumn(name = "actor_id", referencedColumnName = "actor_id"))
     private Set<Actor> actors = new HashSet<>();
 }

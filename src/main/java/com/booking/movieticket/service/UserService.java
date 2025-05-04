@@ -1,8 +1,7 @@
 package com.booking.movieticket.service;
 
-import com.booking.movieticket.dto.business.UserDTO;
-import com.booking.movieticket.dto.vo.UserCriteria;
 import com.booking.movieticket.dto.response.UserResponse;
+import com.booking.movieticket.dto.vo.UserCriteria;
 import com.booking.movieticket.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

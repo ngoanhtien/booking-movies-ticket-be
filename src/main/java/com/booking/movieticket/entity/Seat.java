@@ -41,17 +41,20 @@ public class Seat extends BaseEntity {
     @Column(name = "type_seat")
     private TypeSeat typeSeat;
 
-    @Column(name = "price_seat")
-    private String priceSeat;
-
-    @OneToMany(mappedBy = "seat")
-    private Set<BillDetail> billDetails = new HashSet<>();
-
     @ManyToOne
     @JoinColumn(name = "room_id", referencedColumnName = "room_id")
     private Room room;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "seat_status_id", referencedColumnName = "seat_status_id")
-    private SeatStatus seatStatus;
+    @OneToMany(mappedBy = "seat")
+    private Set<ShowtimeSeat> showtimeSeats = new HashSet<>();
+
+    public void addShowtimeSeat(ShowtimeSeat showtimeSeat) {
+        showtimeSeats.add(showtimeSeat);
+        showtimeSeat.setSeat(this);
+    }
+
+    public void removeShowtimeSeat(ShowtimeSeat showtimeSeat) {
+        showtimeSeats.remove(showtimeSeat);
+        showtimeSeat.setSeat(null);
+    }
 }

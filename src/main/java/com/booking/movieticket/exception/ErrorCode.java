@@ -55,6 +55,7 @@ public enum ErrorCode {
     MOVIE_NOT_FOUND(1003, "Không tìm thấy phim", HttpStatus.NOT_FOUND),
     CINEMA_NOT_FOUND(1004, "Không tìm thấy rạp phim", HttpStatus.NOT_FOUND),
     ROLE_NOT_FOUND(1005, "Role not found", HttpStatus.NOT_FOUND),
+    SHOWTIME_NOT_FOUND(1006, "Show time not found", HttpStatus.NOT_FOUND),
     //Lỗi ko xác định
     UNCATEGORIZED_EXCEPTION(9999, "Lỗi không xác định.");
 

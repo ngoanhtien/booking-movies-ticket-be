@@ -62,9 +62,6 @@ public class Room extends BaseEntity {
     @Column(name = "double_seat_rows")
     private Integer doubleSeatRowNumbers;
 
-    @Column(name = "is_enabled")
-    private Boolean isEnabled;
-
     @ManyToOne
     @JoinColumn(name = "branch_id", referencedColumnName = "branch_id")
     private Branch branch;

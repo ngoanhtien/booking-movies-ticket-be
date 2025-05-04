@@ -42,7 +42,7 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody UserRequest userRequest,
-                                                                @RequestParam(value = "imageAvatar", required = false) MultipartFile imageAvatar) {
+                                                                @RequestParam(value = "avataUrl", required = false) MultipartFile imageAvatar) {
         return ResponseEntity.ok(new ApiResponse<>("Account created successfully.", userService.saveUser(userMapper.toUser(userRequest), imageAvatar)));
     }
 

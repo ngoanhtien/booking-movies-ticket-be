@@ -32,9 +32,6 @@ public class Schedule extends BaseEntity {
     @Column(name = "schedule_time_start")
     private LocalTime timeStart;
 
-    @Column(name = "price_ticket")
-    private Double price;
-
     @ManyToOne
     @JoinColumn(name = "movie_id", referencedColumnName = "movie_id")
     private Movie movie;

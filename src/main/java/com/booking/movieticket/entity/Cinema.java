@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "cinemas")
 @Getter
@@ -29,6 +32,9 @@ public class Cinema {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "is_enabled")
-    private Boolean isEnabled;
+    @Column(name = "logo_url", columnDefinition = "VARCHAR(1000)")
+    private String logoUrl;
+
+    @OneToMany(mappedBy = "cinema")
+    private Set<Branch> branches = new HashSet<>();
 }

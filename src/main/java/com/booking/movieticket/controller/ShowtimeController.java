@@ -1,6 +1,7 @@
 package com.booking.movieticket.controller;
 
 import com.booking.movieticket.dto.response.ApiResponse;
+import com.booking.movieticket.dto.response.ShowtimeDetailResponse;
 import com.booking.movieticket.dto.response.ShowtimeResponse;
 import com.booking.movieticket.service.ShowtimeService;
 import lombok.AccessLevel;
@@ -64,5 +65,21 @@ public class ShowtimeController {
         List<LocalDate> availableDates = showtimeService.getAvailableDatesByMovie(movieId);
         return ResponseEntity.ok(new ApiResponse<>(
                 "Successfully retrieved available dates for movie", availableDates));
+    }
+
+    /**
+     * Get detailed information for a specific showtime, including seat layout
+     * @param scheduleId ID of the schedule
+     * @param roomId ID of the room
+     * @return API response with detailed showtime information including seat layout
+     */
+    @GetMapping("/{scheduleId}/{roomId}/detail")
+    public ResponseEntity<ApiResponse<?>> getShowtimeDetail(
+            @PathVariable Long scheduleId,
+            @PathVariable Long roomId) {
+        log.info("Fetching detailed information for showtime with scheduleId: {} and roomId: {}", scheduleId, roomId);
+        ShowtimeDetailResponse detailResponse = showtimeService.getShowtimeDetail(scheduleId, roomId);
+        return ResponseEntity.ok(new ApiResponse<>(
+                "Successfully retrieved showtime details", detailResponse));
     }
 }

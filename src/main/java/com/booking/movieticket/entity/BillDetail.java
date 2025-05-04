@@ -1,9 +1,11 @@
 package com.booking.movieticket.entity;
 
 import com.booking.movieticket.entity.base.BaseEntity;
-import com.booking.movieticket.entity.compositekey.BillDetailId;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "bill_detail")
@@ -13,19 +15,15 @@ import lombok.*;
 @AllArgsConstructor
 public class BillDetail extends BaseEntity {
 
-    @EmbeddedId
-    private BillDetailId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    private Long id;
 
     @ManyToOne
-    @JoinColumns({@JoinColumn(name = "schedule_id", referencedColumnName = "schedule_id", insertable = false, updatable = false),
-            @JoinColumn(name = "room_id", referencedColumnName = "room_id", insertable = false, updatable = false)})
-    private Showtime showtime;
-
-    @ManyToOne
-    @JoinColumn(name = "bill_id", insertable = false, updatable = false)
+    @JoinColumn(name = "bill_id")
     private Bill bill;
 
     @ManyToOne
-    @JoinColumn(name = "seat_id", insertable = false, updatable = false)
-    private Seat seat;
+    @JoinColumn(name = "showtime_seat_id")
+    private ShowtimeSeat showtimeSeat;
 }
