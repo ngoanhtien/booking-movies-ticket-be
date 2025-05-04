@@ -29,13 +29,13 @@ public class User extends BaseEntity {
     @SequenceGenerator(name = "sequence_user")
     private Long id;
 
-    @Column(columnDefinition = "VARCHAR(50)")
+    @Column(columnDefinition = "VARCHAR(50)", nullable = false)
     private String username;
 
     @Column(columnDefinition = "VARCHAR(50)")
     private String email;
 
-    @Column(columnDefinition = "VARCHAR(1000)")
+    @Column(columnDefinition = "VARCHAR(1000)", nullable = false)
     private String password;
 
     @Nationalized
