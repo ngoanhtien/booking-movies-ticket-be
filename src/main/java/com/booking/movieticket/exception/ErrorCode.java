@@ -56,7 +56,14 @@ public enum ErrorCode {
     CINEMA_NOT_FOUND(1004, "Không tìm thấy rạp phim", HttpStatus.NOT_FOUND),
     ROLE_NOT_FOUND(1005, "Role not found", HttpStatus.NOT_FOUND),
     SHOWTIME_NOT_FOUND(1006, "Show time not found", HttpStatus.NOT_FOUND),
+    BILL_NOT_FOUND(1007, "Bill not found", HttpStatus.NOT_FOUND),
+    SHOWTIMESEAT_NOT_FOUND(1008, "Show time seat not found", HttpStatus.NOT_FOUND),
+    FOOD_NOT_FOUND(1009, "Food not found", HttpStatus.NOT_FOUND),
+
+
+
     //Lỗi ko xác định
+    BAD_REQUEST(9998, "Bad request", HttpStatus.BAD_REQUEST),
     UNCATEGORIZED_EXCEPTION(9999, "Lỗi không xác định.");
 
     ErrorCode(String message) {

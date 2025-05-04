@@ -1,6 +1,5 @@
 package com.booking.movieticket.security.jwt;
 
-import jakarta.servlet.Filter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,6 +46,8 @@ public class SecurityConfiguration {
                         .requestMatchers("/auth/login").permitAll()
                         .requestMatchers("/auth/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/account/resetPassword").permitAll()
+                        .requestMatchers("/payment/sepay-webhook").permitAll()
+                        .requestMatchers("/foods/**").permitAll()
                         .requestMatchers("/**").authenticated()
                 )
 

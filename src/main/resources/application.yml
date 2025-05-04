@@ -59,3 +59,7 @@ cloudinary:
   api_key: 699739212132192
   api_secret: 8GoUJ59v1jiRXtt6z2-R90vP2sc
   secure: true
+
+sepay:
+  merchant_id: MOVIE_TICKET_MERCHANT
+  callback_url: https://alive-bee-adequately.ngrok-free.app/payment/sepay-webhook
