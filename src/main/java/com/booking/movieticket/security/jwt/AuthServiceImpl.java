@@ -60,13 +60,11 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void register(RegisterRequest registerRequest) {
-        ErrorCode errorCode = null;
-        if (userRepository.existsByUsername(registerRequest.getUsername())) {
-            errorCode = ErrorCode.USER_DUPLICATE;
-            throw new AppException(errorCode);
-        }
         try {
-            Role userRole = roleRepository.findByName(registerRequest.getRole().toString())
+            if (userRepository.existsByUsername(registerRequest.getUsername())) {
+                throw new AppException(ErrorCode.USER_DUPLICATE);
+            }
+            Role userRole = roleRepository.findByName(registerRequest.getRole())
                     .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
             User user = new User();
             user.setUsername(registerRequest.getUsername());
@@ -80,9 +78,7 @@ public class AuthServiceImpl implements AuthService {
 
             userRepository.save(user);
         } catch (AppException e) {
-            throw new AppException(e.getErrorCode());
-        } catch (Exception e) {
-            throw e;
+            throw new RuntimeException(e);
         }
     }
 }
