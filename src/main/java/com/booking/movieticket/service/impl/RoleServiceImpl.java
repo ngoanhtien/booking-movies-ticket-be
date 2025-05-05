@@ -22,6 +22,6 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public Role findRoleById(Long id) {
         return roleRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_DUPLICATE));
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
     }
 }

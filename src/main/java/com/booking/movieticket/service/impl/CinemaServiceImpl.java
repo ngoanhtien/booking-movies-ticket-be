@@ -52,14 +52,15 @@ public class CinemaServiceImpl implements CinemaService {
     }
 
     @Override
-    public CinemaResponse createCinema(CinemaRequest cinemaRequest, MultipartFile cinemaLogoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
-        validateImages(cinemaLogoUrl, bindingResult);
+    public CinemaResponse createCinema(CinemaRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+        validateImages(logoUrl, bindingResult);
         if (bindingResult.hasErrors()) {
             throw new MethodArgumentNotValidException(null, bindingResult);
         }
         try {
             Cinema cinema = cinemaMapper.toCinema(cinemaRequest);
-            processAndSetImages(cinema, cinemaLogoUrl);
+            processAndSetImages(cinema, logoUrl);
+            cinema.setId(null);
             cinema.setIsDeleted(false);
             return cinemaMapper.toCinemaResponse(cinemaRepository.save(cinema));
         } catch (IOException e) {
@@ -68,8 +69,8 @@ public class CinemaServiceImpl implements CinemaService {
     }
 
     @Override
-    public void updateCinema(CinemaRequest cinemaRequest, MultipartFile cinemaLogoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
-        validateImages(cinemaLogoUrl, bindingResult);
+    public void updateCinema(CinemaRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+        validateImages(logoUrl, bindingResult);
         if (bindingResult.hasErrors()) {
             throw new MethodArgumentNotValidException(null, bindingResult);
         }
@@ -80,7 +81,7 @@ public class CinemaServiceImpl implements CinemaService {
             Cinema cinema = cinemaRepository.findById(cinemaRequest.getId())
                     .orElseThrow(() -> new AppException(ErrorCode.CINEMA_NOT_FOUND));
             cinemaMapper.updateCinemaFromRequest(cinemaRequest, cinema);
-            processAndSetImages(cinema, cinemaLogoUrl);
+            processAndSetImages(cinema, logoUrl);
             cinemaRepository.save(cinema);
         } catch (IOException e) {
             throw new AppException(ErrorCode.UPLOAD_IMAGE_FAILED);
@@ -97,15 +98,15 @@ public class CinemaServiceImpl implements CinemaService {
         updateCinemaStatus(id, true);
     }
 
-    private void validateImages(MultipartFile cinemaLogoUrl, BindingResult bindingResult) {
-        if (cinemaLogoUrl == null || cinemaLogoUrl.isEmpty()) {
-            bindingResult.rejectValue("cinemaLogoUrl", "cinema.logoUrl.required", "Logo image is required");
+    private void validateImages(MultipartFile logoUrl, BindingResult bindingResult) {
+        if (logoUrl == null || logoUrl.isEmpty()) {
+            bindingResult.rejectValue("logoUrl", "cinema.logoUrl.required", "Logo image is required");
         }
     }
 
-    private void processAndSetImages(Cinema cinema, MultipartFile cinemaLogoUrl) throws IOException {
-        if (cinemaLogoUrl != null && !cinemaLogoUrl.isEmpty()) {
-            cinema.setLogoUrl(imageUploadService.uploadImage(cinemaLogoUrl));
+    private void processAndSetImages(Cinema cinema, MultipartFile logoUrl) throws IOException {
+        if (logoUrl != null && !logoUrl.isEmpty()) {
+            cinema.setLogoUrl(imageUploadService.uploadImage(logoUrl));
         }
     }
 

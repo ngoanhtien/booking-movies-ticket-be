@@ -18,9 +18,9 @@ public interface MovieService {
 
     Page<Movie> getAllMovies(MovieCriteria movieCriteria, Pageable pageable);
 
-    MovieResponse createMovie(MovieRequest movieRequest, MultipartFile movieSmallImgUrl, MultipartFile movieLargeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
+    MovieResponse createMovie(MovieRequest movieRequest, MultipartFile smallImgUrl, MultipartFile largeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
 
-    void updateMovie(MovieRequest movieRequest, MultipartFile movieSmallImgUrl, MultipartFile movieLargeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
+    void updateMovie(MovieRequest movieRequest, MultipartFile smallImgUrl, MultipartFile largeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
 
     void activateMovie(Long id);
 

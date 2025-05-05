@@ -21,7 +21,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -41,36 +43,36 @@ public class UserController {
     UserMapper userMapper;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<User>>> getAllUsers(UserCriteria userCriteria,
-                                                               @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ApiResponse<>("User list fetched successfully.", userService.findUsers(userCriteria, pageable)));
+    public ResponseEntity<ApiResponse<Page<User>>> getAllUsers(UserCriteria userCriteria, @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("Users fetched successfully.", userService.getAllUsers(userCriteria, pageable)));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<User>> readUser(@PathVariable @Min(value = 1, message = "Id must be greater than or equal to 1.") Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("User details fetched successfully.", userService.findUser(id)));
+        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("User details fetched successfully.", userService.getUserById(id)));
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody UserRequest userRequest,
-                                                                @RequestParam(value = "avataUrl", required = false) MultipartFile imageAvatar) {
-        return ResponseEntity.ok(new ApiResponse<>("User created successfully.", userService.saveUser(userMapper.toUser(userRequest), imageAvatar)));
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody UserRequest userRequest, @RequestParam(value = "avataUrl", required = false) MultipartFile avataUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("User created successfully.", userService.createUser(userRequest, avataUrl, bindingResult)));
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<String>> updateUser(@Valid @RequestBody UserRequest userRequest,
-                                                          @RequestParam(value = "avataUrl", required = false) MultipartFile imageAvatar) {
-        userService.updateUser(userMapper.toUser(userRequest), imageAvatar);
-        return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(new ApiResponse<>("User details fetched successfully."));
+    public ResponseEntity<ApiResponse<String>> updateUser(@Valid @RequestBody UserRequest userRequest, @RequestParam(value = "avataUrl", required = false) MultipartFile avataUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+        userService.updateUser(userRequest, avataUrl, bindingResult);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponse<>("User details fetched successfully."));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<String>> activateUser(@PathVariable @Min(value = 1, message = "Id must be greater than or equal to 1.") Long id) {
+        userService.activateUser(id);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponse<>("User activated successfully."));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteAccount(@PathVariable @Min(value = 1, message = "Id must be greater than or equal to 1.") Long id) {
-        userService.softDeleteUser(id);
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ApiResponse<>("Account status updated successfully."));
+    public ResponseEntity<?> deactivateUser(@PathVariable @Min(value = 1, message = "Id must be greater than or equal to 1.") Long id) {
+        userService.deactivateUser(id);
+        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("User deactivated successfully."));
     }
 
     @PostMapping("/resetPassword")
@@ -83,8 +85,7 @@ public class UserController {
             return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Reset password successful."));
         } catch (Exception e) {
             log.error("Unexpected error during authentication: {}.", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Unexpected error: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Unexpected error: " + e.getMessage()));
         }
     }
 

@@ -46,6 +46,7 @@ public class ActorServiceImpl implements ActorService {
     @Transactional
     public ActorResponse createActor(ActorRequest actorRequest) {
         Actor actor = actorMapper.toActor(actorRequest);
+        actor.setId(null);
         actor.setIsDeleted(false);
         return actorMapper.toActorResponse(actorRepository.save(actor));
     }

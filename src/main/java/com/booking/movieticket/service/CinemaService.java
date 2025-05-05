@@ -16,9 +16,9 @@ public interface CinemaService {
 
     Page<Cinema> getAllCinemas(CinemaCriteria cinemaCriteria, Pageable pageable);
 
-    CinemaResponse createCinema(CinemaRequest cinemaRequest, MultipartFile cinemaLogoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
+    CinemaResponse createCinema(CinemaRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
 
-    void updateCinema(CinemaRequest cinemaRequest, MultipartFile cinemaLogoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
+    void updateCinema(CinemaRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
 
     void activateCinema(Long id);
 

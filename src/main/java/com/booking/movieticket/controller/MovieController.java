@@ -51,19 +51,19 @@ public class MovieController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<MovieResponse>> createMovie(@Valid @RequestBody MovieRequest movieRequest,
-                                                                  @RequestParam(value = "imageSmallUrl", required = false) MultipartFile imageSmallUrl,
-                                                                  @RequestParam(value = "imageLargeUrl", required = false) MultipartFile imageLargeUrl,
+                                                                  @RequestParam(value = "smallImgUrl", required = false) MultipartFile smallImgUrl,
+                                                                  @RequestParam(value = "largeImgUrl", required = false) MultipartFile largeImgUrl,
                                                                   BindingResult bindingResult) throws MethodArgumentNotValidException {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ApiResponse<>("Movie created successfully.", movieService.createMovie(movieRequest, imageSmallUrl, imageLargeUrl, bindingResult)));
+                .body(new ApiResponse<>("Movie created successfully.", movieService.createMovie(movieRequest, smallImgUrl, largeImgUrl, bindingResult)));
     }
 
     @PutMapping
     public ResponseEntity<ApiResponse<String>> updateMovie(@Valid @RequestBody MovieRequest movieRequest,
-                                                           @RequestParam(value = "imageSmallUrl", required = false) MultipartFile imageSmallUrl,
-                                                           @RequestParam(value = "imageLargeUrl", required = false) MultipartFile imageLargeUrl,
+                                                           @RequestParam(value = "smallImgUrl", required = false) MultipartFile smallImgUrl,
+                                                           @RequestParam(value = "largeImgUrl", required = false) MultipartFile largeImgUrl,
                                                            BindingResult bindingResult) throws MethodArgumentNotValidException {
-        movieService.updateMovie(movieRequest, imageSmallUrl, imageLargeUrl, bindingResult);
+        movieService.updateMovie(movieRequest, smallImgUrl, largeImgUrl, bindingResult);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(new ApiResponse<>("Cinema updated successfully."));
     }

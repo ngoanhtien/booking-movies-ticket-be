@@ -52,8 +52,8 @@ public class AuthServiceImpl implements AuthService {
             // Create and return LoginResponse
             return LoginResponse.builder().accessToken(jwt).refreshToken(refreshJwt).build();
         } catch (Exception e) {
-            log.error(ErrorCode.USER_DUPLICATE.getMessage());
-            throw new BadCredentialsException(ErrorCode.USER_DUPLICATE.getMessage());
+            log.error(ErrorCode.USER_ALREADY_EXISTS.getMessage());
+            throw new BadCredentialsException(ErrorCode.USER_ALREADY_EXISTS.getMessage());
         }
     }
 
@@ -62,7 +62,7 @@ public class AuthServiceImpl implements AuthService {
     public void register(RegisterRequest registerRequest) {
         try {
             if (userRepository.existsByUsername(registerRequest.getUsername())) {
-                throw new AppException(ErrorCode.USER_DUPLICATE);
+                throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
             }
             Role userRole = roleRepository.findByName(registerRequest.getRole())
                     .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));

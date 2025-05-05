@@ -59,15 +59,16 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public MovieResponse createMovie(MovieRequest movieRequest, MultipartFile movieSmallImgUrl, MultipartFile movieLargeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
-        validateImages(movieSmallImgUrl, movieLargeImgUrl, bindingResult);
+    public MovieResponse createMovie(MovieRequest movieRequest, MultipartFile smallImgUrl, MultipartFile largeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+        validateImages(smallImgUrl, largeImgUrl, bindingResult);
         if (bindingResult.hasErrors()) {
             throw new MethodArgumentNotValidException(null, bindingResult);
         }
         try {
             Movie movie = movieMapper.toMovie(movieRequest);
             movieMapper.mapRelations(movie, movieRequest, categoryRepository, actorRepository);
-            processAndSetImages(movie, movieSmallImgUrl, movieLargeImgUrl);
+            processAndSetImages(movie, smallImgUrl, largeImgUrl);
+            movie.setId(null);
             movie.setIsDeleted(false);
             return movieMapper.toMovieResponse(movieRepository.save(movie));
         } catch (IOException e) {
@@ -77,8 +78,8 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     @Transactional
-    public void updateMovie(MovieRequest movieRequest, MultipartFile movieSmallImgUrl, MultipartFile movieLargeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
-        validateImages(movieSmallImgUrl, movieLargeImgUrl, bindingResult);
+    public void updateMovie(MovieRequest movieRequest, MultipartFile smallImgUrl, MultipartFile largeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+        validateImages(smallImgUrl, largeImgUrl, bindingResult);
         if (bindingResult.hasErrors()) {
             throw new MethodArgumentNotValidException(null, bindingResult);
         }
@@ -89,7 +90,7 @@ public class MovieServiceImpl implements MovieService {
             Movie movie = movieRepository.findById(movieRequest.getId())
                     .orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
             movieMapper.mapRelations(movie, movieRequest, categoryRepository, actorRepository);
-            processAndSetImages(movie, movieSmallImgUrl, movieLargeImgUrl);
+            processAndSetImages(movie, smallImgUrl, largeImgUrl);
             movieRepository.save(movie);
         } catch (IOException e) {
             throw new AppException(ErrorCode.UPLOAD_IMAGE_FAILED);
@@ -112,7 +113,7 @@ public class MovieServiceImpl implements MovieService {
             return movieRepository.findByStatus(StatusMovie.SHOWING);
         } catch (Exception e) {
             log.error("Error fetching showing movies: {}", e.getMessage());
-            throw new AppException(ErrorCode.USER_DUPLICATE);
+            throw new AppException(ErrorCode.SHOWING_MOVIE_NOT_FOUND);
         }
     }
 
@@ -122,7 +123,7 @@ public class MovieServiceImpl implements MovieService {
             return movieRepository.findByStatus(StatusMovie.UPCOMING);
         } catch (Exception e) {
             log.error("Error fetching upcoming movies: {}", e.getMessage());
-            throw new AppException(ErrorCode.USER_DUPLICATE);
+            throw new AppException(ErrorCode.UPCOMING_MOVIE_NOT_FOUND);
         }
     }
 
@@ -131,23 +132,23 @@ public class MovieServiceImpl implements MovieService {
         return movieRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
     }
 
-    private void validateImages(MultipartFile movieSmallImgUrl, MultipartFile movieLargeImgUrl, BindingResult bindingResult) {
-        if (movieSmallImgUrl == null || movieSmallImgUrl.isEmpty()) {
-            bindingResult.rejectValue("movieSmallImgUrl", "movie.smallImage.required", "Small image is required");
+    private void validateImages(MultipartFile smallImgUrl, MultipartFile largeImgUrl, BindingResult bindingResult) {
+        if (smallImgUrl == null || smallImgUrl.isEmpty()) {
+            bindingResult.rejectValue("smallImgUrl", "movie.smallImage.required", "Small image is required");
         }
 
-        if (movieLargeImgUrl == null || movieLargeImgUrl.isEmpty()) {
-            bindingResult.rejectValue("movieLargeImgUrl", "movie.largeImage.required", "Large image is required");
+        if (largeImgUrl == null || largeImgUrl.isEmpty()) {
+            bindingResult.rejectValue("largeImgUrl", "movie.largeImage.required", "Large image is required");
         }
     }
 
-    private void processAndSetImages(Movie movie, MultipartFile movieSmallImgUrl, MultipartFile movieLargeImgUrl) throws IOException {
-        if (movieSmallImgUrl != null && !movieSmallImgUrl.isEmpty()) {
-            movie.setImageSmallUrl(imageUploadService.uploadImage(movieSmallImgUrl));
+    private void processAndSetImages(Movie movie, MultipartFile smallImgUrl, MultipartFile largeImgUrl) throws IOException {
+        if (smallImgUrl != null && !smallImgUrl.isEmpty()) {
+            movie.setImageSmallUrl(imageUploadService.uploadImage(smallImgUrl));
         }
 
-        if (movieLargeImgUrl != null && !movieLargeImgUrl.isEmpty()) {
-            movie.setImageLargeUrl(imageUploadService.uploadImage(movieLargeImgUrl));
+        if (largeImgUrl != null && !largeImgUrl.isEmpty()) {
+            movie.setImageLargeUrl(imageUploadService.uploadImage(largeImgUrl));
         }
     }
 
