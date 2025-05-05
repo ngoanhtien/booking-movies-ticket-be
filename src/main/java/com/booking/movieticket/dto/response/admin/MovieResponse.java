@@ -25,8 +25,6 @@ public class MovieResponse {
     private String language;
     private String trailerUrl;
     private StatusMovie status;
-    private String imageSmallUrl;
-    private String imageLargeUrl;
     private Set<Category> categories = new HashSet<>();
     private Set<Actor> actors = new HashSet<>();
 }

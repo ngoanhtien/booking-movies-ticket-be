@@ -23,7 +23,4 @@ public class CinemaRequest {
     private String hotline;
 
     private String description;
-
-    private String logoUrl;
-
 }

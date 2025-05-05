@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/account")
+@RequestMapping("/user")
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @Slf4j
@@ -39,8 +39,6 @@ public class UserController {
     UserService userService;
 
     MailSendService mailSendService;
-
-    UserMapper userMapper;
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<User>>> getAllUsers(UserCriteria userCriteria, @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -53,13 +51,13 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody UserRequest userRequest, @RequestParam(value = "avataUrl", required = false) MultipartFile avataUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("User created successfully.", userService.createUser(userRequest, avataUrl, bindingResult)));
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestPart("userRequestData") UserRequest userRequest, @RequestPart(value = "avatarUrl", required = false) MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("User created successfully.", userService.createUser(userRequest, avatarUrl, bindingResult)));
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<String>> updateUser(@Valid @RequestBody UserRequest userRequest, @RequestParam(value = "avataUrl", required = false) MultipartFile avataUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
-        userService.updateUser(userRequest, avataUrl, bindingResult);
+    public ResponseEntity<ApiResponse<String>> updateUser(@Valid @RequestPart("userRequestData") UserRequest userRequest, @RequestPart(value = "avatarUrl", required = false) MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+        userService.updateUser(userRequest, avatarUrl, bindingResult);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponse<>("User details fetched successfully."));
     }
 

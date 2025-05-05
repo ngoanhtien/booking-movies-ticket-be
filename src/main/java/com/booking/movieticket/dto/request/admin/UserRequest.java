@@ -5,7 +5,6 @@ import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.validator.constraints.URL;
 
 import java.time.LocalDate;
 
@@ -32,8 +31,6 @@ public class UserRequest {
     @NotBlank(message = "Phone number must not be blank.")
     @Pattern(regexp = "^\\+?[0-9. ()-]{7,25}$", message = "Invalid phone number format.")
     private String phone;
-
-    private String avatarUrl;
 
     private String signupDevice;
 

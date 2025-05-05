@@ -1,9 +1,10 @@
 spring:
-  application: movie-ticket
+  application:
+    name: movie-ticket
   datasource:
     url: jdbc:postgresql://movie-ticket.crm2sq0ssrzj.ap-southeast-2.rds.amazonaws.com/movie
     username: postgres
-    password: AnhTien123.
+    password: Anhtien123.
     driver-class-name: org.postgresql.Driver
     hikari:
       pool-name: Hikari
@@ -15,6 +16,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
   mail:
     host: smtp.gmail.com
     port: 587

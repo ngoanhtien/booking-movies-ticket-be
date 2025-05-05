@@ -6,5 +6,4 @@ public class CinemaResponse {
     private String name;
     private String hotline;
     private String description;
-    private String logoUrl;
 }

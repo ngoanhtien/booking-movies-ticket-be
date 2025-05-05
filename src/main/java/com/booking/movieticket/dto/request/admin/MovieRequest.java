@@ -58,10 +58,6 @@ public class MovieRequest {
     @NotNull(message = "Movie status must not be null.")
     private StatusMovie status;
 
-    private String imageSmallUrl;
-    
-    private String imageLargeUrl;
-
     @NotEmpty(message = "At least one category must be selected.")
     private Set<Long> categoryIds;
 
