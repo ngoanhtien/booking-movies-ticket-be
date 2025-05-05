@@ -1,6 +1,6 @@
 package com.booking.movieticket.repository.specification;
 
-import com.booking.movieticket.dto.vo.UserCriteria;
+import com.booking.movieticket.dto.criteria.UserCriteria;
 import com.booking.movieticket.entity.User;
 import org.springframework.data.jpa.domain.Specification;
 

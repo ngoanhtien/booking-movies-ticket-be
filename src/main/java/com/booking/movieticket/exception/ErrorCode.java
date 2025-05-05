@@ -49,11 +49,13 @@ public enum ErrorCode {
 //    USERNAME_INVALID(1046, "Tên người dùng phải ít nhất 5} ký tự", HttpStatus.BAD_REQUEST),
 //    INVALID_KEY(1047, "Invalid message key", HttpStatus.BAD_REQUEST);
 
-    USER_NOT_FOUND(1000, "User không tìm thấy"),
-    USER_DUPLICATE(1001, "User đã tồn tại"),
-    REGISTER_FAILED(1002, "Đăng ký thất bại",HttpStatus.INTERNAL_SERVER_ERROR),
-    MOVIE_NOT_FOUND(1003, "Không tìm thấy phim", HttpStatus.NOT_FOUND),
+    REGISTER_FAILED(1002, "Đăng ký thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    ACTOR_NOT_FOUND(1009, "Không tìm thấy category", HttpStatus.NOT_FOUND),
+    CATEGORY_NOT_FOUND(1009, "Không tìm thấy category", HttpStatus.NOT_FOUND),
     CINEMA_NOT_FOUND(1004, "Không tìm thấy rạp phim", HttpStatus.NOT_FOUND),
+    MOVIE_NOT_FOUND(1003, "Không tìm thấy phim", HttpStatus.NOT_FOUND),
+    MOVIE_IMAGE_UPLOAD_FAILED(1008, "Up ảnh fail", HttpStatus.INTERNAL_SERVER_ERROR),
     ROLE_NOT_FOUND(1005, "Role not found", HttpStatus.NOT_FOUND),
     SHOWTIME_NOT_FOUND(1006, "Show time not found", HttpStatus.NOT_FOUND),
     BILL_NOT_FOUND(1007, "Bill not found", HttpStatus.NOT_FOUND),
@@ -62,6 +64,10 @@ public enum ErrorCode {
 
 
 
+    USER_NOT_FOUND(1000, "User không tìm thấy"),
+    USER_DUPLICATE(1001, "User đã tồn tại"),
+
+    UPLOAD_IMAGE_FAILED(1999, "Upload images cannot empty or null."),
     //Lỗi ko xác định
     BAD_REQUEST(9998, "Bad request", HttpStatus.BAD_REQUEST),
     UNCATEGORIZED_EXCEPTION(9999, "Lỗi không xác định.");

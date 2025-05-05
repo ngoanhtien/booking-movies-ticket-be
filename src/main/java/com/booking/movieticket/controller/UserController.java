@@ -1,10 +1,10 @@
 package com.booking.movieticket.controller;
 
 import com.booking.movieticket.dto.request.ResetPasswordRequest;
-import com.booking.movieticket.dto.request.UserRequest;
+import com.booking.movieticket.dto.request.admin.UserRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
-import com.booking.movieticket.dto.response.UserResponse;
-import com.booking.movieticket.dto.vo.UserCriteria;
+import com.booking.movieticket.dto.response.admin.UserResponse;
+import com.booking.movieticket.dto.criteria.UserCriteria;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.mapper.UserMapper;
 import com.booking.movieticket.service.MailSendService;
@@ -40,15 +40,9 @@ public class UserController {
 
     UserMapper userMapper;
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody UserRequest userRequest,
-                                                                @RequestParam(value = "avataUrl", required = false) MultipartFile imageAvatar) {
-        return ResponseEntity.ok(new ApiResponse<>("Account created successfully.", userService.saveUser(userMapper.toUser(userRequest), imageAvatar)));
-    }
-
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<User>>> readUsers(UserCriteria userCriteria,
-                                                             @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+    public ResponseEntity<ApiResponse<Page<User>>> getAllUsers(UserCriteria userCriteria,
+                                                               @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ApiResponse<>("User list fetched successfully.", userService.findUsers(userCriteria, pageable)));
     }
@@ -56,6 +50,12 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<User>> readUser(@PathVariable @Min(value = 1, message = "Id must be greater than or equal to 1.") Long id) {
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("User details fetched successfully.", userService.findUser(id)));
+    }
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody UserRequest userRequest,
+                                                                @RequestParam(value = "avataUrl", required = false) MultipartFile imageAvatar) {
+        return ResponseEntity.ok(new ApiResponse<>("User created successfully.", userService.saveUser(userMapper.toUser(userRequest), imageAvatar)));
     }
 
     @PutMapping

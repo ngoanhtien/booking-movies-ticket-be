@@ -1,4 +1,4 @@
-package com.booking.movieticket.dto.request;
+package com.booking.movieticket.dto.request.admin;
 
 import com.booking.movieticket.entity.enums.MembershipLevel;
 import jakarta.validation.constraints.*;
@@ -33,7 +33,7 @@ public class UserRequest {
     @Pattern(regexp = "^\\+?[0-9. ()-]{7,25}$", message = "Invalid phone number format.")
     private String phone;
 
-    @URL(message = "Invalid phone number format.")
+    @URL(message = "Avatar URL must be valid.")
     private String avatarUrl;
 
     private String signupDevice;
