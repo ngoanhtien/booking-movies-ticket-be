@@ -13,7 +13,6 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface CategoryMapper {
 
-    @Mapping(target = "movies", ignore = true)
     Category toCategory(CategoryRequest request);
 
     void updateCategoryFromRequest(CategoryRequest request, @MappingTarget Category category);

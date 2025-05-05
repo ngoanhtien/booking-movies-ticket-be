@@ -18,7 +18,7 @@ public abstract class UserMapper {
 
     public abstract User toUser(UserRequest request);
 
-    public abstract void updateUserFromRequest(UserRequest request, User user);
+    public abstract void updateUserFromRequest(UserRequest request, @MappingTarget User user);
 
     public abstract UserResponse toUserResponse(User user);
 

@@ -9,7 +9,6 @@ import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
 public interface ActorMapper {
-    @Mapping(target = "movies", ignore = true)
     Actor toActor(ActorRequest request);
 
     void updateActorFromRequest(ActorRequest request, @MappingTarget Actor actor);

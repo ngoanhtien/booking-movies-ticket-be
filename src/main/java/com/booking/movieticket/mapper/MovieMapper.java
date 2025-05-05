@@ -18,10 +18,6 @@ import java.util.Set;
 @Mapper(componentModel = "spring", uses = {CategoryMapper.class, ActorMapper.class})
 public interface MovieMapper {
 
-    @Mapping(target = "categories", ignore = true)
-    @Mapping(target = "actors", ignore = true)
-    @Mapping(target = "schedules", ignore = true)
-    @Mapping(target = "reviews", ignore = true)
     Movie toMovie(MovieRequest movieRequest);
 
     @AfterMapping
@@ -51,7 +47,5 @@ public interface MovieMapper {
         }
     }
 
-    @Mapping(target = "categories", source = "categories")
-    @Mapping(target = "actors", source = "actors")
     MovieResponse toMovieResponse(Movie movie);
 }

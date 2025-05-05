@@ -3,9 +3,7 @@ package com.booking.movieticket.service.impl;
 import com.booking.movieticket.dto.criteria.CinemaCriteria;
 import com.booking.movieticket.dto.request.admin.CinemaRequest;
 import com.booking.movieticket.dto.response.admin.CinemaResponse;
-import com.booking.movieticket.entity.Actor;
 import com.booking.movieticket.entity.Cinema;
-import com.booking.movieticket.entity.Movie;
 import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.exception.ErrorCode;
 import com.booking.movieticket.mapper.CinemaMapper;
@@ -26,7 +24,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Objects;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
