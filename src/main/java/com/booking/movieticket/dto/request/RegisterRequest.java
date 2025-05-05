@@ -1,5 +1,6 @@
 package com.booking.movieticket.dto.request;
 
+import com.booking.movieticket.entity.enums.Role;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -17,8 +18,5 @@ public class RegisterRequest {
     @Size(min = 6, max = 100, message = "Password must be between 6 and 100 characters")
     private String password;
 
-    @Size(min = 3, max = 100, message = "Full name must be between 3 and 100 characters")
-    private String fullname;
-
-    private String role;
+    private Role role;
 }

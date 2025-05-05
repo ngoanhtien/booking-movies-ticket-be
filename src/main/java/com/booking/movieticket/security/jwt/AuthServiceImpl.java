@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class AuthServiceImpl implements AuthService {
 
     private final TokenProvider tokenProvider;
@@ -35,7 +36,6 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    @Transactional
     public LoginResponse login(LoginRequest loginRequest) {
         try {
             // Create authentication token
@@ -58,22 +58,16 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional
     public void register(RegisterRequest registerRequest) {
         try {
             if (userRepository.existsByUsername(registerRequest.getUsername())) {
                 throw new AppException(ErrorCode.USER_DUPLICATE);
             }
-            Role userRole = roleRepository.findByName(registerRequest.getRole())
+            Role userRole = roleRepository.findByName(registerRequest.getRole().name())
                     .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
             User user = new User();
             user.setUsername(registerRequest.getUsername());
             user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-            user.setFullname(registerRequest.getFullname());
-            user.setMembershipLevel(MembershipLevel.BASIC);
-            user.setIsConfirmed(false);
-            user.setIsDeleted(false);
-            user.setSignupDevice(SignupDevice.NORMAL);
             user.setRole(userRole);
 
             userRepository.save(user);
