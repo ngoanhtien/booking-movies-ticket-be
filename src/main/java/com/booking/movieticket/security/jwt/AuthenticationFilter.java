@@ -30,7 +30,8 @@ public class AuthenticationFilter extends OncePerRequestFilter {
     private final List<String> publicPaths = Arrays.asList(
             "/auth/login",
             "/auth/register",
-            "/account/resetPassword"
+            "/account/resetPassword",
+            "/payment/sepay-webhook"
     );
 
     public AuthenticationFilter(TokenProvider tokenProvider) {

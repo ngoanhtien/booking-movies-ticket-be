@@ -1,13 +1,12 @@
 package com.booking.movieticket.mapper;
 
-import com.booking.movieticket.dto.request.UserRequest;
-import com.booking.movieticket.dto.response.UserResponse;
+import com.booking.movieticket.dto.request.admin.UserRequest;
+import com.booking.movieticket.dto.response.admin.UserResponse;
 import com.booking.movieticket.entity.Role;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.service.RoleService;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -18,6 +17,8 @@ public abstract class UserMapper {
     protected RoleService roleService;
 
     public abstract User toUser(UserRequest request);
+
+    public abstract void updateUserFromRequest(UserRequest request, @MappingTarget User user);
 
     public abstract UserResponse toUserResponse(User user);
 

@@ -1,9 +1,9 @@
 spring:
   application: movie-ticket
   datasource:
-    url: jdbc:postgresql://localhost:5432/movie
+    url: jdbc:postgresql://movie-ticket.crm2sq0ssrzj.ap-southeast-2.rds.amazonaws.com/movie
     username: postgres
-    password: 123456
+    password: AnhTien123.
     driver-class-name: org.postgresql.Driver
     hikari:
       pool-name: Hikari
@@ -59,3 +59,7 @@ cloudinary:
   api_key: 699739212132192
   api_secret: 8GoUJ59v1jiRXtt6z2-R90vP2sc
   secure: true
+
+sepay:
+  merchant_id: MOVIE_TICKET_MERCHANT
+  callback_url: https://alive-bee-adequately.ngrok-free.app/payment/sepay-webhook

@@ -51,8 +51,8 @@ public class Bill extends BaseEntity {
         billDetail.setBill(this);
     }
 
-    public void removeBillDetail(BillDetail billDetail) {
-        billDetails.remove(billDetail);
-        billDetail.setBill(null);
+    public void addBillFood(BillFood billFood) {
+        billFoods.add(billFood);
+        billFood.setBill(this);
     }
 }
