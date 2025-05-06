@@ -7,6 +7,7 @@ import Login from './pages/auth/Login';
 import Dashboard from './pages/dashboard/Dashboard';
 import MovieManagement from './pages/movies/MovieManagement';
 import ShowtimeManagement from './pages/showtimes/ShowtimeManagement';
+import UserManagement from './pages/users/UserManagement';
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
@@ -27,6 +28,7 @@ const AppRoutes: React.FC = () => {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="movies" element={<MovieManagement />} />
         <Route path="showtimes" element={<ShowtimeManagement />} />
+        <Route path="users" element={<UserManagement />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>

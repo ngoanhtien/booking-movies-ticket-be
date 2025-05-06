@@ -69,11 +69,43 @@
   },
   "users": {
     "title": "Quản lý người dùng",
+    "addUser": "Thêm người dùng mới",
+    "editUser": "Chỉnh sửa người dùng",
+    "export": "Xuất dữ liệu",
+    "exportSuccess": "Xuất dữ liệu thành công",
+    "exportError": "Lỗi khi xuất dữ liệu",
     "id": "ID",
-    "name": "Tên",
+    "username": "Tên đăng nhập",
     "email": "Email",
+    "fullName": "Họ và tên",
+    "phone": "Số điện thoại",
+    "membershipLevel": "Cấp độ thành viên",
     "role": "Vai trò",
-    "status": "Trạng thái"
+    "roles": {
+      "user": "Người dùng",
+      "admin": "Quản trị viên"
+    },
+    "membershipLevels": {
+      "bronze": "Đồng",
+      "silver": "Bạc",
+      "gold": "Vàng",
+      "platinum": "Bạch kim"
+    },
+    "status": "Trạng thái",
+    "avatar": "Ảnh đại diện",
+    "validation": {
+      "usernameRequired": "Vui lòng nhập tên đăng nhập",
+      "usernameMin": "Tên đăng nhập phải có ít nhất 3 ký tự",
+      "usernameMax": "Tên đăng nhập không được vượt quá 50 ký tự",
+      "emailRequired": "Vui lòng nhập email",
+      "emailInvalid": "Email không hợp lệ",
+      "fullNameRequired": "Vui lòng nhập họ và tên",
+      "phoneRequired": "Vui lòng nhập số điện thoại",
+      "phoneInvalid": "Số điện thoại không hợp lệ",
+      "membershipLevelRequired": "Vui lòng chọn cấp độ thành viên",
+      "roleRequired": "Vui lòng chọn vai trò",
+      "statusRequired": "Vui lòng chọn trạng thái"
+    }
   },
   "bookings": {
     "title": "Quản lý đặt vé",
@@ -96,6 +128,7 @@
     "email": "Email không hợp lệ",
     "minLength": "{{field}} phải có ít nhất {{min}} ký tự",
     "maxLength": "{{field}} không được vượt quá {{max}} ký tự",
-    "url": "URL không hợp lệ"
+    "url": "URL không hợp lệ",
+    "phone": "Số điện thoại không hợp lệ"
   }
 } 

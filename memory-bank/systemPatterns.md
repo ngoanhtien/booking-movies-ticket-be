@@ -95,12 +95,12 @@ The system follows a modern React application architecture with TypeScript, focu
 
 ## Critical Implementation Paths
 
-### 1. Movie Management
+### 1. User Management
 - DataGrid implementation
 - Form validation
-- Image handling
+- Avatar handling
 - Status management
-- Date handling
+- Search and filtering
 - Vietnamese translations
 
 ### 2. Translation Management
@@ -132,14 +132,16 @@ Layout
     │   └── MovieForm
     ├── ShowtimeManagement (Vietnamese)
     ├── UserManagement (Vietnamese)
+    │   ├── UserList
+    │   └── UserForm
     └── BookingManagement (Vietnamese)
 ```
 
 ### 2. Component Dependencies
 - Layout → Sidebar, Header, Content
-- MovieManagement → MovieList, MovieForm
-- MovieForm → FormFields, ImageUpload
-- MovieList → DataGrid, StatusIndicator
+- UserManagement → UserList, UserForm
+- UserForm → FormFields, ImageUpload
+- UserList → DataGrid, StatusIndicator
 - All components → TranslationProvider
 
 ## Implementation Guidelines

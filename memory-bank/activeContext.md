@@ -1,117 +1,111 @@
 # Active Context
 
 ## Current Focus
-- Vietnamese Language Implementation
-  - Created Vietnamese translation file
-  - Set up i18n configuration
-  - Updated all components to use translations
-  - Implemented Vietnamese date formatting
-  - Added Vietnamese validation messages
-  - Updated UI text to Vietnamese
+- Implementation of User Management Interface
+  - User list display with DataGrid
+  - User form for create/edit operations
+  - Avatar upload functionality
+  - Search and filtering capabilities
+  - Vietnamese translations for user fields
+  - Form validation with Yup
+  - Status and membership level management
 
 ## Recent Changes
-1. Translation Implementation
-   - Created translation.json with Vietnamese text
-   - Set up i18n configuration with Vietnamese as default
-   - Updated Layout component with Vietnamese menu items
-   - Updated Dashboard with Vietnamese statistics
-   - Updated Movie Management with Vietnamese labels
-   - Updated Login page with Vietnamese text
-   - Added Vietnamese validation messages
-
-2. Component Updates
-   - All components now use useTranslation hook
-   - Form validation messages in Vietnamese
-   - Status indicators in Vietnamese
-   - Button labels in Vietnamese
-   - Error messages in Vietnamese
+- Implemented User Management component with DataGrid
+- Added Vietnamese translations for user fields
+- Implemented status and membership level management
+- Added avatar upload functionality with preview
+- Implemented search and filtering functionality
+- Added form validation with Yup
+- Integrated with backend API for CRUD operations
 
 ## Next Steps
-1. Complete Translation Coverage
-   - Add missing translations
-   - Review all UI text
-   - Ensure consistent terminology
-   - Add Vietnamese date formatting
-   - Add Vietnamese number formatting
-
-2. Frontend Enhancement
-   - Optimize translation loading
-   - Add translation caching
-   - Improve error handling
-   - Enhance user feedback
-   - Add loading states
+- Add export functionality for user data
+- Implement user role management
+- Add bulk actions for selected users
+- Enhance error handling and feedback
+- Add user activity logs
+- Implement user statistics dashboard
 
 ## Active Decisions
 1. UI/UX Patterns
-   - Using Material-UI DataGrid with Vietnamese headers
-   - Formik + Yup with Vietnamese validation
-   - Consistent form layout and validation patterns
-   - Status indicators with Vietnamese text
-   - Vietnamese language for all user-facing text
+   - Using Material-UI DataGrid for user list
+   - Formik with Yup for form validation
+   - Avatar upload with preview
+   - Search and filter in Vietnamese
+   - Responsive grid layout
+   - Status indicators
 
 2. Technical Patterns
-   - i18next for translation management
-   - Vietnamese as default language
-   - Translation keys organized by feature
-   - Consistent translation key naming
-   - Vietnamese date formatting
+   - TypeScript interfaces for type safety
+   - Form validation with Yup
+   - File upload handling
+   - API integration with axios
+   - Vietnamese translations
+   - Error handling patterns
 
 ## Important Patterns
-1. Translation Management
-   - Centralized translation file
-   - Feature-based organization
-   - Consistent key naming
-   - Vietnamese validation messages
-   - Vietnamese error handling
+1. User Management
+   - CRUD operations
+   - Avatar handling
+   - Status management
+   - Membership levels
+   - Search and filtering
+   - Form validation
 
 2. Data Display
-   - Vietnamese column headers
-   - Vietnamese status indicators
-   - Vietnamese form labels
-   - Vietnamese button text
-   - Vietnamese error messages
+   - DataGrid implementation
+   - Status indicators
+   - Avatar display
+   - Vietnamese labels
+   - Responsive layout
+   - Loading states
 
 ## Project Insights
 1. Development Efficiency
-   - i18next simplifies translation management
-   - Vietnamese translations improve user experience
-   - Consistent translation patterns
-   - Centralized translation file
-   - Easy to maintain and update
+   - Reusable components
+   - Type safety with TypeScript
+   - Consistent validation patterns
+   - Vietnamese language support
+   - API integration patterns
 
 2. Areas for Improvement
-   - Need to add missing translations
-   - Optimize translation loading
-   - Add translation caching
-   - Improve error handling
-   - Enhance user feedback
+   - Export functionality needed
+   - Role management pending
+   - Bulk actions needed
+   - Activity logging needed
+   - Statistics dashboard needed
 
 ## Current Considerations
 1. Technical
-   - Translation management strategy
-   - Date formatting for Vietnamese locale
-   - Number formatting for Vietnamese locale
-   - Error message translations
-   - Loading state translations
+   - API integration strategy
+   - File upload handling
+   - Type safety
+   - Performance optimization
+   - Error handling
+   - Vietnamese support
 
 2. UX
-   - Consistent Vietnamese terminology
-   - Clear error messages in Vietnamese
-   - Intuitive Vietnamese labels
-   - Proper Vietnamese formatting
-   - Smooth translation loading
+   - User feedback
+   - Loading states
+   - Error messages
+   - Form validation
+   - Search experience
+   - Mobile responsiveness
 
 ## Learnings
 1. Technical
-   - i18next configuration
-   - Translation key organization
-   - Vietnamese date formatting
-   - Vietnamese number formatting
-   - Translation caching
+   - DataGrid implementation
+   - Form validation patterns
+   - File upload handling
+   - API integration
+   - Type safety
+   - Vietnamese translations
 
-2. Process
-   - Translation management
-   - Error handling
-   - User feedback
+2. UX
+   - User feedback patterns
+   - Form validation UX
+   - Search and filter UX
+   - Mobile responsiveness
    - Loading states
-   - Performance optimization 
+   - Error handling 
