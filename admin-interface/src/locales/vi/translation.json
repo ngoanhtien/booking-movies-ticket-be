@@ -1,0 +1,101 @@
+{
+  "common": {
+    "dashboard": "Bảng điều khiển",
+    "movies": "Phim",
+    "showtimes": "Lịch chiếu",
+    "users": "Người dùng",
+    "bookings": "Đặt vé",
+    "logout": "Đăng xuất",
+    "adminPanel": "Bảng quản trị",
+    "actions": "Thao tác",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "add": "Thêm mới",
+    "status": "Trạng thái",
+    "active": "Hoạt động",
+    "inactive": "Không hoạt động",
+    "comingSoon": "Sắp ra mắt..."
+  },
+  "dashboard": {
+    "title": "Bảng điều khiển",
+    "totalMovies": "Tổng số phim",
+    "totalShowtimes": "Tổng số lịch chiếu",
+    "totalUsers": "Tổng số người dùng",
+    "totalBookings": "Tổng số đặt vé"
+  },
+  "movies": {
+    "title": "Quản lý phim",
+    "addMovie": "Thêm phim mới",
+    "editMovie": "Chỉnh sửa phim",
+    "id": "ID",
+    "title": "Tên phim",
+    "description": "Mô tả",
+    "duration": "Thời lượng (phút)",
+    "releaseDate": "Ngày phát hành",
+    "poster": "Áp phích",
+    "trailer": "Trailer",
+    "language": "Ngôn ngữ",
+    "categories": "Thể loại",
+    "actors": "Diễn viên"
+  },
+  "showtimes": {
+    "title": "Quản lý lịch chiếu",
+    "addShowtime": "Thêm lịch chiếu mới",
+    "editShowtime": "Chỉnh sửa lịch chiếu",
+    "id": "ID",
+    "movie": "Phim",
+    "cinema": "Rạp chiếu",
+    "room": "Phòng chiếu",
+    "date": "Ngày chiếu",
+    "time": "Giờ chiếu",
+    "price": "Giá vé",
+    "status": "Trạng thái",
+    "selectMovie": "Chọn phim",
+    "selectCinema": "Chọn rạp chiếu",
+    "selectRoom": "Chọn phòng chiếu",
+    "enterPrice": "Nhập giá vé",
+    "validation": {
+      "movieRequired": "Vui lòng chọn phim",
+      "cinemaRequired": "Vui lòng chọn rạp chiếu",
+      "roomRequired": "Vui lòng chọn phòng chiếu",
+      "dateRequired": "Vui lòng chọn ngày chiếu",
+      "timeRequired": "Vui lòng chọn giờ chiếu",
+      "priceRequired": "Vui lòng nhập giá vé",
+      "priceMin": "Giá vé phải lớn hơn 0",
+      "statusRequired": "Vui lòng chọn trạng thái"
+    }
+  },
+  "users": {
+    "title": "Quản lý người dùng",
+    "id": "ID",
+    "name": "Tên",
+    "email": "Email",
+    "role": "Vai trò",
+    "status": "Trạng thái"
+  },
+  "bookings": {
+    "title": "Quản lý đặt vé",
+    "id": "ID",
+    "user": "Người đặt",
+    "showtime": "Lịch chiếu",
+    "seats": "Ghế",
+    "total": "Tổng tiền",
+    "status": "Trạng thái"
+  },
+  "auth": {
+    "login": "Đăng nhập",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "signIn": "Đăng nhập",
+    "signingIn": "Đang đăng nhập..."
+  },
+  "validation": {
+    "required": "{{field}} là bắt buộc",
+    "email": "Email không hợp lệ",
+    "minLength": "{{field}} phải có ít nhất {{min}} ký tự",
+    "maxLength": "{{field}} không được vượt quá {{max}} ký tự",
+    "url": "URL không hợp lệ"
+  }
+} 
