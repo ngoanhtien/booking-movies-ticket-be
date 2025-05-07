@@ -1,69 +1,66 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
-  TextField,
   Button,
-  Typography,
   Container,
+  TextField,
+  Typography,
+  Paper,
   Alert,
+  CircularProgress,
 } from '@mui/material';
-import { useFormik } from 'formik';
-import * as yup from 'yup';
 import { useTranslation } from 'react-i18next';
-import { RootState } from '../../store';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { loginStart, loginSuccess, loginFailure } from '../../store/slices/authSlice';
+import axios from 'axios';
 
 const Login: React.FC = () => {
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
   const { t } = useTranslation();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { loading, error } = useSelector((state: any) => state.auth);
 
-  const validationSchema = yup.object({
-    email: yup
-      .string()
-      .email(t('validation.email'))
-      .required(t('validation.required', { field: t('auth.email') })),
-    password: yup
-      .string()
-      .min(8, t('validation.minLength', { field: t('auth.password'), min: 8 }))
-      .required(t('validation.required', { field: t('auth.password') })),
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
   });
 
-  const formik = useFormik({
-    initialValues: {
-      email: '',
-      password: '',
-    },
-    validationSchema: validationSchema,
-    onSubmit: async (values) => {
-      try {
-        dispatch(loginStart());
-        // TODO: Replace with actual API call
-        const response = await fetch('http://localhost:8080/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(values),
-        });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
 
-        if (!response.ok) {
-          throw new Error('Invalid credentials');
-        }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    dispatch(loginStart());
 
-        const data = await response.json();
-        dispatch(loginSuccess(data));
-        navigate('/dashboard');
-      } catch (err) {
-        dispatch(loginFailure(err instanceof Error ? err.message : 'Login failed'));
-      }
-    },
-  });
+    try {
+      const response = await axios.post('/auth/login', {
+        ...formData,
+        role: 'ADMIN',
+      });
+
+      const { accessToken, refreshToken } = response.data.data;
+      
+      // Store tokens
+      localStorage.setItem('token', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+
+      // Set default authorization header
+      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+
+      // Get user info
+      const userResponse = await axios.get('/api/users/me');
+      
+      dispatch(loginSuccess({ user: userResponse.data.data, token: accessToken }));
+      navigate('/admin/dashboard');
+    } catch (err: any) {
+      dispatch(loginFailure(err.response?.data?.message || 'Login failed'));
+    }
+  };
 
   return (
     <Container component="main" maxWidth="xs">
@@ -75,52 +72,62 @@ const Login: React.FC = () => {
           alignItems: 'center',
         }}
       >
-        <Card sx={{ width: '100%' }}>
-          <CardContent>
-            <Typography component="h1" variant="h5" align="center" gutterBottom>
-              {t('auth.login')}
-            </Typography>
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </Alert>
-            )}
-            <form onSubmit={formik.handleSubmit}>
-              <TextField
-                fullWidth
-                id="email"
-                name="email"
-                label={t('auth.email')}
-                value={formik.values.email}
-                onChange={formik.handleChange}
-                error={formik.touched.email && Boolean(formik.errors.email)}
-                helperText={formik.touched.email && formik.errors.email}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                id="password"
-                name="password"
-                label={t('auth.password')}
-                type="password"
-                value={formik.values.password}
-                onChange={formik.handleChange}
-                error={formik.touched.password && Boolean(formik.errors.password)}
-                helperText={formik.touched.password && formik.errors.password}
-                margin="normal"
-              />
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                sx={{ mt: 3, mb: 2 }}
-                disabled={loading}
-              >
-                {loading ? t('auth.signingIn') : t('auth.signIn')}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        <Paper
+          elevation={3}
+          sx={{
+            padding: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
+          <Typography component="h1" variant="h5">
+            {t('auth.login')}
+          </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
+              {error}
+            </Alert>
+          )}
+
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="username"
+              label={t('auth.username')}
+              name="username"
+              autoComplete="username"
+              autoFocus
+              value={formData.username}
+              onChange={handleChange}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="password"
+              label={t('auth.password')}
+              type="password"
+              id="password"
+              autoComplete="current-password"
+              value={formData.password}
+              onChange={handleChange}
+            />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 2 }}
+              disabled={loading}
+            >
+              {loading ? <CircularProgress size={24} /> : t('auth.login')}
+            </Button>
+          </Box>
+        </Paper>
       </Box>
     </Container>
   );

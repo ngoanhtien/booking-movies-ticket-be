@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -32,6 +33,9 @@ public class Showtime extends BaseEntity {
     @JoinColumn(name = "room_id", insertable = false, updatable = false)
     private Room room;
 
+    @Column
+    private String format;
+
     @OneToMany(mappedBy = "showtime")
     private Set<ShowtimeSeat> showtimeSeats = new HashSet<>();
 
@@ -43,5 +47,13 @@ public class Showtime extends BaseEntity {
     public void removeShowtimeSeat(ShowtimeSeat showtimeSeat) {
         showtimeSeats.remove(showtimeSeat);
         showtimeSeat.setShowtime(null);
+    }
+
+    public Movie getMovie() {
+        return schedule.getMovie();
+    }
+
+    public LocalDate getDate() {
+        return schedule.getDate();
     }
 }

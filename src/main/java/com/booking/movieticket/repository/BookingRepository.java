@@ -16,6 +16,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
            "JOIN FETCH s.movie m " +
            "WHERE s.date BETWEEN :startDate AND :endDate " +
            "AND b.status = 'CONFIRMED' " +
+           "AND (:type IS NULL OR m.status = :type) " +
            "ORDER BY s.date")
     List<Booking> findSalesReport(
         @Param("startDate") LocalDate startDate,

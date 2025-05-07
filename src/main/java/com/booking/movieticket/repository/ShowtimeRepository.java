@@ -44,4 +44,19 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, ShowtimeId> 
             @Param("movieId") Long movieId,
             @Param("date") LocalDate date,
             @Param("cinemaId") Long cinemaId);
+
+    /**
+     * Find showtimes for attendance report within a date range
+     */
+    @Query("SELECT st FROM Showtime st " +
+            "JOIN st.schedule s " +
+            "JOIN st.room r " +
+            "WHERE s.date BETWEEN :startDate AND :endDate " +
+            "AND st.isDeleted = false " +
+            "AND (:type IS NULL OR s.movie.status = :type) " +
+            "ORDER BY s.date, s.movie.name")
+    List<Showtime> findAttendanceReport(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("type") String type);
 }

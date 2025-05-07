@@ -8,10 +8,14 @@ import com.booking.movieticket.repository.ShowtimeRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -27,16 +31,17 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "salesReports", key = "#startDate.toString() + '-' + #endDate.toString() + '-' + #type")
     public List<SalesReportDTO> getSalesReport(LocalDate startDate, LocalDate endDate, String type) {
         return bookingRepository.findSalesReport(startDate, endDate, type)
                 .stream()
                 .map(booking -> {
                     SalesReportDTO dto = new SalesReportDTO();
-                    dto.setMovieName(booking.getShowtime().getMovie().getTitle());
+                    dto.setMovieName(booking.getShowtime().getMovie().getName());
                     dto.setFormat(booking.getShowtime().getFormat());
                     dto.setDate(booking.getShowtime().getDate());
-                    dto.setRevenue(booking.getTotalAmount());
-                    dto.setTickets(booking.getSeats().size());
+                    dto.setRevenue(BigDecimal.valueOf(booking.getTotalAmount()));
+                    dto.setTickets(booking.getShowtimeSeats().size());
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -44,18 +49,25 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "attendanceReports", key = "#startDate.toString() + '-' + #endDate.toString() + '-' + #type")
     public List<AttendanceReportDTO> getAttendanceReport(LocalDate startDate, LocalDate endDate, String type) {
         return showtimeRepository.findAttendanceReport(startDate, endDate, type)
                 .stream()
                 .map(showtime -> {
                     AttendanceReportDTO dto = new AttendanceReportDTO();
-                    dto.setMovieName(showtime.getMovie().getTitle());
-                    dto.setCinemaName(showtime.getRoom().getCinema().getName());
+                    dto.setMovieName(showtime.getMovie().getName());
+                    dto.setCinemaName(showtime.getRoom().getBranch().getName());
                     dto.setDate(showtime.getDate());
-                    dto.setAttendance(showtime.getBookings().size());
+                    dto.setAttendance(showtime.getShowtimeSeats().size());
                     return dto;
                 })
                 .collect(Collectors.toList());
+    }
+
+    @Scheduled(cron = "0 0 * * * *") // Clear cache every hour
+    @CacheEvict(value = {"salesReports", "attendanceReports"}, allEntries = true)
+    public void clearReportCache() {
+        // Cache will be cleared automatically
     }
 
     @Override

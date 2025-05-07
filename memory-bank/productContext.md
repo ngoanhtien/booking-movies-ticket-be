@@ -47,6 +47,8 @@ The Movie Ticket Booking System is designed to provide a comprehensive solution 
    - Responsive design
    - Export functionality
    - Real-time updates
+   - Branch management with cinema association
+   - Invoice management with user and booking association
 
 2. User Interface
    - Easy movie browsing
@@ -97,6 +99,20 @@ The Movie Ticket Booking System is designed to provide a comprehensive solution 
    - Vietnamese translations
    - Date range selection
    - Interactive charts
+
+6. Branch Management
+   - Branch information management
+   - Cinema association
+   - Vietnamese translations
+   - Add/edit/delete UI
+   - Sidebar navigation
+
+7. Invoice (Bill) Management
+   - Invoice information management
+   - User and booking association
+   - Vietnamese translations
+   - Add/edit/delete UI
+   - Sidebar navigation
 
 ## Success Metrics
 1. User Engagement

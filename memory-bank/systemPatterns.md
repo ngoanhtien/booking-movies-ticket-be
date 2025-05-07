@@ -9,6 +9,18 @@
 - Responsive design
 - Data visualization
 - Excel export functionality
+- Booking system with payment integration
+- Data Fetching Architecture:
+  - React Query for server state management
+  - Centralized query client configuration
+  - Automatic background refetching
+  - Cache invalidation strategies
+  - Loading and error states
+  - Optimistic updates
+  - Infinite queries
+  - Parallel queries
+  - Dependent queries
+  - Query retries and fallbacks
 
 ## Key Technical Decisions
 1. Frontend
@@ -19,6 +31,12 @@
    - Recharts for data visualization
    - Axios for API calls
    - React Query for data fetching
+   - @tanstack/react-query v5 for data fetching
+   - TypeScript 5.3.3 for type safety
+   - Query client configuration at app root
+   - Stale time and cache time settings
+   - Error boundary implementation
+   - Loading state patterns
 
 2. Backend
    - Spring Boot 3.x
@@ -28,6 +46,8 @@
    - JWT authentication
    - Apache POI for Excel export
    - WebSocket for real-time updates
+   - JPA entity relationships
+   - Enum-based status management
 
 3. Data Visualization
    - Recharts library
@@ -44,6 +64,14 @@
    - File naming conventions
    - Error handling
 
+5. Booking System
+   - JPA entity relationships
+   - Status management using enums
+   - Lazy loading for performance
+   - Transaction management
+   - Payment integration
+   - Vietnamese localization
+
 ## Design Patterns
 1. Frontend
    - Component-based architecture
@@ -56,6 +84,17 @@
    - Responsive design pattern
    - Data visualization pattern
    - Export functionality pattern
+   - React Query Patterns:
+     - Query hooks for data fetching
+     - Mutation hooks for updates
+     - Query invalidation
+     - Optimistic updates
+     - Infinite queries
+     - Parallel queries
+     - Query retries
+     - Error handling
+     - Loading states
+     - Cache management
 
 2. Backend
    - Repository pattern
@@ -66,6 +105,8 @@
    - Transaction management
    - Data aggregation pattern
    - Excel export pattern
+   - Entity relationship pattern
+   - Status management pattern
 
 ## Component Relationships
 1. Reports and Analytics
@@ -78,6 +119,38 @@
    - Controllers → Frontend
    - Frontend → Charts
    - Frontend → Export
+
+2. Booking System
+   - Booking → User (Many-to-One)
+   - Booking → Showtime (Many-to-One)
+   - Booking → ShowtimeSeat (One-to-Many)
+   - BookingRepository → BookingService
+   - BookingService → BookingController
+   - BookingController → Frontend
+   - Frontend → Booking Form
+   - Frontend → Payment Integration
+
+3. Branch Management
+   - Branch → Cinema (Many-to-One)
+   - BranchManagement page → DataGrid, Formik, Yup
+   - BranchManagement page → CinemaManagement (for cinema selection)
+   - BranchManagement page → Sidebar/Menu (navigation)
+   - BranchManagement page → REST API endpoints (/api/branches, /api/cinema)
+
+4. Invoice (Bill) Management
+   - Invoice → User (Many-to-One)
+   - Invoice → Booking (Many-to-One)
+   - InvoiceManagement page → DataGrid, Formik, Yup
+   - InvoiceManagement page → Sidebar/Menu (navigation)
+   - InvoiceManagement page → REST API endpoints (/api/invoices, /api/users, /api/bookings)
+
+3. Data Fetching Flow:
+   - QueryClientProvider → App
+   - useQuery hooks → Components
+   - Query cache → React Query
+   - Error boundaries → Components
+   - Loading states → UI
+   - Data → Charts
 
 ## Critical Implementation Paths
 1. Report Generation
@@ -95,6 +168,15 @@
    - File formatting
    - Error handling
    - Download handling
+   - Vietnamese localization
+
+3. Booking System
+   - Entity relationships
+   - Status management
+   - Payment integration
+   - Transaction handling
+   - Validation rules
+   - Error handling
    - Vietnamese localization
 
 ## Security Patterns

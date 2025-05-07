@@ -15,10 +15,18 @@ interface AuthState {
   error: string | null;
 }
 
+// Mock user for UI development
+const mockUser: User = {
+  id: '1',
+  email: 'admin@example.com',
+  name: 'Admin User',
+  role: 'ADMIN'
+};
+
 const initialState: AuthState = {
-  user: null,
-  token: localStorage.getItem('token'),
-  isAuthenticated: false,
+  user: mockUser,
+  token: 'mock-token',
+  isAuthenticated: true, // Set to true to bypass authentication
   loading: false,
   error: null,
 };
@@ -48,8 +56,14 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       localStorage.removeItem('token');
     },
+    checkAuth: (state) => {
+      // For UI development, always return authenticated
+      state.isAuthenticated = true;
+      state.user = mockUser;
+      state.token = 'mock-token';
+    },
   },
 });
 
-export const { loginStart, loginSuccess, loginFailure, logout } = authSlice.actions;
+export const { loginStart, loginSuccess, loginFailure, logout, checkAuth } = authSlice.actions;
 export default authSlice.reducer; 

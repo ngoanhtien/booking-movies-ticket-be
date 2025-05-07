@@ -22,5 +22,10 @@ public class CinemaRequest {
     @Pattern(regexp = "^\\+?[0-9. ()-]{7,25}$", message = "Invalid cinema hotline format.")
     private String hotline;
 
+    @Size(max = 1000, message = "Description must not exceed 1000 characters.")
     private String description;
+
+    @NotBlank(message = "Cinema address must not be blank.")
+    @Size(min = 10, max = 500, message = "Address must be between 10 and 500 characters.")
+    private String address;
 }

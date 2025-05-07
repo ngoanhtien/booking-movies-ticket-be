@@ -24,10 +24,10 @@ public class Cinema extends BaseEntity {
     @Column(name = "cinema_id")
     private Long id;
 
-    @Column(name = "cinema_name")
+    @Column(name = "cinema_name", nullable = false)
     private String name;
 
-    @Column(name = "hotline")
+    @Column(name = "hotline", nullable = false)
     private String hotline;
 
     @Column(name = "description", columnDefinition = "TEXT")
@@ -36,6 +36,18 @@ public class Cinema extends BaseEntity {
     @Column(name = "logo_url", columnDefinition = "VARCHAR(1000)")
     private String logoUrl;
 
-    @OneToMany(mappedBy = "cinema")
+    @Column(name = "address", nullable = false)
+    private String address;
+
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted = false;
+
+    @OneToMany(mappedBy = "cinema", cascade = CascadeType.ALL)
     private Set<Branch> branches = new HashSet<>();
+
+    @OneToMany(mappedBy = "cinema", cascade = CascadeType.ALL)
+    private Set<Room> rooms = new HashSet<>();
+
+    @OneToMany(mappedBy = "cinema", cascade = CascadeType.ALL)
+    private Set<Showtime> showtimes = new HashSet<>();
 }

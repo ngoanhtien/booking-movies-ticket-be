@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -20,6 +20,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { vi } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import {
   BarChart,
   Bar,
@@ -34,6 +35,15 @@ import {
   PieChart,
   Pie,
   Cell,
+  AreaChart,
+  Area,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ComposedChart,
+  Scatter,
 } from 'recharts';
 import { FileDownload as FileDownloadIcon } from '@mui/icons-material';
 import axios from 'axios';
@@ -42,6 +52,25 @@ interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
+}
+
+interface SalesReportData {
+  movieName: string;
+  format: string;
+  date: string;
+  revenue: number;
+  tickets: number;
+  cinemaName?: string;
+  time?: string;
+  month?: string;
+  attendance?: number;
+}
+
+interface AttendanceReportData {
+  movieName: string;
+  cinemaName: string;
+  date: string;
+  attendance: number;
 }
 
 const TabPanel = (props: TabPanelProps) => {
@@ -68,10 +97,6 @@ const ReportsAndAnalytics: React.FC = () => {
   const [startDate, setStartDate] = useState<Date | null>(new Date());
   const [endDate, setEndDate] = useState<Date | null>(new Date());
   const [reportType, setReportType] = useState('daily');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [salesData, setSalesData] = useState<any[]>([]);
-  const [attendanceData, setAttendanceData] = useState<any[]>([]);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -82,43 +107,39 @@ const ReportsAndAnalytics: React.FC = () => {
     severity: 'success',
   });
 
-  useEffect(() => {
-    if (startDate && endDate) {
-      fetchReportData();
-    }
-  }, [startDate, endDate, reportType]);
+  const { data: salesData, isLoading: salesLoading, error: salesError } = useQuery<SalesReportData[]>({
+    queryKey: ['salesReport', startDate?.toISOString(), endDate?.toISOString(), reportType],
+    queryFn: async () => {
+      const response = await axios.get('/api/reports/sales', {
+        params: {
+          startDate: startDate?.toISOString(),
+          endDate: endDate?.toISOString(),
+          type: reportType,
+        },
+      });
+      return response.data;
+    },
+    enabled: !!startDate && !!endDate,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 30 * 60 * 1000, // Keep data in cache for 30 minutes
+  });
 
-  const fetchReportData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const [salesResponse, attendanceResponse] = await Promise.all([
-        axios.get('/api/reports/sales', {
-          params: {
-            startDate: startDate?.toISOString(),
-            endDate: endDate?.toISOString(),
-            type: reportType,
-          },
-        }),
-        axios.get('/api/reports/attendance', {
-          params: {
-            startDate: startDate?.toISOString(),
-            endDate: endDate?.toISOString(),
-            type: reportType,
-          },
-        }),
-      ]);
-
-      setSalesData(salesResponse.data);
-      setAttendanceData(attendanceResponse.data);
-    } catch (err) {
-      setError(t('reports.fetchError'));
-      console.error('Error fetching report data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: attendanceData, isLoading: attendanceLoading, error: attendanceError } = useQuery<AttendanceReportData[]>({
+    queryKey: ['attendanceReport', startDate?.toISOString(), endDate?.toISOString(), reportType],
+    queryFn: async () => {
+      const response = await axios.get('/api/reports/attendance', {
+        params: {
+          startDate: startDate?.toISOString(),
+          endDate: endDate?.toISOString(),
+          type: reportType,
+        },
+      });
+      return response.data;
+    },
+    enabled: !!startDate && !!endDate,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 30 * 60 * 1000, // Keep data in cache for 30 minutes
+  });
 
   const handleExport = async (type: 'sales' | 'attendance') => {
     try {
@@ -160,6 +181,9 @@ const ReportsAndAnalytics: React.FC = () => {
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
+
+  const isLoading = salesLoading || attendanceLoading;
+  const error = salesError || attendanceError;
 
   return (
     <Box sx={{ p: 3 }}>
@@ -208,11 +232,11 @@ const ReportsAndAnalytics: React.FC = () => {
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
+          {t('reports.fetchError')}
         </Alert>
       )}
 
-      <Paper sx={{ width: '100%' }}>
+      <Paper>
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
@@ -234,7 +258,7 @@ const ReportsAndAnalytics: React.FC = () => {
             </Button>
           </Box>
 
-          {loading ? (
+          {isLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
               <CircularProgress />
             </Box>
@@ -246,15 +270,16 @@ const ReportsAndAnalytics: React.FC = () => {
                     {t('reports.salesByMovie')}
                   </Typography>
                   <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={salesData}>
+                    <ComposedChart data={salesData || []}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="movieName" />
-                      <YAxis />
+                      <YAxis yAxisId="left" />
+                      <YAxis yAxisId="right" orientation="right" />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="revenue" name={t('reports.revenue')} fill="#8884d8" />
-                      <Bar dataKey="tickets" name={t('reports.tickets')} fill="#82ca9d" />
-                    </BarChart>
+                      <Bar yAxisId="left" dataKey="revenue" name={t('reports.revenue')} fill="#8884d8" />
+                      <Line yAxisId="right" type="monotone" dataKey="tickets" name={t('reports.tickets')} stroke="#82ca9d" />
+                    </ComposedChart>
                   </ResponsiveContainer>
                 </Paper>
               </Grid>
@@ -267,7 +292,7 @@ const ReportsAndAnalytics: React.FC = () => {
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
-                        data={salesData}
+                        data={salesData || []}
                         dataKey="revenue"
                         nameKey="format"
                         cx="50%"
@@ -275,7 +300,7 @@ const ReportsAndAnalytics: React.FC = () => {
                         outerRadius={100}
                         label
                       >
-                        {salesData.map((entry, index) => (
+                        {(salesData || []).map((entry: SalesReportData, index: number) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
@@ -289,10 +314,57 @@ const ReportsAndAnalytics: React.FC = () => {
               <Grid item xs={12} md={6}>
                 <Paper sx={{ p: 2 }}>
                   <Typography variant="h6" sx={{ mb: 2 }}>
+                    {t('reports.salesByCinema')}
+                  </Typography>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <RadarChart data={salesData || []}>
+                      <PolarGrid />
+                      <PolarAngleAxis dataKey="cinemaName" />
+                      <PolarRadiusAxis />
+                      <Radar
+                        name={t('reports.revenue')}
+                        dataKey="revenue"
+                        stroke="#8884d8"
+                        fill="#8884d8"
+                        fillOpacity={0.6}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </Paper>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Paper sx={{ p: 2 }}>
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    {t('reports.salesByTime')}
+                  </Typography>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={salesData || []}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="time" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Area
+                        type="monotone"
+                        dataKey="revenue"
+                        name={t('reports.revenue')}
+                        stroke="#8884d8"
+                        fill="#8884d8"
+                        fillOpacity={0.3}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Paper>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Paper sx={{ p: 2 }}>
+                  <Typography variant="h6" sx={{ mb: 2 }}>
                     {t('reports.salesTrend')}
                   </Typography>
                   <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={salesData}>
+                    <LineChart data={salesData || []}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="date" />
                       <YAxis />
@@ -304,7 +376,34 @@ const ReportsAndAnalytics: React.FC = () => {
                         name={t('reports.revenue')}
                         stroke="#8884d8"
                       />
+                      <Line
+                        type="monotone"
+                        dataKey="tickets"
+                        name={t('reports.tickets')}
+                        stroke="#82ca9d"
+                      />
                     </LineChart>
+                  </ResponsiveContainer>
+                </Paper>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Paper sx={{ p: 2 }}>
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    {t('reports.monthlyComparison')}
+                  </Typography>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <ComposedChart data={salesData || []}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis yAxisId="left" />
+                      <YAxis yAxisId="right" orientation="right" />
+                      <Tooltip />
+                      <Legend />
+                      <Bar yAxisId="left" dataKey="revenue" name={t('reports.revenue')} fill="#8884d8" />
+                      <Line yAxisId="right" type="monotone" dataKey="tickets" name={t('reports.tickets')} stroke="#82ca9d" />
+                      <Scatter yAxisId="right" dataKey="attendance" name={t('reports.attendance')} fill="#ff7300" />
+                    </ComposedChart>
                   </ResponsiveContainer>
                 </Paper>
               </Grid>
@@ -323,7 +422,7 @@ const ReportsAndAnalytics: React.FC = () => {
             </Button>
           </Box>
 
-          {loading ? (
+          {isLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
               <CircularProgress />
             </Box>
@@ -335,7 +434,7 @@ const ReportsAndAnalytics: React.FC = () => {
                     {t('reports.attendanceByMovie')}
                   </Typography>
                   <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={attendanceData}>
+                    <BarChart data={attendanceData || []}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="movieName" />
                       <YAxis />
@@ -359,7 +458,7 @@ const ReportsAndAnalytics: React.FC = () => {
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
-                        data={attendanceData}
+                        data={attendanceData || []}
                         dataKey="attendance"
                         nameKey="cinemaName"
                         cx="50%"
@@ -367,7 +466,7 @@ const ReportsAndAnalytics: React.FC = () => {
                         outerRadius={100}
                         label
                       >
-                        {attendanceData.map((entry, index) => (
+                        {(attendanceData || []).map((entry: AttendanceReportData, index: number) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
@@ -384,7 +483,7 @@ const ReportsAndAnalytics: React.FC = () => {
                     {t('reports.attendanceTrend')}
                   </Typography>
                   <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={attendanceData}>
+                    <LineChart data={attendanceData || []}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="date" />
                       <YAxis />

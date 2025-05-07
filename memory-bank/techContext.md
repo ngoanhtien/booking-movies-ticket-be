@@ -11,6 +11,20 @@
    - Recharts 2.x
    - Axios 1.x
    - React Query 4.x
+   - @tanstack/react-query v5.75.4
+   - TypeScript 5.3.3
+   - Query configuration:
+     - Stale time: 5 minutes
+     - Cache time: 30 minutes
+     - Auto background refresh
+     - Retry configuration
+     - Error handling
+     - Loading states
+   - Branch management UI with React, TypeScript, Material-UI, Formik, Yup
+   - Branch type definition in frontend
+   - Invoice management UI with React, TypeScript, Material-UI, Formik, Yup
+   - Invoice type definition in frontend
+   - REST API endpoints: /api/branches, /api/cinema, /api/invoices, /api/users, /api/bookings
 
 2. Backend
    - Spring Boot 3.x
@@ -31,6 +45,10 @@
    - Vietnamese language support
    - Chart library setup
    - Export functionality setup
+   - React Query DevTools
+   - Query client configuration
+   - Error boundary setup
+   - Loading state components
 
 2. Backend
    - Java 17
@@ -58,7 +76,8 @@
        "react-query": "^4.0.0",
        "recharts": "^2.6.2",
        "typescript": "^5.0.4",
-       "yup": "^1.1.1"
+       "yup": "^1.1.1",
+       "@tanstack/react-query": "^5.75.4"
      }
    }
    ```
@@ -141,6 +160,20 @@
        properties:
          hibernate:
            dialect: org.hibernate.dialect.PostgreSQLDialect
+   ```
+
+3. React Query Configuration
+   ```typescript
+   const queryClient = new QueryClient({
+     defaultOptions: {
+       queries: {
+         staleTime: 5 * 60 * 1000,
+         gcTime: 30 * 60 * 1000,
+         retry: 3,
+         refetchOnWindowFocus: true,
+       },
+     },
+   });
    ```
 
 ## API Endpoints
