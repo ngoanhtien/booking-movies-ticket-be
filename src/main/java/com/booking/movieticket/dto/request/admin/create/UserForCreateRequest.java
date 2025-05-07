@@ -1,4 +1,4 @@
-package com.booking.movieticket.dto.request.admin;
+package com.booking.movieticket.dto.request.admin.create;
 
 import com.booking.movieticket.entity.enums.MembershipLevel;
 import jakarta.validation.constraints.*;
@@ -11,9 +11,7 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserRequest {
-
-    private Long id;
+public class UserForCreateRequest {
 
     @NotBlank(message = "Username must not be blank.")
     @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters.")

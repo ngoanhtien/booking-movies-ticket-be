@@ -1,7 +1,8 @@
 package com.booking.movieticket.service.impl;
 
 import com.booking.movieticket.dto.criteria.ActorCriteria;
-import com.booking.movieticket.dto.request.admin.ActorRequest;
+import com.booking.movieticket.dto.request.admin.update.ActorForUpdateRequest;
+import com.booking.movieticket.dto.request.admin.create.ActorForCreateRequest;
 import com.booking.movieticket.dto.response.admin.ActorResponse;
 import com.booking.movieticket.entity.Actor;
 import com.booking.movieticket.exception.AppException;
@@ -44,16 +45,15 @@ public class ActorServiceImpl implements ActorService {
 
     @Override
     @Transactional
-    public ActorResponse createActor(ActorRequest actorRequest) {
+    public ActorResponse createActor(ActorForCreateRequest actorRequest) {
         Actor actor = actorMapper.toActor(actorRequest);
-        actor.setId(null);
         actor.setIsDeleted(false);
         return actorMapper.toActorResponse(actorRepository.save(actor));
     }
 
     @Override
     @Transactional
-    public void updateActor(ActorRequest actorRequest) {
+    public void updateActor(ActorForUpdateRequest actorRequest) {
         if (actorRequest.getId() == null) {
             throw new AppException(ErrorCode.ACTOR_NOT_FOUND);
         }

@@ -1,7 +1,8 @@
 package com.booking.movieticket.controller;
 
 import com.booking.movieticket.dto.criteria.MovieCriteria;
-import com.booking.movieticket.dto.request.admin.MovieRequest;
+import com.booking.movieticket.dto.request.admin.update.MovieForUpdateRequest;
+import com.booking.movieticket.dto.request.admin.create.MovieForCreateRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.dto.response.admin.MovieResponse;
 import com.booking.movieticket.entity.Movie;
@@ -50,7 +51,7 @@ public class MovieController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<MovieResponse>> createMovie(@Valid @RequestBody MovieRequest movieRequest,
+    public ResponseEntity<ApiResponse<MovieResponse>> createMovie(@Valid @RequestBody MovieForCreateRequest movieRequest,
                                                                   @RequestParam(value = "smallImgUrl", required = false) MultipartFile smallImgUrl,
                                                                   @RequestParam(value = "largeImgUrl", required = false) MultipartFile largeImgUrl,
                                                                   BindingResult bindingResult) throws MethodArgumentNotValidException {
@@ -59,7 +60,7 @@ public class MovieController {
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<String>> updateMovie(@Valid @RequestBody MovieRequest movieRequest,
+    public ResponseEntity<ApiResponse<String>> updateMovie(@Valid @RequestBody MovieForUpdateRequest movieRequest,
                                                            @RequestParam(value = "smallImgUrl", required = false) MultipartFile smallImgUrl,
                                                            @RequestParam(value = "largeImgUrl", required = false) MultipartFile largeImgUrl,
                                                            BindingResult bindingResult) throws MethodArgumentNotValidException {

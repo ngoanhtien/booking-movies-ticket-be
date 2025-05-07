@@ -1,7 +1,8 @@
 package com.booking.movieticket.service.impl;
 
 import com.booking.movieticket.dto.criteria.UserCriteria;
-import com.booking.movieticket.dto.request.admin.UserRequest;
+import com.booking.movieticket.dto.request.admin.update.UserForUpdateRequest;
+import com.booking.movieticket.dto.request.admin.create.UserForCreateRequest;
 import com.booking.movieticket.dto.response.admin.UserResponse;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.exception.AppException;
@@ -57,7 +58,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponse createUser(UserRequest userRequest, MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public UserResponse createUser(UserForCreateRequest userRequest, MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
         validateImages(avatarUrl, bindingResult);
         if (bindingResult.hasErrors()) {
             throw new MethodArgumentNotValidException(null, bindingResult);
@@ -65,7 +66,6 @@ public class UserServiceImpl implements UserService {
         try {
             User user = userMapper.toUser(userRequest);
             processAndSetImages(user, avatarUrl);
-            user.setId(null);
             user.setIsDeleted(false);
             return userMapper.toUserResponse(userRepository.save(user));
         } catch (IOException e) {
@@ -75,7 +75,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void updateUser(UserRequest userRequest, MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public void updateUser(UserForUpdateRequest userRequest, MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
         validateImages(avatarUrl, bindingResult);
         if (bindingResult.hasErrors()) {
             throw new MethodArgumentNotValidException(null, bindingResult);

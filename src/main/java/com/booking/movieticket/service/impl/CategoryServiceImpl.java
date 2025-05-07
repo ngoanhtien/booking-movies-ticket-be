@@ -1,7 +1,8 @@
 package com.booking.movieticket.service.impl;
 
 import com.booking.movieticket.dto.criteria.CategoryCriteria;
-import com.booking.movieticket.dto.request.admin.CategoryRequest;
+import com.booking.movieticket.dto.request.admin.update.CategoryForUpdateRequest;
+import com.booking.movieticket.dto.request.admin.create.CategoryForCreateRequest;
 import com.booking.movieticket.dto.response.admin.CategoryResponse;
 import com.booking.movieticket.entity.Category;
 import com.booking.movieticket.exception.AppException;
@@ -43,16 +44,15 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public CategoryResponse createCategory(CategoryRequest categoryRequest) {
+    public CategoryResponse createCategory(CategoryForCreateRequest categoryRequest) {
         Category category = categoryMapper.toCategory(categoryRequest);
-        category.setId(null);
         category.setIsDeleted(false);
         return categoryMapper.toCategoryResponse(categoryRepository.save(category));
     }
 
     @Override
     @Transactional
-    public void updateCategory(CategoryRequest categoryRequest) {
+    public void updateCategory(CategoryForUpdateRequest categoryRequest) {
         if (categoryRequest.getId() == null) {
             throw new AppException(ErrorCode.CATEGORY_NOT_FOUND);
         }

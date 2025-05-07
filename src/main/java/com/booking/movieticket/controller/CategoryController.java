@@ -1,7 +1,8 @@
 package com.booking.movieticket.controller;
 
 import com.booking.movieticket.dto.criteria.CategoryCriteria;
-import com.booking.movieticket.dto.request.admin.CategoryRequest;
+import com.booking.movieticket.dto.request.admin.update.CategoryForUpdateRequest;
+import com.booking.movieticket.dto.request.admin.create.CategoryForCreateRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.dto.response.admin.CategoryResponse;
 import com.booking.movieticket.entity.Category;
@@ -45,12 +46,12 @@ public class CategoryController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(@Valid @RequestBody CategoryRequest categoryRequest) {
+    public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(@Valid @RequestBody CategoryForCreateRequest categoryRequest) {
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Category created successfully.", categoryService.createCategory(categoryRequest)));
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<String>> updateCategory(@Valid @RequestBody CategoryRequest categoryRequest) {
+    public ResponseEntity<ApiResponse<String>> updateCategory(@Valid @RequestBody CategoryForUpdateRequest categoryRequest) {
         categoryService.updateCategory(categoryRequest);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(new ApiResponse<>("Category updated successfully."));

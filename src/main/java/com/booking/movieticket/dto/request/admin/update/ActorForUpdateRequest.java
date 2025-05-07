@@ -1,4 +1,4 @@
-package com.booking.movieticket.dto.request.admin;
+package com.booking.movieticket.dto.request.admin.update;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ActorRequest {
+public class ActorForUpdateRequest {
 
     private Long id;
 

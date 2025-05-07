@@ -1,7 +1,8 @@
 package com.booking.movieticket.service;
 
 import com.booking.movieticket.dto.criteria.CinemaCriteria;
-import com.booking.movieticket.dto.request.admin.CinemaRequest;
+import com.booking.movieticket.dto.request.admin.update.CinemaForUpdateRequest;
+import com.booking.movieticket.dto.request.admin.create.CinemaForCreateRequest;
 import com.booking.movieticket.dto.response.admin.CinemaResponse;
 import com.booking.movieticket.entity.Cinema;
 import org.springframework.data.domain.Page;
@@ -16,9 +17,9 @@ public interface CinemaService {
 
     Page<Cinema> getAllCinemas(CinemaCriteria cinemaCriteria, Pageable pageable);
 
-    CinemaResponse createCinema(CinemaRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
+    CinemaResponse createCinema(CinemaForCreateRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
 
-    void updateCinema(CinemaRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
+    void updateCinema(CinemaForUpdateRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
 
     void activateCinema(Long id);
 

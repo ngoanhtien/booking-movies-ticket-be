@@ -1,4 +1,4 @@
-package com.booking.movieticket.dto.request.admin;
+package com.booking.movieticket.dto.request.admin.create;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -9,9 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CategoryRequest {
-
-    private Long id;
+public class CategoryForCreateRequest {
 
     @NotBlank(message = "Category name must not be blank.")
     @Size(min = 2, max = 100, message = "Category name must be between 2 and 100 characters.")

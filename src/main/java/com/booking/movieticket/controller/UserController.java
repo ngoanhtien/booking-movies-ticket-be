@@ -1,12 +1,12 @@
 package com.booking.movieticket.controller;
 
 import com.booking.movieticket.dto.request.ResetPasswordRequest;
-import com.booking.movieticket.dto.request.admin.UserRequest;
+import com.booking.movieticket.dto.request.admin.update.UserForUpdateRequest;
+import com.booking.movieticket.dto.request.admin.create.UserForCreateRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.dto.response.admin.UserResponse;
 import com.booking.movieticket.dto.criteria.UserCriteria;
 import com.booking.movieticket.entity.User;
-import com.booking.movieticket.mapper.UserMapper;
 import com.booking.movieticket.service.MailSendService;
 import com.booking.movieticket.service.UserService;
 import jakarta.validation.Valid;
@@ -51,12 +51,12 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestPart("userRequestData") UserRequest userRequest, @RequestPart(value = "avatarUrl", required = false) MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestPart("userRequestData") UserForCreateRequest userRequest, @RequestPart(value = "avatarUrl", required = false) MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("User created successfully.", userService.createUser(userRequest, avatarUrl, bindingResult)));
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<String>> updateUser(@Valid @RequestPart("userRequestData") UserRequest userRequest, @RequestPart(value = "avatarUrl", required = false) MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public ResponseEntity<ApiResponse<String>> updateUser(@Valid @RequestPart("userRequestData") UserForUpdateRequest userRequest, @RequestPart(value = "avatarUrl", required = false) MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
         userService.updateUser(userRequest, avatarUrl, bindingResult);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponse<>("User details fetched successfully."));
     }

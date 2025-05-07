@@ -1,7 +1,8 @@
 package com.booking.movieticket.service;
 
 import com.booking.movieticket.dto.criteria.ActorCriteria;
-import com.booking.movieticket.dto.request.admin.ActorRequest;
+import com.booking.movieticket.dto.request.admin.update.ActorForUpdateRequest;
+import com.booking.movieticket.dto.request.admin.create.ActorForCreateRequest;
 import com.booking.movieticket.dto.response.admin.ActorResponse;
 import com.booking.movieticket.entity.Actor;
 import org.springframework.data.domain.Page;
@@ -13,9 +14,9 @@ public interface ActorService {
 
     Page<Actor> getAllActors(ActorCriteria actorCriteria, Pageable pageable);
 
-    ActorResponse createActor(ActorRequest actorRequest);
+    ActorResponse createActor(ActorForCreateRequest actorRequest);
 
-    void updateActor(ActorRequest actorRequest);
+    void updateActor(ActorForUpdateRequest actorRequest);
 
     void activateActor(Long id);
 

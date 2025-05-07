@@ -1,7 +1,8 @@
 package com.booking.movieticket.controller;
 
 import com.booking.movieticket.dto.criteria.ActorCriteria;
-import com.booking.movieticket.dto.request.admin.ActorRequest;
+import com.booking.movieticket.dto.request.admin.update.ActorForUpdateRequest;
+import com.booking.movieticket.dto.request.admin.create.ActorForCreateRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.dto.response.admin.ActorResponse;
 import com.booking.movieticket.entity.Actor;
@@ -45,12 +46,12 @@ public class ActorController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ActorResponse>> createActor(@Valid @RequestBody ActorRequest actorRequest) {
+    public ResponseEntity<ApiResponse<ActorResponse>> createActor(@Valid @RequestBody ActorForCreateRequest actorRequest) {
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Actor created successfully.", actorService.createActor(actorRequest)));
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<String>> updateActor(@Valid @RequestBody ActorRequest actorRequest) {
+    public ResponseEntity<ApiResponse<String>> updateActor(@Valid @RequestBody ActorForUpdateRequest actorRequest) {
         actorService.updateActor(actorRequest);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(new ApiResponse<>("Actor updated successfully."));

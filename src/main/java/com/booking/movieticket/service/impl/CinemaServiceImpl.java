@@ -1,7 +1,8 @@
 package com.booking.movieticket.service.impl;
 
 import com.booking.movieticket.dto.criteria.CinemaCriteria;
-import com.booking.movieticket.dto.request.admin.CinemaRequest;
+import com.booking.movieticket.dto.request.admin.update.CinemaForUpdateRequest;
+import com.booking.movieticket.dto.request.admin.create.CinemaForCreateRequest;
 import com.booking.movieticket.dto.response.admin.CinemaResponse;
 import com.booking.movieticket.entity.Cinema;
 import com.booking.movieticket.exception.AppException;
@@ -49,7 +50,7 @@ public class CinemaServiceImpl implements CinemaService {
     }
 
     @Override
-    public CinemaResponse createCinema(CinemaRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public CinemaResponse createCinema(CinemaForCreateRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
         validateImages(logoUrl, bindingResult);
         if (bindingResult.hasErrors()) {
             throw new MethodArgumentNotValidException(null, bindingResult);
@@ -57,7 +58,6 @@ public class CinemaServiceImpl implements CinemaService {
         try {
             Cinema cinema = cinemaMapper.toCinema(cinemaRequest);
             processAndSetImages(cinema, logoUrl);
-            cinema.setId(null);
             cinema.setIsDeleted(false);
             return cinemaMapper.toCinemaResponse(cinemaRepository.save(cinema));
         } catch (IOException e) {
@@ -66,7 +66,7 @@ public class CinemaServiceImpl implements CinemaService {
     }
 
     @Override
-    public void updateCinema(CinemaRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public void updateCinema(CinemaForUpdateRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
         validateImages(logoUrl, bindingResult);
         if (bindingResult.hasErrors()) {
             throw new MethodArgumentNotValidException(null, bindingResult);
