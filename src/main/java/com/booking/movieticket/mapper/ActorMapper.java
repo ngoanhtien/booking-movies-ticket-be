@@ -10,11 +10,9 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface ActorMapper {
 
-    Actor toActor(ActorForCreateRequest request);
-
-    Actor toActor(ActorForUpdateRequest request);
+    Actor convertRequestToActor(ActorForCreateRequest request);
 
     void updateActorFromRequest(ActorForUpdateRequest request, @MappingTarget Actor actor);
 
-    ActorResponse toActorResponse(Actor actor);
+    ActorResponse convertEntityToActorResponse(Actor actor);
 }

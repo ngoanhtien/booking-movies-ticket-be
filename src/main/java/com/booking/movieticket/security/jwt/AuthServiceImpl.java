@@ -52,8 +52,8 @@ public class AuthServiceImpl implements AuthService {
             // Create and return LoginResponse
             return LoginResponse.builder().accessToken(jwt).refreshToken(refreshJwt).build();
         } catch (Exception e) {
-            log.error(ErrorCode.USER_ALREADY_EXISTS.getMessage());
-            throw new BadCredentialsException(ErrorCode.USER_ALREADY_EXISTS.getMessage());
+            log.error(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage());
+            throw new BadCredentialsException(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage());
         }
     }
 

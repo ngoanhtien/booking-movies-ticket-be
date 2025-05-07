@@ -1,6 +1,5 @@
 package com.booking.movieticket.mapper;
 
-
 import com.booking.movieticket.dto.request.admin.update.CategoryForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.CategoryForCreateRequest;
 import com.booking.movieticket.dto.response.admin.CategoryResponse;
@@ -11,11 +10,9 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface CategoryMapper {
 
-    Category toCategory(CategoryForCreateRequest request);
-
-    Category toCategory(CategoryForUpdateRequest request);
+    Category convertRequestToCategory(CategoryForCreateRequest request);
 
     void updateCategoryFromRequest(CategoryForUpdateRequest request, @MappingTarget Category category);
 
-    CategoryResponse toCategoryResponse(Category category);
+    CategoryResponse convertEntityToCategoryResponse(Category category);
 }

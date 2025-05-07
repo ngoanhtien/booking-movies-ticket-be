@@ -64,11 +64,11 @@ public class MovieServiceImpl implements MovieService {
             throw new MethodArgumentNotValidException(null, bindingResult);
         }
         try {
-            Movie movie = movieMapper.toMovie(movieRequest);
+            Movie movie = movieMapper.convertRequestToMovie(movieRequest);
             movieMapper.mapRelations(movie, movieRequest, categoryRepository, actorRepository);
             processAndSetImages(movie, smallImgUrl, largeImgUrl);
             movie.setIsDeleted(false);
-            return movieMapper.toMovieResponse(movieRepository.save(movie));
+            return movieMapper.convertEntityToMovieResponse(movieRepository.save(movie));
         } catch (IOException e) {
             throw new AppException(ErrorCode.MOVIE_NOT_FOUND);
         }

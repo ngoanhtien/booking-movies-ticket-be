@@ -21,11 +21,9 @@ import java.util.Set;
 @Mapper(componentModel = "spring", uses = {CategoryMapper.class, ActorMapper.class})
 public interface MovieMapper {
 
-    Movie toMovie(MovieForUpdateRequest movieRequest);
+    Movie convertRequestToMovie(MovieForCreateRequest movieRequest);
 
-    Movie toMovie(MovieForCreateRequest movieRequest);
-
-    MovieResponse toMovieResponse(Movie movie);
+    MovieResponse convertEntityToMovieResponse(Movie movie);
 
     @AfterMapping
     default void mapRelations(@MappingTarget Movie movie, MovieForCreateRequest movieRequest, @Context CategoryRepository categoryRepository, @Context ActorRepository actorRepository) {

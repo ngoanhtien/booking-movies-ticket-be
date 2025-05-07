@@ -46,9 +46,9 @@ public class ActorServiceImpl implements ActorService {
     @Override
     @Transactional
     public ActorResponse createActor(ActorForCreateRequest actorRequest) {
-        Actor actor = actorMapper.toActor(actorRequest);
+        Actor actor = actorMapper.convertRequestToActor(actorRequest);
         actor.setIsDeleted(false);
-        return actorMapper.toActorResponse(actorRepository.save(actor));
+        return actorMapper.convertEntityToActorResponse(actorRepository.save(actor));
     }
 
     @Override

@@ -17,13 +17,11 @@ public abstract class UserMapper {
     @Autowired
     protected RoleService roleService;
 
-    public abstract User toUser(UserForCreateRequest request);
-
-    public abstract User toUser(UserForUpdateRequest request);
+    public abstract User convertRequestToUser(UserForCreateRequest request);
 
     public abstract void updateUserFromRequest(UserForUpdateRequest request, @MappingTarget User user);
 
-    public abstract UserResponse toUserResponse(User user);
+    public abstract UserResponse convertEntityToUserResponse(User user);
 
     @AfterMapping
     protected void afterMapping(UserForUpdateRequest request, @MappingTarget User user) {

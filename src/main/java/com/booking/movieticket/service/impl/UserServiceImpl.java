@@ -64,10 +64,10 @@ public class UserServiceImpl implements UserService {
             throw new MethodArgumentNotValidException(null, bindingResult);
         }
         try {
-            User user = userMapper.toUser(userRequest);
+            User user = userMapper.convertRequestToUser(userRequest);
             processAndSetImages(user, avatarUrl);
             user.setIsDeleted(false);
-            return userMapper.toUserResponse(userRepository.save(user));
+            return userMapper.convertEntityToUserResponse(userRepository.save(user));
         } catch (IOException e) {
             throw new AppException(ErrorCode.USER_NOT_FOUND);
         }

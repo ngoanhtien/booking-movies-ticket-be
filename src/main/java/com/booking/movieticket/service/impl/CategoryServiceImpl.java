@@ -45,9 +45,9 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryResponse createCategory(CategoryForCreateRequest categoryRequest) {
-        Category category = categoryMapper.toCategory(categoryRequest);
+        Category category = categoryMapper.convertRequestToCategory(categoryRequest);
         category.setIsDeleted(false);
-        return categoryMapper.toCategoryResponse(categoryRepository.save(category));
+        return categoryMapper.convertEntityToCategoryResponse(categoryRepository.save(category));
     }
 
     @Override

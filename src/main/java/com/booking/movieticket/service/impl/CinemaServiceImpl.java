@@ -56,10 +56,10 @@ public class CinemaServiceImpl implements CinemaService {
             throw new MethodArgumentNotValidException(null, bindingResult);
         }
         try {
-            Cinema cinema = cinemaMapper.toCinema(cinemaRequest);
+            Cinema cinema = cinemaMapper.convertRequestToCinema(cinemaRequest);
             processAndSetImages(cinema, logoUrl);
             cinema.setIsDeleted(false);
-            return cinemaMapper.toCinemaResponse(cinemaRepository.save(cinema));
+            return cinemaMapper.convertEntityToCinemaResponse(cinemaRepository.save(cinema));
         } catch (IOException e) {
             throw new AppException(ErrorCode.CINEMA_NOT_FOUND);
         }

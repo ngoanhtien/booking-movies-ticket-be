@@ -10,11 +10,9 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface CinemaMapper {
 
-    Cinema toCinema(CinemaForCreateRequest request);
-
-    Cinema toCinema(CinemaForUpdateRequest request);
+    Cinema convertRequestToCinema(CinemaForCreateRequest request);
 
     void updateCinemaFromRequest(CinemaForUpdateRequest request, @MappingTarget Cinema cinema);
 
-    CinemaResponse toCinemaResponse(Cinema cinema);
+    CinemaResponse convertEntityToCinemaResponse(Cinema cinema);
 }

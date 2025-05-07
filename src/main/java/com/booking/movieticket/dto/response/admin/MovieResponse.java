@@ -2,16 +2,18 @@ package com.booking.movieticket.dto.response.admin;
 
 import com.booking.movieticket.entity.Actor;
 import com.booking.movieticket.entity.Category;
-import com.booking.movieticket.entity.Schedule;
 import com.booking.movieticket.entity.enums.StatusMovie;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.lang.management.LockInfo;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
-@Getter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class MovieResponse {
 
     private Long id;
