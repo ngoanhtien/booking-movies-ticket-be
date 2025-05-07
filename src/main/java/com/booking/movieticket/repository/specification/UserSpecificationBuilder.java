@@ -7,7 +7,7 @@ import org.springframework.util.StringUtils;
 
 public class UserSpecificationBuilder {
     public static Specification<User> findByCriteria(UserCriteria criteria) {
-        Specification<User> spec = Specification.where(null);
+        Specification<User> spec = Specification.where(notDeleted());
         if (criteria != null && StringUtils.hasText(criteria.getName())) {
             spec = spec.and(hasUserName(criteria.getName()));
         }
@@ -19,5 +19,12 @@ public class UserSpecificationBuilder {
             String searchTerm = "%" + name.toLowerCase() + "%";
             return criteriaBuilder.like(criteriaBuilder.lower(root.get("username")), searchTerm);
         };
+    }
+
+    private static Specification<User> notDeleted() {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.or(
+                criteriaBuilder.isNull(root.get("isDeleted")),
+                criteriaBuilder.notEqual(root.get("isDeleted"), true)
+        );
     }
 }

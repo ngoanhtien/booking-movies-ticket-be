@@ -3,7 +3,7 @@ package com.booking.movieticket.service.impl;
 import com.booking.movieticket.dto.criteria.MovieCriteria;
 import com.booking.movieticket.dto.request.admin.update.MovieForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.MovieForCreateRequest;
-import com.booking.movieticket.dto.response.admin.MovieResponse;
+import com.booking.movieticket.dto.response.admin.create.MovieCreatedResponse;
 import com.booking.movieticket.entity.Movie;
 import com.booking.movieticket.entity.enums.StatusMovie;
 import com.booking.movieticket.exception.AppException;
@@ -58,7 +58,7 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public MovieResponse createMovie(MovieForCreateRequest movieRequest, MultipartFile smallImgUrl, MultipartFile largeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public MovieCreatedResponse createMovie(MovieForCreateRequest movieRequest, MultipartFile smallImgUrl, MultipartFile largeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
         validateImages(smallImgUrl, largeImgUrl, bindingResult);
         if (bindingResult.hasErrors()) {
             throw new MethodArgumentNotValidException(null, bindingResult);
@@ -68,7 +68,7 @@ public class MovieServiceImpl implements MovieService {
             movieMapper.mapRelations(movie, movieRequest, categoryRepository, actorRepository);
             processAndSetImages(movie, smallImgUrl, largeImgUrl);
             movie.setIsDeleted(false);
-            return movieMapper.convertEntityToMovieResponse(movieRepository.save(movie));
+            return movieMapper.convertEntityToMovieCreatedResponse(movieRepository.save(movie));
         } catch (IOException e) {
             throw new AppException(ErrorCode.MOVIE_NOT_FOUND);
         }

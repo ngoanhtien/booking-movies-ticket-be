@@ -1,8 +1,9 @@
 package com.booking.movieticket.mapper;
 
-import com.booking.movieticket.dto.request.admin.update.MovieForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.MovieForCreateRequest;
+import com.booking.movieticket.dto.request.admin.update.MovieForUpdateRequest;
 import com.booking.movieticket.dto.response.admin.MovieResponse;
+import com.booking.movieticket.dto.response.admin.create.MovieCreatedResponse;
 import com.booking.movieticket.entity.Actor;
 import com.booking.movieticket.entity.Category;
 import com.booking.movieticket.entity.Movie;
@@ -22,6 +23,8 @@ import java.util.Set;
 public interface MovieMapper {
 
     Movie convertRequestToMovie(MovieForCreateRequest movieRequest);
+
+    MovieCreatedResponse convertEntityToMovieCreatedResponse(Movie movie);
 
     MovieResponse convertEntityToMovieResponse(Movie movie);
 

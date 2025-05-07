@@ -5,6 +5,7 @@ import com.booking.movieticket.dto.request.admin.update.ActorForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.ActorForCreateRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.dto.response.admin.ActorResponse;
+import com.booking.movieticket.dto.response.admin.create.ActorCreatedResponse;
 import com.booking.movieticket.entity.Actor;
 import com.booking.movieticket.service.ActorService;
 import jakarta.validation.Valid;
@@ -34,19 +35,19 @@ public class ActorController {
     ActorService actorService;
 
     @GetMapping("")
-    public ResponseEntity<ApiResponse<Page<Actor>>> getAllActors(ActorCriteria actorCriteria,
-                                                                 @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+    public ResponseEntity<ApiResponse<Page<ActorResponse>>> getAllActors(ActorCriteria actorCriteria,
+                                                                         @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ApiResponse<>("Actors fetched successfully.", actorService.getAllActors(actorCriteria, pageable)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Actor>> getActorById(@PathVariable @Min(value = 1, message = "Id must be greater than or equal to 1.") Long id) {
+    public ResponseEntity<ApiResponse<ActorResponse>> getActorById(@PathVariable @Min(value = 1, message = "Id must be greater than or equal to 1.") Long id) {
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("Actor details fetched successfully.", actorService.getActorById(id)));
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ActorResponse>> createActor(@Valid @RequestBody ActorForCreateRequest actorRequest) {
+    public ResponseEntity<ApiResponse<ActorCreatedResponse>> createActor(@Valid @RequestBody ActorForCreateRequest actorRequest) {
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Actor created successfully.", actorService.createActor(actorRequest)));
     }
 

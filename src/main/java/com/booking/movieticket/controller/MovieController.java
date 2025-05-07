@@ -4,7 +4,7 @@ import com.booking.movieticket.dto.criteria.MovieCriteria;
 import com.booking.movieticket.dto.request.admin.update.MovieForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.MovieForCreateRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
-import com.booking.movieticket.dto.response.admin.MovieResponse;
+import com.booking.movieticket.dto.response.admin.create.MovieCreatedResponse;
 import com.booking.movieticket.entity.Movie;
 import com.booking.movieticket.service.MovieService;
 import jakarta.validation.Valid;
@@ -51,10 +51,10 @@ public class MovieController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<MovieResponse>> createMovie(@Valid @RequestBody MovieForCreateRequest movieRequest,
-                                                                  @RequestParam(value = "smallImgUrl", required = false) MultipartFile smallImgUrl,
-                                                                  @RequestParam(value = "largeImgUrl", required = false) MultipartFile largeImgUrl,
-                                                                  BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public ResponseEntity<ApiResponse<MovieCreatedResponse>> createMovie(@Valid @RequestBody MovieForCreateRequest movieRequest,
+                                                                         @RequestParam(value = "smallImgUrl", required = false) MultipartFile smallImgUrl,
+                                                                         @RequestParam(value = "largeImgUrl", required = false) MultipartFile largeImgUrl,
+                                                                         BindingResult bindingResult) throws MethodArgumentNotValidException {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ApiResponse<>("Movie created successfully.", movieService.createMovie(movieRequest, smallImgUrl, largeImgUrl, bindingResult)));
     }

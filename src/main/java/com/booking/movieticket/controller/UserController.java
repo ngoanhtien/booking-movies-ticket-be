@@ -4,7 +4,7 @@ import com.booking.movieticket.dto.request.ResetPasswordRequest;
 import com.booking.movieticket.dto.request.admin.update.UserForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.UserForCreateRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
-import com.booking.movieticket.dto.response.admin.UserResponse;
+import com.booking.movieticket.dto.response.admin.create.UserCreatedResponse;
 import com.booking.movieticket.dto.criteria.UserCriteria;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.service.MailSendService;
@@ -51,7 +51,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestPart("userRequestData") UserForCreateRequest userRequest, @RequestPart(value = "avatarUrl", required = false) MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public ResponseEntity<ApiResponse<UserCreatedResponse>> createUser(@Valid @RequestPart("userRequestData") UserForCreateRequest userRequest, @RequestPart(value = "avatarUrl", required = false) MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("User created successfully.", userService.createUser(userRequest, avatarUrl, bindingResult)));
     }
 

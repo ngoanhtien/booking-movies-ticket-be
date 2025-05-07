@@ -4,7 +4,7 @@ import com.booking.movieticket.dto.criteria.CinemaCriteria;
 import com.booking.movieticket.dto.request.admin.update.CinemaForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.CinemaForCreateRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
-import com.booking.movieticket.dto.response.admin.CinemaResponse;
+import com.booking.movieticket.dto.response.admin.create.CinemaCreatedResponse;
 import com.booking.movieticket.entity.Cinema;
 import com.booking.movieticket.service.CinemaService;
 import jakarta.validation.Valid;
@@ -49,9 +49,9 @@ public class CinemaController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<CinemaResponse>> createCinema(@Valid @RequestBody CinemaForCreateRequest cinemaRequest,
-                                                                    @RequestParam(value = "logoUrl", required = false) MultipartFile logoUrl,
-                                                                    BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public ResponseEntity<ApiResponse<CinemaCreatedResponse>> createCinema(@Valid @RequestBody CinemaForCreateRequest cinemaRequest,
+                                                                           @RequestParam(value = "logoUrl", required = false) MultipartFile logoUrl,
+                                                                           BindingResult bindingResult) throws MethodArgumentNotValidException {
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Cinema created successfully.", cinemaService.createCinema(cinemaRequest, logoUrl, bindingResult)));
     }
 

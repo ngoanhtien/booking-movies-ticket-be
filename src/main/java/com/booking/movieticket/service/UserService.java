@@ -2,7 +2,7 @@ package com.booking.movieticket.service;
 
 import com.booking.movieticket.dto.request.admin.update.UserForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.UserForCreateRequest;
-import com.booking.movieticket.dto.response.admin.UserResponse;
+import com.booking.movieticket.dto.response.admin.create.UserCreatedResponse;
 import com.booking.movieticket.dto.criteria.UserCriteria;
 import com.booking.movieticket.entity.User;
 import org.springframework.data.domain.Page;
@@ -16,7 +16,7 @@ public interface UserService {
 
     User getUserById(Long id);
 
-    UserResponse createUser(UserForCreateRequest userRequest, MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
+    UserCreatedResponse createUser(UserForCreateRequest userRequest, MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
 
     void updateUser(UserForUpdateRequest userRequest, MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
 

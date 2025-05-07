@@ -1,16 +1,13 @@
-package com.booking.movieticket.dto.response.admin;
+package com.booking.movieticket.dto.response.admin.create;
 
-import com.booking.movieticket.entity.Movie;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Set;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ActorResponse {
+public class ActorCreatedResponse {
 
     private Long id;
     private String realName;

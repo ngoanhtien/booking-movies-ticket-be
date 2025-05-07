@@ -1,8 +1,9 @@
 package com.booking.movieticket.mapper;
 
-import com.booking.movieticket.dto.request.admin.update.UserForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.UserForCreateRequest;
+import com.booking.movieticket.dto.request.admin.update.UserForUpdateRequest;
 import com.booking.movieticket.dto.response.admin.UserResponse;
+import com.booking.movieticket.dto.response.admin.create.UserCreatedResponse;
 import com.booking.movieticket.entity.Role;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.service.RoleService;
@@ -20,6 +21,8 @@ public abstract class UserMapper {
     public abstract User convertRequestToUser(UserForCreateRequest request);
 
     public abstract void updateUserFromRequest(UserForUpdateRequest request, @MappingTarget User user);
+
+    public abstract UserCreatedResponse convertEntityToUserCreatedResponse(User user);
 
     public abstract UserResponse convertEntityToUserResponse(User user);
 

@@ -4,6 +4,7 @@ import com.booking.movieticket.dto.criteria.CategoryCriteria;
 import com.booking.movieticket.dto.request.admin.update.CategoryForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.CategoryForCreateRequest;
 import com.booking.movieticket.dto.response.admin.CategoryResponse;
+import com.booking.movieticket.dto.response.admin.create.CategoryCreatedResponse;
 import com.booking.movieticket.entity.Category;
 import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.exception.ErrorCode;
@@ -31,23 +32,23 @@ public class CategoryServiceImpl implements CategoryService {
     CategoryMapper categoryMapper;
 
     @Override
-    public Category getCategoryById(Long id) {
+    public CategoryResponse getCategoryById(Long id) {
         if (id == null) {
             throw new AppException(ErrorCode.CATEGORY_NOT_FOUND);
         }
-        return categoryRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+        return categoryMapper.convertEntityToCategoryResponse(categoryRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND)));
     }
 
     @Override
-    public Page<Category> getAllCategories(CategoryCriteria categoryCriteria, Pageable pageable) {
-        return categoryRepository.findAll(CategorySpecificationBuilder.findByCriteria(categoryCriteria), pageable);
+    public Page<CategoryResponse> getAllCategories(CategoryCriteria categoryCriteria, Pageable pageable) {
+        return categoryRepository.findAll(CategorySpecificationBuilder.findByCriteria(categoryCriteria), pageable).map(categoryMapper::convertEntityToCategoryResponse);
     }
 
     @Override
-    public CategoryResponse createCategory(CategoryForCreateRequest categoryRequest) {
+    public CategoryCreatedResponse createCategory(CategoryForCreateRequest categoryRequest) {
         Category category = categoryMapper.convertRequestToCategory(categoryRequest);
         category.setIsDeleted(false);
-        return categoryMapper.convertEntityToCategoryResponse(categoryRepository.save(category));
+        return categoryMapper.convertEntityToCategoryCreatedResponse(categoryRepository.save(category));
     }
 
     @Override

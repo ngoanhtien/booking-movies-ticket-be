@@ -3,7 +3,7 @@ package com.booking.movieticket.service.impl;
 import com.booking.movieticket.dto.criteria.CinemaCriteria;
 import com.booking.movieticket.dto.request.admin.update.CinemaForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.CinemaForCreateRequest;
-import com.booking.movieticket.dto.response.admin.CinemaResponse;
+import com.booking.movieticket.dto.response.admin.create.CinemaCreatedResponse;
 import com.booking.movieticket.entity.Cinema;
 import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.exception.ErrorCode;
@@ -50,7 +50,7 @@ public class CinemaServiceImpl implements CinemaService {
     }
 
     @Override
-    public CinemaResponse createCinema(CinemaForCreateRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public CinemaCreatedResponse createCinema(CinemaForCreateRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
         validateImages(logoUrl, bindingResult);
         if (bindingResult.hasErrors()) {
             throw new MethodArgumentNotValidException(null, bindingResult);
@@ -59,7 +59,7 @@ public class CinemaServiceImpl implements CinemaService {
             Cinema cinema = cinemaMapper.convertRequestToCinema(cinemaRequest);
             processAndSetImages(cinema, logoUrl);
             cinema.setIsDeleted(false);
-            return cinemaMapper.convertEntityToCinemaResponse(cinemaRepository.save(cinema));
+            return cinemaMapper.convertEntityToCinemaCreatedResponse(cinemaRepository.save(cinema));
         } catch (IOException e) {
             throw new AppException(ErrorCode.CINEMA_NOT_FOUND);
         }

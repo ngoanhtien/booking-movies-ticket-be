@@ -3,7 +3,7 @@ package com.booking.movieticket.service.impl;
 import com.booking.movieticket.dto.criteria.UserCriteria;
 import com.booking.movieticket.dto.request.admin.update.UserForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.UserForCreateRequest;
-import com.booking.movieticket.dto.response.admin.UserResponse;
+import com.booking.movieticket.dto.response.admin.create.UserCreatedResponse;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.exception.ErrorCode;
@@ -58,7 +58,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponse createUser(UserForCreateRequest userRequest, MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public UserCreatedResponse createUser(UserForCreateRequest userRequest, MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
         validateImages(avatarUrl, bindingResult);
         if (bindingResult.hasErrors()) {
             throw new MethodArgumentNotValidException(null, bindingResult);
@@ -67,7 +67,7 @@ public class UserServiceImpl implements UserService {
             User user = userMapper.convertRequestToUser(userRequest);
             processAndSetImages(user, avatarUrl);
             user.setIsDeleted(false);
-            return userMapper.convertEntityToUserResponse(userRepository.save(user));
+            return userMapper.convertEntityToUserCreatedResponse(userRepository.save(user));
         } catch (IOException e) {
             throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
