@@ -1,111 +1,93 @@
 # Active Context
 
 ## Current Focus
-- Implementation of User Management Interface
-  - User list display with DataGrid
-  - User form for create/edit operations
-  - Avatar upload functionality
-  - Search and filtering capabilities
-  - Vietnamese translations for user fields
-  - Form validation with Yup
-  - Status and membership level management
+- Implementation of Payment Integration
+  - Payment gateway integration
+  - Transaction management
+  - Payment status tracking
+  - Vietnamese translations
 
 ## Recent Changes
-- Implemented User Management component with DataGrid
-- Added Vietnamese translations for user fields
-- Implemented status and membership level management
-- Added avatar upload functionality with preview
-- Implemented search and filtering functionality
-- Added form validation with Yup
-- Integrated with backend API for CRUD operations
+- Completed Reports and Analytics feature with:
+  - Frontend:
+    - Sales reports showing revenue and ticket sales by movie
+    - Attendance reports showing viewership by movie and cinema
+    - Interactive charts using Recharts library
+    - Date range selection with Vietnamese localization
+    - Export functionality for both report types
+    - Loading states and error handling
+    - Vietnamese translations
+    - Responsive layout
+  - Backend:
+    - DTOs for sales and attendance reports
+    - Service layer with report generation and Excel export
+    - Repository queries for data aggregation
+    - REST API endpoints for reports and exports
+    - Apache POI integration for Excel export
 
 ## Next Steps
-- Add export functionality for user data
-- Implement user role management
-- Add bulk actions for selected users
-- Enhance error handling and feedback
-- Add user activity logs
-- Implement user statistics dashboard
+1. Implement Payment Integration:
+   - Integrate payment gateway
+   - Implement transaction management
+   - Add payment status tracking
+   - Add Vietnamese translations
+2. Add Real-time Updates:
+   - Implement WebSocket
+   - Add real-time notifications
+   - Add live booking updates
+3. Performance Optimization:
+   - Implement data caching
+   - Optimize database queries
+   - Improve frontend performance
 
 ## Active Decisions
-1. UI/UX Patterns
-   - Using Material-UI DataGrid for user list
-   - Formik with Yup for form validation
-   - Avatar upload with preview
-   - Search and filter in Vietnamese
-   - Responsive grid layout
-   - Status indicators
-
-2. Technical Patterns
-   - TypeScript interfaces for type safety
-   - Form validation with Yup
-   - File upload handling
-   - API integration with axios
-   - Vietnamese translations
-   - Error handling patterns
+- Using Apache POI for Excel export functionality
+- Implementing date range selection with Vietnamese localization
+- Separating sales and attendance reports into tabs
+- Using Material-UI components for consistent design
+- Using Recharts for data visualization
+- Implementing export functionality for both report types
 
 ## Important Patterns
-1. User Management
-   - CRUD operations
-   - Avatar handling
-   - Status management
-   - Membership levels
-   - Search and filtering
-   - Form validation
-
-2. Data Display
-   - DataGrid implementation
-   - Status indicators
-   - Avatar display
-   - Vietnamese labels
-   - Responsive layout
-   - Loading states
+- Consistent use of Material-UI components
+- Vietnamese language support throughout
+- Responsive grid layout
+- Error handling and loading states
+- Modular component structure
+- RESTful API design
+- Data aggregation patterns
+- Excel export functionality
 
 ## Project Insights
-1. Development Efficiency
-   - Reusable components
-   - Type safety with TypeScript
-   - Consistent validation patterns
-   - Vietnamese language support
-   - API integration patterns
+- Data visualization is crucial for effective reporting
+- Date range selection is essential for flexible reporting
+- Export functionality is important for data analysis
+- Vietnamese localization improves user experience
+- Responsive design ensures usability across devices
+- Backend data aggregation is critical for performance
 
-2. Areas for Improvement
-   - Export functionality needed
-   - Role management pending
-   - Bulk actions needed
-   - Activity logging needed
-   - Statistics dashboard needed
+## Areas for Improvement
+- Add more chart types and visualization options
+- Implement data caching for better performance
+- Add more filtering and sorting options
+- Enhance export functionality with more formats
+- Add print functionality for reports
+- Optimize database queries for large datasets
 
 ## Current Considerations
-1. Technical
-   - API integration strategy
-   - File upload handling
-   - Type safety
-   - Performance optimization
-   - Error handling
-   - Vietnamese support
-
-2. UX
-   - User feedback
-   - Loading states
-   - Error messages
-   - Form validation
-   - Search experience
-   - Mobile responsiveness
+- Performance optimization for large datasets
+- Data accuracy and validation
+- User experience in data visualization
+- Export file format compatibility
+- Caching strategy for report data
+- Payment gateway integration approach
+- Real-time update implementation
 
 ## Learnings
-1. Technical
-   - DataGrid implementation
-   - Form validation patterns
-   - File upload handling
-   - API integration
-   - Type safety
-   - Vietnamese translations
-
-2. UX
-   - User feedback patterns
-   - Form validation UX
-   - Search and filter UX
-   - Mobile responsiveness
-   - Loading states
-   - Error handling 
+- Effective use of Recharts for data visualization
+- Implementation of date range selection with localization
+- Export functionality for reports using Apache POI
+- Vietnamese translation integration
+- Responsive design patterns
+- Backend data aggregation techniques
+- Excel export implementation 

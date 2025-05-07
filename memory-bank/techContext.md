@@ -1,291 +1,214 @@
 # Technical Context
 
-## Technologies Used
+## Technology Stack
+1. Frontend
+   - React 18.x
+   - TypeScript 5.x
+   - Material-UI 5.x
+   - Formik 2.x
+   - Yup 1.x
+   - i18next 23.x
+   - Recharts 2.x
+   - Axios 1.x
+   - React Query 4.x
 
-### Frontend Framework
-- React 18.2.0
-- TypeScript 5.3.3
-- Material-UI 5.15.10
-- Redux Toolkit 2.2.1
-- React Router 6.22.1
-
-### Form Handling
-- Formik 2.4.5
-- Yup 1.3.3
-- React Hook Form 7.50.1
-
-### Data Display
-- Material-UI DataGrid 6.19.4
-- Material-UI Date Pickers 6.19.4
-- Material-UI Icons 5.15.10
-
-### State Management
-- Redux Toolkit 2.2.1
-- React Redux 9.1.0
-- Redux Persist 6.0.0
-
-### Internationalization
-- i18next 23.7.16
-- react-i18next 14.0.1
-- date-fns 2.30.0 (Vietnamese locale)
-
-### Development Tools
-- Vite 5.1.3
-- ESLint 8.56.0
-- Prettier 3.2.5
-- TypeScript 5.3.3
+2. Backend
+   - Spring Boot 3.x
+   - Spring Security 6.x
+   - Spring Data JPA 3.x
+   - PostgreSQL 15.x
+   - JWT 0.9.1
+   - Apache POI 5.2.3
+   - WebSocket 6.x
 
 ## Development Setup
+1. Frontend
+   - Node.js 18.x
+   - npm 9.x
+   - TypeScript configuration
+   - ESLint configuration
+   - Prettier configuration
+   - Vietnamese language support
+   - Chart library setup
+   - Export functionality setup
 
-### Prerequisites
-- Node.js 18.x or higher
-- npm 9.x or higher
-- Git
+2. Backend
+   - Java 17
+   - Gradle 8.x
+   - Spring Boot configuration
+   - Database configuration
+   - Security configuration
+   - Excel export configuration
+   - Vietnamese localization
 
-### Environment Setup
-1. Clone repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start development server:
-   ```bash
-   npm run dev
+## Dependencies
+1. Frontend
+   ```json
+   {
+     "dependencies": {
+       "@emotion/react": "^11.11.0",
+       "@emotion/styled": "^11.11.0",
+       "@mui/material": "^5.13.0",
+       "@mui/x-data-grid": "^6.5.0",
+       "axios": "^1.4.0",
+       "formik": "^2.2.9",
+       "i18next": "^23.4.4",
+       "react": "^18.2.0",
+       "react-dom": "^18.2.0",
+       "react-query": "^4.0.0",
+       "recharts": "^2.6.2",
+       "typescript": "^5.0.4",
+       "yup": "^1.1.1"
+     }
+   }
    ```
 
-### Build Process
-1. Development:
-   ```bash
-   npm run dev
-   ```
-2. Production build:
-   ```bash
-   npm run build
-   ```
-3. Preview production:
-   ```bash
-   npm run preview
+2. Backend
+   ```gradle
+   dependencies {
+       implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+       implementation 'org.springframework.boot:spring-boot-starter-security'
+       implementation 'org.springframework.boot:spring-boot-starter-web'
+       implementation 'io.jsonwebtoken:jjwt:0.9.1'
+       implementation 'org.apache.poi:poi:5.2.3'
+       implementation 'org.apache.poi:poi-ooxml:5.2.3'
+       runtimeOnly 'org.postgresql:postgresql'
+   }
    ```
 
 ## Technical Constraints
+1. Frontend
+   - Browser compatibility
+   - Mobile responsiveness
+   - Chart performance
+   - Export file size
+   - Vietnamese character support
+   - Date format localization
 
-### Browser Support
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
+2. Backend
+   - Database performance
+   - Report generation time
+   - Excel file size
+   - Vietnamese character encoding
+   - Date handling
+   - Memory usage
 
-### Performance Requirements
-- First contentful paint < 2s
-- Time to interactive < 3s
-- Bundle size < 500KB (initial load)
+## Tool Usage
+1. Development
+   - VS Code
+   - IntelliJ IDEA
+   - Git
+   - Postman
+   - pgAdmin
+   - Chrome DevTools
 
-### Language Requirements
-- Vietnamese language support
-- Vietnamese date formatting
-- Vietnamese number formatting
-- Vietnamese error messages
-- Vietnamese UI text
+2. Testing
+   - Jest
+   - React Testing Library
+   - JUnit
+   - Mockito
+   - Postman
+   - Vietnamese test data
 
-## Dependencies
+## Configuration
+1. Frontend
+   ```typescript
+   // i18n.ts
+   import i18n from 'i18next';
+   import { initReactI18next } from 'react-i18next';
+   
+   i18n.use(initReactI18next).init({
+     lng: 'vi',
+     resources: {
+       vi: {
+         translation: require('./locales/vi/translation.json')
+       }
+     }
+   });
+   ```
 
-### Core Dependencies
-```json
-{
-  "dependencies": {
-    "@emotion/react": "^11.11.3",
-    "@emotion/styled": "^11.11.0",
-    "@mui/icons-material": "^5.15.10",
-    "@mui/material": "^5.15.10",
-    "@mui/x-data-grid": "^6.19.4",
-    "@mui/x-date-pickers": "^6.19.4",
-    "@reduxjs/toolkit": "^2.2.1",
-    "date-fns": "^2.30.0",
-    "formik": "^2.4.5",
-    "i18next": "^23.7.16",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-hook-form": "^7.50.1",
-    "react-i18next": "^14.0.1",
-    "react-redux": "^9.1.0",
-    "react-router-dom": "^6.22.1",
-    "redux-persist": "^6.0.0",
-    "yup": "^1.3.3"
-  }
-}
-```
+2. Backend
+   ```yaml
+   # application.yml
+   spring:
+     datasource:
+       url: jdbc:postgresql://localhost:5432/movie_booking
+       username: postgres
+       password: postgres
+     jpa:
+       hibernate:
+         ddl-auto: update
+       properties:
+         hibernate:
+           dialect: org.hibernate.dialect.PostgreSQLDialect
+   ```
 
-### Development Dependencies
-```json
-{
-  "devDependencies": {
-    "@types/react": "^18.2.55",
-    "@types/react-dom": "^18.2.19",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "@vitejs/plugin-react": "^4.2.1",
-    "eslint": "^8.56.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.5",
-    "prettier": "^3.2.5",
-    "typescript": "^5.3.3",
-    "vite": "^5.1.3"
-  }
-}
-```
+## API Endpoints
+1. Reports
+   ```
+   GET /api/reports/sales
+   GET /api/reports/attendance
+   GET /api/reports/sales/export
+   GET /api/reports/attendance/export
+   ```
 
-## Tool Usage Patterns
+## Data Models
+1. Reports
+   ```java
+   @Data
+   public class SalesReportDTO {
+       private String movieName;
+       private String format;
+       private LocalDate date;
+       private BigDecimal revenue;
+       private Integer tickets;
+   }
 
-### Code Organization
-- Feature-based folder structure
-- Shared components in common directory
-- Page components in pages directory
-- Redux slices in store directory
-- Types in types directory
-- Translations in locales directory
+   @Data
+   public class AttendanceReportDTO {
+       private String movieName;
+       private String cinemaName;
+       private LocalDate date;
+       private Integer attendance;
+   }
+   ```
 
-### Component Structure
-```typescript
-// Component template
-import React from 'react';
-import { Box, Typography } from '@mui/material';
-import { useTranslation } from 'react-i18next';
+## Security
+1. Authentication
+   - JWT token-based
+   - Role-based access
+   - Secure endpoints
+   - Vietnamese error messages
 
-interface Props {
-  // Props interface
-}
+2. Data Protection
+   - Input validation
+   - SQL injection prevention
+   - XSS protection
+   - CSRF protection
+   - Vietnamese security
 
-const Component: React.FC<Props> = ({ /* props */ }) => {
-  const { t } = useTranslation();
-  
-  return (
-    <Box>
-      <Typography>{t('component.title')}</Typography>
-    </Box>
-  );
-};
+## Performance
+1. Frontend
+   - Code splitting
+   - Lazy loading
+   - Memoization
+   - Vietnamese optimization
 
-export default Component;
-```
-
-### Form Structure
-```typescript
-// Form template
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
-import { useTranslation } from 'react-i18next';
-
-const Form = () => {
-  const { t } = useTranslation();
-  
-  const validationSchema = Yup.object({
-    // Validation schema with Vietnamese messages
-  });
-
-  const formik = useFormik({
-    initialValues: {
-      // Initial values
-    },
-    validationSchema,
-    onSubmit: (values) => {
-      // Submit handler
-    },
-  });
-
-  return (
-    <form onSubmit={formik.handleSubmit}>
-      {/* Form fields with Vietnamese labels */}
-    </form>
-  );
-};
-```
-
-### Redux Structure
-```typescript
-// Redux slice template
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-interface State {
-  // State interface
-}
-
-const initialState: State = {
-  // Initial state
-};
-
-const slice = createSlice({
-  name: 'sliceName',
-  initialState,
-  reducers: {
-    // Reducers
-  },
-});
-
-export const { actions } = slice;
-export default slice.reducer;
-```
-
-## Testing Strategy
-
-### Unit Testing
-- Component testing
-- Redux testing
-- Form validation testing
-- Utility function testing
-- Translation testing
-
-### Integration Testing
-- Form submission
-- State management
-- Routing
-- Translation switching
-
-### E2E Testing
-- User flows
-- Critical paths
-- Error scenarios
-- Performance testing
-- Language switching
-
-## Deployment
-
-### Build Process
-1. Run tests
-2. Build production bundle
-3. Optimize assets
-4. Generate source maps
-
-### Deployment Steps
-1. Build application
-2. Deploy to hosting
-3. Configure environment
-4. Monitor performance
+2. Backend
+   - Query optimization
+   - Caching
+   - Batch processing
+   - Vietnamese handling
 
 ## Monitoring
+1. Application
+   - Logging
+   - Error tracking
+   - Performance monitoring
+   - Vietnamese logging
 
-### Performance Metrics
-- Load time
-- Time to interactive
-- Bundle size
-- Memory usage
-
-### Error Tracking
-- Error boundaries
-- Error logging
-- User feedback
-- Error recovery
-
-## Documentation
-
-### Code Documentation
-- JSDoc comments
-- Type definitions
-- Component documentation
-- Translation documentation
-
-### User Documentation
-- Setup guide
-- Usage guide
-- Troubleshooting
-- FAQ
-- Vietnamese language guide 
+2. Business
+   - Report generation
+   - Data analysis
+   - Vietnamese analytics
+   - Export tracking 
