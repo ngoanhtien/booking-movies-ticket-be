@@ -3,6 +3,7 @@ package com.booking.movieticket.service.impl;
 import com.booking.movieticket.dto.criteria.UserCriteria;
 import com.booking.movieticket.dto.request.admin.update.UserForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.UserForCreateRequest;
+import com.booking.movieticket.dto.response.admin.UserResponse;
 import com.booking.movieticket.dto.response.admin.create.UserCreatedResponse;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.exception.AppException;
@@ -44,16 +45,16 @@ public class UserServiceImpl implements UserService {
     UserMapper userMapper;
 
     @Override
-    public User getUserById(Long id) {
+    public UserResponse getUserById(Long id) {
         if (id == null) {
             throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
-        return userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        return userMapper.convertEntityToUserResponse(userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)));
     }
 
     @Override
-    public Page<User> getAllUsers(UserCriteria userCriteria, Pageable pageable) {
-        return userRepository.findAll(UserSpecificationBuilder.findByCriteria(userCriteria), pageable);
+    public Page<UserResponse> getAllUsers(UserCriteria userCriteria, Pageable pageable) {
+        return userRepository.findAll(UserSpecificationBuilder.findByCriteria(userCriteria), pageable).map(userMapper::convertEntityToUserResponse);
     }
 
     @Override
@@ -62,6 +63,15 @@ public class UserServiceImpl implements UserService {
         validateImages(avatarUrl, bindingResult);
         if (bindingResult.hasErrors()) {
             throw new MethodArgumentNotValidException(null, bindingResult);
+        }
+        if (userRepository.existsByEmail(userRequest.getEmail())) {
+            throw new AppException(ErrorCode.EMAIL_IS_EXISTED);
+        }
+        if (userRepository.existsByUsername(userRequest.getUsername())) {
+            throw new AppException(ErrorCode.USERNAME_IS_EXISTED);
+        }
+        if (userRepository.existsByPhone(userRequest.getPhone())) {
+            throw new AppException(ErrorCode.PHONE_IS_EXISTED);
         }
         try {
             User user = userMapper.convertRequestToUser(userRequest);
@@ -84,8 +94,10 @@ public class UserServiceImpl implements UserService {
             if (userRequest.getId() == null) {
                 throw new AppException(ErrorCode.USER_NOT_FOUND);
             }
-            User user = userRepository.findById(userRequest.getId())
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            if (userRepository.existsByEmail(userRequest.getUsername())) {
+                throw new AppException(ErrorCode.USERNAME_IS_EXISTED);
+            }
+            User user = userRepository.findById(userRequest.getId()).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
             userMapper.updateUserFromRequest(userRequest, user);
             processAndSetImages(user, avatarUrl);
             userRepository.save(user);
@@ -134,8 +146,7 @@ public class UserServiceImpl implements UserService {
         if (id == null) {
             throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         if (Objects.equals(user.getIsDeleted(), isDeleted)) {
             return;
         }

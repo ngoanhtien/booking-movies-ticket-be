@@ -1,4 +1,9 @@
 spring:
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 10MB
   application:
     name: movie-ticket
   datasource:
@@ -57,7 +62,7 @@ resetPasswordBody: "Dear {0},\n\nYou have requested to reset your account passwo
 resetPasswordSubject: "Password Change Notification"
 
 cloudinary:
-  cloud_name: bnsfbnn
+  cloud_name: dgpgct51a
   api_key: 699739212132192
   api_secret: 8GoUJ59v1jiRXtt6z2-R90vP2sc
   secure: true
@@ -65,3 +70,4 @@ cloudinary:
 sepay:
   merchant_id: MOVIE_TICKET_MERCHANT
   callback_url: https://alive-bee-adequately.ngrok-free.app/payment/sepay-webhook
+

@@ -21,6 +21,9 @@ public class UserForCreateRequest {
     @Email(message = "Invalid email format.")
     private String email;
 
+    @Size(min = 6, max = 100, message = "Password must be between 6 and 100 characters")
+    private String password;
+
     private String fullName;
 
     @Past(message = "Date of birth must be in the past.")

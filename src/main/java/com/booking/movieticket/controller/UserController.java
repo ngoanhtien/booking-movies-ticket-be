@@ -4,6 +4,7 @@ import com.booking.movieticket.dto.request.ResetPasswordRequest;
 import com.booking.movieticket.dto.request.admin.update.UserForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.UserForCreateRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
+import com.booking.movieticket.dto.response.admin.UserResponse;
 import com.booking.movieticket.dto.response.admin.create.UserCreatedResponse;
 import com.booking.movieticket.dto.criteria.UserCriteria;
 import com.booking.movieticket.entity.User;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
@@ -41,17 +43,17 @@ public class UserController {
     MailSendService mailSendService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<User>>> getAllUsers(UserCriteria userCriteria, @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+    public ResponseEntity<ApiResponse<Page<UserResponse>>> getAllUsers(UserCriteria userCriteria, @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("Users fetched successfully.", userService.getAllUsers(userCriteria, pageable)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<User>> readUser(@PathVariable @Min(value = 1, message = "Id must be greater than or equal to 1.") Long id) {
+    public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable @Min(value = 1, message = "Id must be greater than or equal to 1.") Long id) {
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("User details fetched successfully.", userService.getUserById(id)));
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<UserCreatedResponse>> createUser(@Valid @RequestPart("userRequestData") UserForCreateRequest userRequest, @RequestPart(value = "avatarUrl", required = false) MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public ResponseEntity<ApiResponse<UserCreatedResponse>> createUser(@RequestPart("user") @Valid UserForCreateRequest userRequest, @RequestPart(value = "avatarUrl", required = false) MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("User created successfully.", userService.createUser(userRequest, avatarUrl, bindingResult)));
     }
 

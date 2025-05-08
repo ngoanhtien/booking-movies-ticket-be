@@ -9,6 +9,9 @@ public enum ErrorCode {
 
     REGISTRATION_FAILED(1000, "Registration failed", HttpStatus.INTERNAL_SERVER_ERROR),
     USER_NOT_FOUND(1001, "User not found", HttpStatus.NOT_FOUND),
+    EMAIL_IS_EXISTED(1001, "Email is existed", HttpStatus.NOT_FOUND),
+    USERNAME_IS_EXISTED(1001, "Username is existed", HttpStatus.NOT_FOUND),
+    PHONE_IS_EXISTED(1001, "Phone is existed", HttpStatus.NOT_FOUND),
     USER_ALREADY_EXISTS(1002, "User already exists", HttpStatus.CONFLICT),
     ROLE_NOT_FOUND(1003, "Role not found", HttpStatus.NOT_FOUND),
 

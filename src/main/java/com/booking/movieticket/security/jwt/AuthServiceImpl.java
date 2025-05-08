@@ -69,7 +69,7 @@ public class AuthServiceImpl implements AuthService {
             User user = new User();
             user.setUsername(registerRequest.getUsername());
             user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-            user.setFullname(registerRequest.getFullname());
+            user.setFullName(registerRequest.getFullname());
             user.setMembershipLevel(MembershipLevel.BASIC);
             user.setIsConfirmed(false);
             user.setIsDeleted(false);
