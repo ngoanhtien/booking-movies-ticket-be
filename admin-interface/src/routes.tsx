@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import Login from './pages/auth/Login';
 import Dashboard from './pages/dashboard/Dashboard';
@@ -6,7 +6,7 @@ import MovieManagement from './pages/movies/MovieManagement';
 import MovieSchedules from './pages/movies/MovieSchedules';
 import ShowtimeManagement from './pages/showtimes/ShowtimeManagement';
 import UserManagement from './pages/users/UserManagement';
-import RolesManagement from './pages/users/RolesManagement';
+import UserList from './pages/users/UserList';
 import BookingManagement from './pages/bookings/BookingManagement';
 import ReportsAndAnalytics from './pages/reports/ReportsAndAnalytics';
 import CinemaManagement from './pages/cinemas/CinemaManagement';
@@ -40,8 +40,7 @@ const AppRoutes: React.FC = () => {
         <Route path="movies/edit/:id" element={<MovieForm movie={null} onSave={() => {}} onCancel={() => {}} />} />
         <Route path="movies/schedules" element={<MovieSchedules />} />
         <Route path="showtimes" element={<ShowtimeManagement />} />
-        <Route path="users" element={<UserManagement />} />
-        <Route path="users/roles" element={<RolesManagement />} />
+        <Route path="users" element={<UserList />} />
         <Route path="bookings" element={<BookingManagement />} />
         <Route path="reports" element={<ReportsAndAnalytics />} />
         <Route path="cinemas" element={<CinemaManagement />} />

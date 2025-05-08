@@ -178,27 +178,6 @@ const Layout: React.FC = () => {
                     }} 
                   />
                 </ListItem>
-                <ListItem 
-                  button 
-                  sx={{ 
-                    py: 1.2, 
-                    pl: 7,
-                    pr: 2.5, 
-                    '&:hover': { 
-                      bgcolor: 'rgba(25, 118, 210, 0.04)'
-                    }
-                  }} 
-                  onClick={() => handleNavigation('/admin/users/roles')}
-                >
-                  <ListItemText 
-                    primary={t('sidebar.rolesPermissions')} 
-                    primaryTypographyProps={{ 
-                      fontSize: '0.875rem',
-                      fontWeight: 500,
-                      color: 'text.secondary'
-                    }} 
-                  />
-                </ListItem>
               </List>
             </Collapse>
             

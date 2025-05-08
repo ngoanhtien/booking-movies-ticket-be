@@ -1,11 +1,22 @@
 # Active Context
 
 ## Current Focus
-- Moving from implementing the user-facing Booking System (now with complete UI for all form steps) to either:
-    - API integration for the multi-step booking form
-    - Continued refinement of other admin modules
+- Moving from implementing the user-facing Booking System (now with complete UI for all form steps) to completing the placeholder admin modules that have been enhanced:
+    - RoomManagement
+    - PromotionsManagement
+    - TheaterLocations
+    - Next candidates: RolesManagement and other placeholder components 
 
 ## Recent Changes
+- **Admin Panel Navigation Update**:
+    - Removed "Vai trò & Phân quyền" (Roles & Permissions) tab from the user management section in the sidebar navigation.
+    - Deleted the RolesManagement.tsx component as it's no longer needed.
+    - Updated progress.md to reflect this change.
+- **Admin Panel Placeholder Components - Enhanced Implementation**:
+    - **RoomManagement.tsx**: Implemented with mock data for cinema rooms (2D, 3D, IMAX, VIP), added DataGrid display with comprehensive CRUD operations, form validation using Formik/Yup, and visual status indicators.
+    - **PromotionsManagement.tsx**: Created rich mock data for different promotion types (percentage/fixed discounts), various targets (all/movie/food/combo), date range selection with Vietnamese localization, and comprehensive form validation.
+    - **TheaterLocations.tsx**: Enhanced with theater location mock data, dual view modes (grid/list), Google Maps integration, search functionality, and detailed location management. Had linter errors regarding missing `MenuItem` imports which were attempted to be fixed.
+    - All implementations maintained consistency with the existing UI patterns, used Material-UI components, included Vietnamese translations, and followed the project's established design conventions.
 - **User-Facing Booking System - Full Implementation**:
     - Completed all four steps of the multi-step booking form in `BookingForm.tsx`:
         - **Showtime Selection**: Implemented UI for displaying available showtimes with movie time, room name, and available seats. Added state management for selected showtime and form validation.
@@ -21,13 +32,22 @@
     - Added comprehensive Vietnamese translations for the entire booking form UI in `admin-interface/src/locales/vi/translation.json`.
     - Added a dedicated `booking` section in the translation file with nested keys for all UI elements.
     - Ensured proper use of the translation function `t()` throughout the booking form for consistent Vietnamese display.
+    - Added Vietnamese translations for new placeholder components (RoomManagement, PromotionsManagement, TheaterLocations).
 - **Linter Error Resolution**:
     - Fixed TypeScript errors in `BookingForm.tsx` related to formik validation by properly handling field error checks.
     - Resolved issues with `Register.tsx` import in `routes.tsx` which was causing persistent linter errors.
     - Explicitly typed Formik's fields to prevent TypeScript "argument of type string is not assignable to type never" errors.
+    - Encountered but couldn't fully resolve import errors in TheaterLocations.tsx related to MenuItem components.
 
 ## Next Steps
-1. **API Integration for Booking System**:
+1. **Complete Placeholder Admin Modules**:
+   * Enhance remaining placeholder components with mock data and UI:
+     * `DiscountManagement.tsx` 
+     * `NotificationManagement.tsx`
+     * `MovieSchedules.tsx`
+   * Fix remaining linter errors in enhanced components.
+   * Ensure consistent Vietnamese translations across all new components.
+2. **API Integration for Booking System**:
    * Replace mock data with actual API calls for each step:
      * Fetch showtimes from backend based on movieId (or all upcoming showtimes)
      * Fetch seat layout based on selected showtime
@@ -36,17 +56,16 @@
    * Implement proper error handling for API failures
    * Add loading states for API calls
    * Consider optimistic UI updates for better user experience
-2. **Refine `MovieForm` Routes**:
+3. **Refine `MovieForm` Routes**:
    * Modify the `movies/add` and `movies/edit/:id` routes in `admin-interface/src/routes.tsx`
    * For "edit", fetch movie data based on `id` and pass it to `MovieForm`
    * Implement actual `onSave` and `onCancel` handlers (e.g., API calls, navigation)
-3. **Enhance User Experience for Booking Form**:
+4. **Enhance User Experience for Booking Form**:
    * Add animations for step transitions
    * Improve responsive design for mobile users
    * Add more detailed validation messages
    * Implement better error recovery for failed operations
-4. **Address Placeholder Admin Modules**: Systematically work through other placeholder components in the admin panel (e.g., `RoomManagement`, `RolesManagement`, `PromotionsManagement`) to implement their full functionality.
-5. **Testing**: Conduct a thorough review and test of the recently implemented features, especially the multi-step booking form.
+5. **Testing**: Conduct a thorough review and test of the recently implemented features, especially the enhanced admin components and the multi-step booking form.
 
 ## Active Decisions
 - Using JPA for entity relationships
@@ -69,6 +88,9 @@
 - Using a component-based approach for seat visualization in the booking form.
 - Implementing a grid layout for food & drink items with quantity controls.
 - Using helper functions to calculate subtotals and totals in the booking summary.
+- Using Material-UI DataGrid for consistent data table presentation in admin components.
+- Implementing view mode toggles (grid/list) for location-based data visualization.
+- Providing rich mock data that closely resembles expected production data patterns.
 
 ## Important Patterns
 - JPA entity relationships
@@ -101,6 +123,9 @@
 - Using helper functions to transform and process data for display.
 - Handling form state across multiple steps in a multi-step form.
 - Explicitly typing form values in Formik to improve TypeScript inference.
+- View mode toggles (grid/list) for different data visualization contexts.
+- Common dialog pattern for CRUD operations across admin components.
+- Status indicators with consistent color coding (success/error/warning).
 
 ## Project Insights
 - Entity relationships are crucial for data integrity
@@ -132,6 +157,9 @@
 - Form validation should provide immediate feedback but avoid disrupting user flow.
 - Mock data with simulated API delays helps test loading states and error handling.
 - Complex UIs like seat maps benefit from a component-based approach with clear visual state indicators.
+- Implementing placeholder components with rich mock data helps visualize the final product better and identify potential UX issues early.
+- Consistent import patterns across components are crucial to prevent linter errors.
+- Maintaining consistent data models and form validation patterns across similar components improves code maintainability.
 
 ## Areas for Improvement
 - Add more chart customization options
@@ -165,6 +193,10 @@
 - Implement actual payment processing integration.
 - Add booking confirmation emails/notifications.
 - Implement a booking history view for users.
+- Fix import errors in TheaterLocations.tsx related to MenuItem components.
+- Add more sophisticated filtering options to DataGrid components.
+- Implement proper error handling for image upload failures.
+- Add confirmation dialogs for critical actions (delete, status changes).
 
 ## Current Considerations
 - API integration approach for the booking form
@@ -188,6 +220,10 @@
 - Season pass/membership integration
 - Analytics for popular seats/food items
 - A/B testing for booking flow optimization
+- Best approach for role-based permission management
+- Integration of Google Maps for theater locations
+- Handling real-time room availability updates
+- Promotion code validation and application workflow
 
 ## Learnings
 - JPA entity relationship implementation
@@ -220,4 +256,8 @@
 - Implementing quantity selectors for catalog items (food & drinks).
 - Organizing translation keys hierarchically to match UI structure.
 - Using TypeScript interfaces to model domain entities (Showtime, Seat, Food items).
-- Calculating derived values from form state (subtotals, totals). 
+- Calculating derived values from form state (subtotals, totals).
+- Implementing view mode toggles for different data visualization contexts.
+- Creating rich mock data that closely resembles expected production data.
+- Using Material-UI DataGrid for efficient data presentation.
+- Implementing comprehensive CRUD operations with consistent UI patterns. 

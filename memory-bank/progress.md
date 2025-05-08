@@ -9,6 +9,7 @@
   - Vietnamese translation file
   - Vietnamese UI text
   - Comprehensive translations for booking form UI
+  - Complete translations for enhanced placeholder components
 - Admin Panel UI Development
   - Authentication bypass for UI preview
   - Direct access to admin panel without backend
@@ -18,6 +19,10 @@
   - Consistent sidebar navigation with collapsible groups
   - Path prefixes for proper route nesting
   - Placeholder components for all menu items
+  - Enhanced placeholder components with rich mock data and full UI:
+    - Room Management with room types, capacity, status and features
+    - Promotions Management with various discount types and targets
+    - Theater Locations with map integration and dual view modes
 - Showtime Management Interface
   - Showtime list view with DataGrid
   - Add/Edit showtime form
@@ -96,13 +101,15 @@
   - Add/edit/delete UI
   - Routing and sidebar link
   - Vietnamese translations
-- Placeholder components created for all sidebar menu items:
-  - RolesManagement.tsx for user role permissions
-  - MovieSchedules.tsx for movie scheduling
-  - TheaterManagement.tsx and TheaterLocations.tsx for theater management
-  - RoomManagement.tsx for cinema rooms
-  - PromotionsManagement.tsx, DiscountManagement.tsx, and NotificationManagement.tsx for promotions
-  - All with basic structure and Vietnamese headers
+- Placeholder components enhanced with functional UI and mock data:
+  - RoomManagement.tsx with DataGrid, form validation, status indicators, and support for different room types (2D, 3D, IMAX, VIP)
+  - PromotionsManagement.tsx with rich promotion data, different discount types (percentage/fixed), various targets (all/movie/food/combo), and date range selection
+  - TheaterLocations.tsx with location data, dual view modes (grid/list), Google Maps integration, and search functionality
+- Partially functional placeholder components:
+  - RolesManagement.tsx (basic structure)
+  - MovieSchedules.tsx (basic structure)
+  - DiscountManagement.tsx (basic structure)
+  - NotificationManagement.tsx (basic structure)
 - Admin Panel UI Enhancements:
     - Sidebar in `Layout.tsx` harmonized with dashboard design (styling, hover effects).
     - Dashboard charts (`BarChart`, `PieChart`, `LineChart` in `Dashboard.tsx`) visually enhanced (gradients, styling, tooltips, `ChartContainer` improvements).
@@ -168,14 +175,14 @@
    - [x] Branch management module
    - [x] Invoice (Bill) management module
    - [x] Theater management module (placeholder)
-   - [x] Theater locations module (placeholder)
-   - [x] Room management module (placeholder)
-   - [x] User roles management module (placeholder)
-   - [x] Promotions management module (placeholder)
-   - [x] Discount management module (placeholder)
-   - [x] Notification management module (placeholder)
-   - [x] Movie schedules module (placeholder)
-   - [ ] Complete content for placeholder modules
+   - [x] Theater locations module (placeholder enhanced with functional UI)
+   - [x] Room management module (placeholder enhanced with functional UI)
+   - [-] User roles management module (removed from navigation)
+   - [x] Promotions management module (placeholder enhanced with functional UI)
+   - [ ] Discount management module (placeholder requires enhancement)
+   - [ ] Notification management module (placeholder requires enhancement)
+   - [ ] Movie schedules module (placeholder requires enhancement)
+   - [ ] Complete content for remaining placeholder modules
    - [ ] Refine `MovieForm` routes with actual data fetching/state management (currently uses placeholder props).
 
    User Interface
@@ -248,84 +255,44 @@
   - Vietnamese translations for all UI elements
   - TypeScript interfaces for form data and domain entities
   - Helper functions for derived values (subtotals, totals)
-- Booking Management features implemented with:
-  - DataGrid for booking listing with Vietnamese headers
-  - Detailed booking view with movie, cinema, and food information
-  - Status management with confirmation dialogs
-  - Export functionality for booking data
-  - Search and filtering capabilities
-  - API integration with error handling
-  - Loading states and notifications
-  - Vietnamese translations throughout
-- Reports and Analytics features implemented with:
-  - Integration with @tanstack/react-query v5
-  - Sales reports showing revenue and ticket sales by movie
-  - Attendance reports showing viewership by movie and cinema
-  - Interactive charts using Recharts library
-  - Multiple chart types:
-    - Bar charts for sales comparison
-    - Pie charts for distribution analysis
-    - Radar charts for cinema performance
-    - Area charts for time-based trends
-    - Line charts for trend analysis
-    - Composed charts for multi-metric visualization
-  - Date range selection with Vietnamese localization
-  - Export functionality for both report types
-  - Loading states and error handling
-  - Vietnamese translations
-  - Responsive layout
-  - Mock data for UI preview
-  - Proper error boundaries
-  - Data caching with React Query
-  - TypeScript 5.3.3 support
-- Cinema Management features implemented with:
-  - DataGrid for cinema listing with Vietnamese headers
-  - Form validation using Formik and Yup with Vietnamese messages
-  - Image upload with preview
-  - Status management with Vietnamese indicators
-  - Add/edit/delete UI
-  - Routing and sidebar link
-  - Vietnamese translations
-- Branch Management features implemented with:
-  - DataGrid for branch listing with Vietnamese headers
-  - Form validation using Formik and Yup with Vietnamese messages
-  - Cinema selection dropdown
-  - Add/edit/delete UI
-  - Routing and sidebar link
-  - Vietnamese translations
-- Invoice (Bill) Management features implemented with:
-  - DataGrid for invoice listing with Vietnamese headers
-  - Form validation using Formik and Yup with Vietnamese messages
-  - User and booking selection dropdowns
-  - Add/edit/delete UI
-  - Routing and sidebar link
-  - Vietnamese translations
-- Admin dashboard charts (`Dashboard.tsx`) have been visually enhanced with improved styling, gradients, and tooltip consistency.
-- The admin sidebar (`Layout.tsx`) has been stylistically harmonized with the dashboard.
-- Theater Management page (`TheaterManagement.tsx`) for admin panel has a complete UI with mocked CRUD operations, Formik/Yup validation, and styling aligned with the dashboard. Type definitions in `theater.ts` are established. TypeScript errors related to image URL handling were resolved.
-- Initial components (`BookingPage.tsx`, `BookingForm.tsx`) and routing for the user-facing booking page are in place. `BookingForm.tsx` includes a multi-step stepper structure, but the content for each step (Showtime, Seats, Food, Payment) is currently placeholder and requires full implementation.
-- Recent linter errors in `Dashboard.tsx` (Recharts props) and `routes.tsx` (missing `Register` component, `MovieForm` props) have been addressed. The `Register.tsx` file has been created, and `MovieForm` uses temporary placeholder props.
+- Placeholder Admin Components enhanced:
+  - RoomManagement.tsx implemented with:
+    - Mock data for different room types (2D, 3D, IMAX, VIP)
+    - DataGrid for room listing with Vietnamese headers
+    - Add/Edit dialog with form validation
+    - Status management with visual indicators
+    - Capacity and features management
+  - PromotionsManagement.tsx implemented with:
+    - Rich mock data for various promotion types
+    - Support for percentage and fixed amount discounts
+    - Target selection (all/movie/food/combo)
+    - Date range selection with Vietnamese localization
+    - Comprehensive form validation
+  - TheaterLocations.tsx implemented with:
+    - Theater location mock data
+    - Dual view modes (grid view and list view)
+    - Google Maps integration for location visualization
+    - Search functionality for locations
+    - Detailed location management
+  - All enhanced components maintain consistency with:
+    - Existing UI patterns and Material-UI components
+    - Vietnamese translations
+    - Form validation using Formik and Yup
+    - Visual status indicators
+    - Appropriate error handling
+- Remaining placeholder components have basic structure and Vietnamese headers but require further enhancement
 
 ## Known Issues
-- Mock data used in dashboard and management interfaces
-- Some Vietnamese translations may need refinement
-- API integration needed for all management interfaces
-- Performance optimization needed for large datasets in reports
-- Mobile responsiveness improvements needed for charts
-- Date range selection UX needs enhancement
-- Need to implement data caching for reports
-- Optimize database queries for large datasets
-- Add more chart types and visualization options
-- Enhance export functionality with more formats
-- Add print functionality for reports
-- Booking service layer needs implementation
-- Payment integration pending
-- Booking validation rules needed
-- Error states needed for offline mode
-- Implement proper error states for offline mode
-- `MovieForm` component invocations in `admin-interface/src/routes.tsx` use placeholder `null` props for `movie` and empty functions for `onSave`/`onCancel`; these need to be replaced with actual data fetching logic (for edit mode) and functional callbacks.
-- The user-facing `BookingForm.tsx` contains placeholder content for its steps (Showtime Selection, Seat Selection, Food & Drinks, Confirm & Pay). Each step requires full UI implementation, API integration, and state management.
-- The linter might show a temporary error for the `admin-interface/src/pages/auth/Register.tsx` import in `admin-interface/src/routes.tsx` if it hasn't fully re-indexed after the file creation (the file does exist and the error should resolve).
+- Some linter errors in TheaterLocations.tsx related to MenuItem imports
+- MovieForm routes using placeholder props instead of actual data flow
+- Booking form using mock data instead of API integration
+- Missing content for some placeholder components
+- Lack of proper error handling for offline mode
+- Limited mobile responsiveness for complex UIs like seat selection
+- Incomplete translations for some newer components
+- Missing confirmation dialogs for critical actions in some components
+- Limited filtering options in some DataGrid implementations
+- Lack of proper error handling for image upload failures in some components
 
 ## Next Steps
 1. Complete Booking System:
