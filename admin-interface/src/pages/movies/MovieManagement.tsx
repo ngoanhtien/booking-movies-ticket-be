@@ -14,16 +14,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MovieForm from './MovieForm';
-
-interface Movie {
-  id: number;
-  title: string;
-  description: string;
-  duration: number;
-  releaseDate: string;
-  status: 'ACTIVE' | 'INACTIVE';
-  posterUrl: string;
-}
+import { Movie, MovieFormData } from '../../types';
 
 const MovieManagement: React.FC = () => {
   const { t } = useTranslation();
@@ -105,9 +96,27 @@ const MovieManagement: React.FC = () => {
     setSelectedMovie(null);
   };
 
-  const handleSave = (movie: Omit<Movie, 'id'>) => {
+  const handleSave = (formData: MovieFormData) => {
     // TODO: Implement save functionality
-    console.log('Save movie:', movie);
+    // Chuyển đổi formData.releaseDate từ Date sang string nếu cần
+    const movieToSave = {
+      title: formData.title,
+      description: formData.description,
+      duration: formData.duration,
+      // Chuyển đổi Date sang string dạng YYYY-MM-DD
+      releaseDate: formData.releaseDate.toISOString().split('T')[0],
+      status: formData.status,
+      posterUrl: formData.posterUrl || '',
+      // Xử lý posterFile nếu cần
+    };
+    
+    console.log('Save movie:', movieToSave);
+    // Ở đây có thể thêm logic để upload posterFile nếu có
+    if (formData.posterFile) {
+      console.log('Upload poster file:', formData.posterFile.name);
+      // Logic upload file và cập nhật posterUrl
+    }
+    
     handleClose();
   };
 

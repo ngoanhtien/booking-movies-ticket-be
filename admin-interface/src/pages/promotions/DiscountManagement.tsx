@@ -35,7 +35,11 @@ import {
   Movie as MovieIcon,
   Fastfood as FoodIcon,
   Settings as SettingsIcon,
-  AllInclusive as AllInclusiveIcon
+  AllInclusive as AllInclusiveIcon,
+  Visibility,
+  CheckCircle as CheckCircleIcon,
+  Error as ErrorIcon,
+  Search as SearchIcon
 } from '@mui/icons-material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -220,6 +224,32 @@ const DiscountManagement: React.FC = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [selectedDiscount, setSelectedDiscount] = useState<Discount | null>(null);
 
+  // Search and filter state
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'PERCENTAGE' | 'FIXED_AMOUNT'>('all');
+
+  // Get filtered discounts
+  const filteredDiscounts = discounts.filter(discount => {
+    // Search term filter
+    const matchesSearch = 
+      discount.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      discount.name.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Status filter
+    const matchesStatus = 
+      filterStatus === 'all' || 
+      (filterStatus === 'active' && discount.isActive) ||
+      (filterStatus === 'inactive' && !discount.isActive);
+
+    // Type filter
+    const matchesType =
+      filterType === 'all' ||
+      filterType === discount.discountType;
+
+    return matchesSearch && matchesStatus && matchesType;
+  });
+
   const formatCurrency = (value: number | null) => {
     if (value === null || typeof value === 'undefined') return '-';
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })
@@ -354,101 +384,152 @@ const DiscountManagement: React.FC = () => {
     }
   };
 
+  // Add handleViewDetails function
+  const handleViewDetails = (discount: Discount) => {
+    setSelectedDiscount(discount);
+    // You could also add a view mode to the dialog
+    setDialogType('edit');
+    formik.setValues({...discount});
+    setOpenDialog(true);
+  };
+
   const columns: GridColDef[] = [
-    { field: 'id', headerName: 'ID', width: 80 },
-    { 
-      field: 'code',
-      headerName: 'Mã giảm giá',
-      width: 150,
-      renderCell: (params: GridRenderCellParams) => (
-        <Chip 
-          icon={<DiscountCodeIcon />}
-          label={params.value} 
-          color="primary" 
-          variant="outlined" 
-          size="small" 
-        />
+    { field: 'code', headerName: t('discount.code', 'Mã giảm giá'), flex: 1, minWidth: 120,
+      renderCell: (params: GridRenderCellParams<Discount>) => (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <DiscountCodeIcon sx={{ color: 'primary.main', mr: 1 }} />
+          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+            {params.value}
+          </Typography>
+        </Box>
       )
     },
-    { field: 'name', headerName: 'Tên mã', width: 200 },
-    {
-      field: 'discountValue',
-      headerName: 'Giá trị',
-      width: 120,
-      valueGetter: params => {
-        const row = params.row as Discount;
-        return row.discountType === 'PERCENTAGE' ? `${row.discountValue}%` : formatCurrency(row.discountValue);
-      },
+    { field: 'name', headerName: t('discount.name', 'Tên khuyến mãi'), flex: 2, minWidth: 200 },
+    { 
+      field: 'discountValue', 
+      headerName: t('discount.value', 'Giá trị'), 
+      flex: 1, 
+      minWidth: 120,
+      renderCell: (params: GridRenderCellParams<Discount>) => {
+        const { discountType, discountValue } = params.row;
+        return (
+          <Typography>
+            {discountType === 'PERCENTAGE' 
+              ? `${discountValue}%` 
+              : formatCurrency(discountValue)
+            }
+          </Typography>
+        );
+      }
     },
     {
-      field: 'dateRange',
-      headerName: 'Hiệu lực',
-      width: 200,
-      valueGetter: params => {
-        const row = params.row as Discount;
+      field: 'validPeriod',
+      headerName: t('discount.validPeriod', 'Thời gian hiệu lực'),
+      flex: 1.5,
+      minWidth: 200,
+      valueGetter: (params) => {
+        const { startDate, endDate } = params.row;
         const format = (date: Date) => new Date(date).toLocaleDateString('vi-VN');
-        return `${format(row.startDate)} - ${format(row.endDate)}`;
+        return `${format(startDate)} - ${format(endDate)}`;
       },
+      renderCell: (params) => {
+        const now = new Date();
+        const { startDate, endDate } = params.row;
+        let status: 'future' | 'active' | 'expired' = 'active';
+        
+        if (new Date(startDate) > now) {
+          status = 'future';
+        } else if (new Date(endDate) < now) {
+          status = 'expired';
+        }
+        
+        const format = (date: Date) => new Date(date).toLocaleDateString('vi-VN');
+        
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <CalendarIcon sx={{ 
+              color: status === 'active' ? 'success.main' : status === 'future' ? 'info.main' : 'text.disabled',
+              mr: 1 
+            }} />
+            <Typography>{`${format(startDate)} - ${format(endDate)}`}</Typography>
+          </Box>
+        );
+      }
     },
     {
       field: 'applicableTo',
-      headerName: 'Áp dụng cho',
-      width: 220,
-      renderCell: (params: GridRenderCellParams) => (
-        <Tooltip title={getApplicableItemsName(params.row as Discount)}>
-          <Typography variant="body2" noWrap>
-            {applicableToOptions.find(opt => opt.value === params.value)?.label || params.value}
-          </Typography>
-        </Tooltip>
-      )
-    },
-    {
-      field: 'usage',
-      headerName: 'Sử dụng',
-      width: 120,
-      valueGetter: params => {
-        const row = params.row as Discount;
-        return `${row.usedCount} / ${row.totalUsageLimit === null ? '∞' : row.totalUsageLimit}`;
+      headerName: t('discount.applicableTo', 'Áp dụng cho'),
+      flex: 1.5,
+      minWidth: 180,
+      valueGetter: (params) => getApplicableItemsName(params.row),
+      renderCell: (params) => {
+        const { applicableTo } = params.row;
+        let icon = <AllInclusiveIcon />;
+        
+        if (applicableTo === 'SPECIFIC_MOVIES') {
+          icon = <MovieIcon />;
+        } else if (applicableTo === 'SPECIFIC_FOOD') {
+          icon = <FoodIcon />;
+        } else if (applicableTo === 'SPECIFIC_CATEGORIES') {
+          icon = <CategoryIcon />;
+        }
+        
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box sx={{ mr: 1, color: 'primary.main' }}>{icon}</Box>
+            <Typography noWrap>{getApplicableItemsName(params.row)}</Typography>
+          </Box>
+        );
       }
     },
     {
       field: 'isActive',
-      headerName: 'Trạng thái',
-      width: 130,
-      renderCell: (params: GridRenderCellParams) => (
+      headerName: t('discount.status', 'Trạng thái'),
+      width: 120,
+      renderCell: (params: GridRenderCellParams<Discount>) => (
         <Chip 
-          label={params.value ? 'Đang hoạt động' : 'Không hoạt động'} 
-          color={params.value ? 'success' : 'default'} 
-          size="small" 
+          label={params.value ? t('discount.active', 'Hoạt động') : t('discount.inactive', 'Không hoạt động')} 
+          color={params.value ? 'success' : 'default'}
+          size="small"
         />
-      ),
+      )
     },
     {
       field: 'actions',
-      headerName: 'Thao tác',
-      width: 130,
-      renderCell: (params: GridRenderCellParams) => (
+      headerName: t('common.actions', 'Thao tác'),
+      width: 150,
+      sortable: false,
+      renderCell: (params: GridRenderCellParams<Discount>) => (
         <Box>
-          <Tooltip title="Chỉnh sửa">
+          <Tooltip title={t('common.view', 'Xem chi tiết')}>
             <IconButton 
-              color="primary" 
-              onClick={() => handleEditClick(params.row as Discount)}
-              size="small"
+              onClick={() => handleViewDetails(params.row)}
+              size="small" 
+              sx={{ color: 'info.main' }}
             >
-              <EditIcon fontSize="small"/>
+              <Visibility />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Xóa">
+          <Tooltip title={t('common.edit', 'Chỉnh sửa')}>
             <IconButton 
-              color="error" 
-              onClick={() => handleDeleteClick(params.row.id as string)}
-              size="small"
+              onClick={() => handleEditClick(params.row)}
+              size="small" 
+              sx={{ color: 'primary.main' }}
             >
-              <DeleteIcon fontSize="small" />
+              <EditIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t('common.delete', 'Xóa')}>
+            <IconButton 
+              onClick={() => handleDeleteClick(params.row.id)}
+              size="small" 
+              sx={{ color: 'error.main' }}
+            >
+              <DeleteIcon />
             </IconButton>
           </Tooltip>
         </Box>
-      ),
+      )
     },
   ];
 
@@ -462,9 +543,148 @@ const DiscountManagement: React.FC = () => {
           </Button>
         </Box>
 
+        {/* Search and filter section */}
+        <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+          <TextField
+            label={t('common.search', 'Tìm kiếm')}
+            placeholder={t('discount.searchPlaceholder', 'Tìm theo mã hoặc tên...')}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            variant="outlined"
+            size="small"
+            sx={{ width: { xs: '100%', sm: 'auto', flexGrow: 1 } }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>{t('discount.statusFilter', 'Trạng thái')}</InputLabel>
+            <Select
+              value={filterStatus}
+              label={t('discount.statusFilter', 'Trạng thái')}
+              onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
+            >
+              <MenuItem value="all">{t('common.all', 'Tất cả')}</MenuItem>
+              <MenuItem value="active">{t('discount.active', 'Hoạt động')}</MenuItem>
+              <MenuItem value="inactive">{t('discount.inactive', 'Không hoạt động')}</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel>{t('discount.typeFilter', 'Loại giảm giá')}</InputLabel>
+            <Select
+              value={filterType}
+              label={t('discount.typeFilter', 'Loại giảm giá')}
+              onChange={(e) => setFilterType(e.target.value as typeof filterType)}
+            >
+              <MenuItem value="all">{t('common.all', 'Tất cả')}</MenuItem>
+              <MenuItem value="PERCENTAGE">{t('discount.percentage', 'Phần trăm (%)')}</MenuItem>
+              <MenuItem value="FIXED_AMOUNT">{t('discount.fixedAmount', 'Số tiền cố định')}</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+
+        {/* Stats summary */}
+        <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+          <Paper 
+            elevation={1} 
+            sx={{ 
+              p: 2, 
+              display: 'flex', 
+              alignItems: 'center', 
+              width: { xs: '100%', sm: 'auto', md: '200px' } 
+            }}
+          >
+            <Box sx={{ 
+              mr: 1.5, 
+              backgroundColor: 'primary.light', 
+              borderRadius: '50%', 
+              p: 1, 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center' 
+            }}>
+              <DiscountCodeIcon sx={{ color: 'primary.main' }} />
+            </Box>
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                {t('discount.totalDiscounts', 'Tổng số mã')}
+              </Typography>
+              <Typography variant="h6">
+                {discounts.length}
+              </Typography>
+            </Box>
+          </Paper>
+          
+          <Paper 
+            elevation={1} 
+            sx={{ 
+              p: 2, 
+              display: 'flex', 
+              alignItems: 'center', 
+              width: { xs: '100%', sm: 'auto', md: '200px' } 
+            }}
+          >
+            <Box sx={{ 
+              mr: 1.5, 
+              backgroundColor: 'success.light', 
+              borderRadius: '50%', 
+              p: 1, 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center' 
+            }}>
+              <CheckCircleIcon sx={{ color: 'success.main' }} />
+            </Box>
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                {t('discount.activeDiscounts', 'Mã đang hoạt động')}
+              </Typography>
+              <Typography variant="h6">
+                {discounts.filter(d => d.isActive).length}
+              </Typography>
+            </Box>
+          </Paper>
+          
+          <Paper 
+            elevation={1} 
+            sx={{ 
+              p: 2, 
+              display: 'flex', 
+              alignItems: 'center', 
+              width: { xs: '100%', sm: 'auto', md: '200px' } 
+            }}
+          >
+            <Box sx={{ 
+              mr: 1.5, 
+              backgroundColor: 'error.light', 
+              borderRadius: '50%', 
+              p: 1, 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center' 
+            }}>
+              <ErrorIcon sx={{ color: 'error.main' }} />
+            </Box>
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                {t('discount.inactiveDiscounts', 'Mã không hoạt động')}
+              </Typography>
+              <Typography variant="h6">
+                {discounts.filter(d => !d.isActive).length}
+              </Typography>
+            </Box>
+          </Paper>
+        </Box>
+
         <Paper sx={{ height: 'calc(100vh - 200px)', width: '100%' }}>
           <DataGrid
-            rows={discounts}
+            rows={filteredDiscounts}
             columns={columns}
             initialState={{
               pagination: { paginationModel: { page: 0, pageSize: 10 } },

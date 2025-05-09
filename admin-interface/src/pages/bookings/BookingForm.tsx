@@ -27,47 +27,16 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-// import { Movie } from '../../types/movie'; // Assuming you have a movie type
-// import { Showtime } from '../../types/showtime'; // Assuming you have a showtime type
-// import { Seat } from '../../types/seat'; // Assuming you have a seat type
+import { 
+  bookingService, 
+  Showtime, 
+  Seat, 
+  SeatStatus, 
+  FoodItem, 
+  FoodSelection 
+} from '../../services/bookingService';
 
-// Let's define a simple Showtime type for now
-interface Showtime {
-  id: string;
-  time: string;
-  roomName: string;
-  availableSeats: number;
-}
-
-// Define SeatStatus enum and Seat interface
-export enum SeatStatus {
-  Available = 'available',
-  Booked = 'booked',
-  Selected = 'selected',
-  Unavailable = 'unavailable', // e.g., aisle, space
-}
-
-export interface Seat {
-  id: string; // e.g., "A1", "B5"
-  row: string;
-  number: number;
-  status: SeatStatus;
-  price?: number; // Optional: if seats have different prices
-}
-
-// Define FoodItem and FoodSelection interfaces
-export interface FoodItem {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  imageUrl?: string; // Optional image
-}
-
-export interface FoodSelection {
-  itemId: string;
-  quantity: number;
-}
+// Các interface đã được chuyển sang bookingService.ts
 
 const steps = ['Select Showtime', 'Select Seats', 'Add Food & Drinks', 'Confirm & Pay'];
 
@@ -80,11 +49,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [bookingCompleted, setBookingCompleted] = useState(false);
+  const [bookingDetails, setBookingDetails] = useState<any>(null);
 
-  // Mock data - replace with API calls
-  // const [movie, setMovie] = useState<Movie | null>(null);
+  // State thay thế mock data với API data
   const [showtimes, setShowtimes] = useState<Showtime[]>([]);
-  // const [selectedShowtime, setSelectedShowtime] = useState<Showtime | null>(null); // We'll use formik for selectedShowtimeId
   const [seatLayout, setSeatLayout] = useState<Seat[][]>([]); 
   const [availableFoodItems, setAvailableFoodItems] = useState<FoodItem[]>([]);
 
@@ -92,7 +62,13 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId }) => {
     // Define Yup validation based on activeStep
     showtimeId: activeStep === 0 ? Yup.string().required('Showtime is required') : Yup.string(),
     seatIds: activeStep === 1 ? Yup.array().min(1, 'Please select at least one seat.').required('Please select at least one seat.') : Yup.array(),
-    foodItems: activeStep === 2 ? Yup.array().min(1, 'Please select at least one food item.').required('Please select at least one food item.') : Yup.array(),
+    foodItems: activeStep === 2 ? Yup.array().of(
+      Yup.object().shape({
+        itemId: Yup.string().required(),
+        quantity: Yup.number().min(1).required()
+      })
+    ) : Yup.array(),
+    paymentMethod: activeStep === 3 ? Yup.string().required('Payment method is required') : Yup.string(),
   });
 
   const formik = useFormik<{
@@ -106,22 +82,54 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId }) => {
       seatIds: [],
       foodItems: [],
       paymentMethod: 'creditCard',
-      // ... other fields
     },
     validationSchema,
-    onSubmit: (values) => {
-      setLoading(true);
-      setError(null);
-      console.log('Booking Submitted', values);
-      // Simulate API call
-      setTimeout(() => {
+    onSubmit: async (values) => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Tìm thông tin showtime chi tiết
+        const selectedShowtime = getSelectedShowtimeDetails();
+        if (!selectedShowtime) {
+          throw new Error('Không tìm thấy thông tin suất chiếu.');
+        }
+        
+        // Tạo booking request
+        const bookingRequest = {
+          scheduleId: selectedShowtime.scheduleId,
+          roomId: selectedShowtime.roomId,
+          seatIds: values.seatIds,
+          foodItems: values.foodItems.map(item => ({
+            foodId: parseInt(item.itemId),
+            quantity: item.quantity
+          })),
+          paymentMethod: values.paymentMethod
+        };
+        
+        // Gọi API đặt vé
+        const bookingResponse = await bookingService.createBooking(bookingRequest);
+        
+        // Nếu tạo booking thành công, mô phỏng thanh toán
+        if (bookingResponse?.data?.bookingId) {
+          const paymentResult = await bookingService.simulatePayment(
+            bookingResponse.data.bookingId, 
+            values.paymentMethod
+          );
+          
+          // Lấy booking details sau khi thanh toán
+          const bookingDetails = await bookingService.getBookingDetails(bookingResponse.data.bookingId);
+          
+          setBookingDetails(bookingDetails.data);
+          setBookingCompleted(true);
+          setSuccessMessage('Đặt vé thành công!');
+        }
+      } catch (err: any) {
+        console.error('Lỗi đặt vé:', err);
+        setError(err.message || 'Đã xảy ra lỗi khi đặt vé. Vui lòng thử lại.');
+      } finally {
         setLoading(false);
-        // On success:
-        // setActiveStep((prevActiveStep) => prevActiveStep + 1);
-        // Or show success message
-        // On error:
-        // setError('Booking failed. Please try again.');
-      }, 2000);
+      }
     },
   });
 
@@ -159,90 +167,114 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId }) => {
 
   // Fetch movie details and showtimes if movieId is provided
   useEffect(() => {
-    if (movieId) {
-      // setLoading(true);
-      // Fetch movie details
-      // Fetch showtimes for this movie
-      // For now, setting mock showtimes
-      const mockShowtimes: Showtime[] = [
-        { id: 'st1', time: '10:00 AM', roomName: 'Room 1', availableSeats: 50 },
-        { id: 'st2', time: '01:00 PM', roomName: 'Room 2', availableSeats: 30 },
-        { id: 'st3', time: '04:00 PM', roomName: 'Room 1', availableSeats: 10 },
-        { id: 'st4', time: '07:00 PM', roomName: 'Screen X', availableSeats: 75 },
-      ];
-      setShowtimes(mockShowtimes);
-      // setLoading(false);
-    } else {
-      // If no movieId, maybe fetch all upcoming showtimes or show a message
-       const genericMockShowtimes: Showtime[] = [
-        { id: 'gst1', time: '11:00 AM', roomName: 'Any Room A', availableSeats: 20 },
-        { id: 'gst2', time: '02:30 PM', roomName: 'Any Room B', availableSeats: 40 },
-      ];
-      setShowtimes(genericMockShowtimes);
-    }
+    const fetchShowtimes = async () => {
+      try {
+        setLoading(true);
+        let response;
+        
+        if (movieId) {
+          // Nếu có movieId, gọi API lấy showtimes theo phim
+          response = await bookingService.getShowtimesByMovie(movieId);
+        } else {
+          // Nếu không có movieId, lấy tất cả showtimes có sẵn
+          response = await bookingService.getAllShowtimes();
+        }
+        
+        if (response?.data) {
+          setShowtimes(response.data);
+        }
+      } catch (err: any) {
+        console.error('Error fetching showtimes:', err);
+        setError(err.message || 'Error fetching showtimes');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchShowtimes();
   }, [movieId]);
 
-  // Generate mock seat layout when showtimeId changes and we are on the seat selection step
+  // Fetch seat layout when showtimeId changes and we are on the seat selection step
   useEffect(() => {
-    if (formik.values.showtimeId && activeStep === 1) { 
-      console.log('Generating/Fetching seat layout for showtime:', formik.values.showtimeId);
-      setLoading(true);
-      const generateMockLayout = (): Seat[][] => {
-        const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-        const seatsPerRow = 12;
-        const layout: Seat[][] = [];
-        for (let i = 0; i < rows.length; i++) {
-          const rowSeats: Seat[] = [];
-          for (let j = 1; j <= seatsPerRow; j++) {
-            const seatId = `${rows[i]}${j}`;
-            let status = SeatStatus.Available;
-            // Randomly make some seats booked
-            if (Math.random() < 0.2) status = SeatStatus.Booked;
-            // Make some seats unavailable (aisles etc)
-            if (j === 3 || j === seatsPerRow - 2) status = SeatStatus.Unavailable; 
-            
-            rowSeats.push({
-              id: seatId,
-              row: rows[i],
-              number: j,
-              status: status,
-              price: status === SeatStatus.Booked || status === SeatStatus.Unavailable ? undefined : 100, // Example price
-            });
+    const fetchSeatLayout = async () => {
+      if (formik.values.showtimeId && activeStep === 1) {
+        try {
+          setLoading(true);
+          
+          // Tìm showtime được chọn
+          const selectedShowtime = showtimes.find(st => st.id === formik.values.showtimeId);
+          if (!selectedShowtime) {
+            throw new Error('Không tìm thấy thông tin suất chiếu');
           }
-          layout.push(rowSeats);
+          
+          // Gọi API lấy sơ đồ ghế
+          const response = await bookingService.getSeatLayout(
+            selectedShowtime.scheduleId, 
+            selectedShowtime.roomId
+          );
+          
+          if (response?.data) {
+            // API sẽ trả về mảng 1 chiều, cần chuyển thành mảng 2 chiều theo hàng ghế
+            const seats = response.data;
+            
+            // Nhóm ghế theo hàng
+            const rowMap = new Map<string, Seat[]>();
+            seats.forEach((seat: Seat) => {
+              if (!rowMap.has(seat.row)) {
+                rowMap.set(seat.row, []);
+              }
+              rowMap.get(seat.row)?.push(seat);
+            });
+            
+            // Chuyển map thành mảng 2 chiều
+            const layout: Seat[][] = Array.from(rowMap.values());
+            
+            // Sắp xếp các hàng theo thứ tự chữ cái
+            layout.sort((a, b) => a[0].row.localeCompare(b[0].row));
+            
+            // Sắp xếp ghế trong mỗi hàng theo số thứ tự
+            layout.forEach(row => row.sort((a, b) => a.number - b.number));
+            
+            setSeatLayout(layout);
+            
+            // Clear previously selected seats when layout changes for a new showtime
+            formik.setFieldValue('seatIds', []);
+          }
+        } catch (err: any) {
+          console.error('Error fetching seat layout:', err);
+          setError(err.message || 'Error fetching seat layout');
+        } finally {
+          setLoading(false);
         }
-        return layout;
-      };
-      // Simulate API delay
-      setTimeout(() => {
-        setSeatLayout(generateMockLayout());
-        // Clear previously selected seats when layout changes for a new showtime
-        formik.setFieldValue('seatIds', []); 
-        setLoading(false);
-      }, 500);
-    } else if (activeStep !== 1) {
-      // If we navigate away from seat selection, clear the layout (optional, good for cleanup)
-      // setSeatLayout([]); 
-    }
-  }, [formik.values.showtimeId, activeStep]); // Re-run if showtimeId or activeStep changes
+      }
+    };
+    
+    fetchSeatLayout();
+  }, [formik.values.showtimeId, activeStep]);
 
   // Effect to load food/drink items when entering step 2
   useEffect(() => {
-    if (activeStep === 2) {
-      setLoading(true);
-      // Simulate API call to fetch food items
-      const mockFoodItems: FoodItem[] = [
-        { id: 'food1', name: 'Popcorn Large', price: 5.99, category: 'Snacks', imageUrl: 'https://via.placeholder.com/50/FFA500/000000?Text=Popcorn' },
-        { id: 'food2', name: 'Nachos', price: 6.49, category: 'Snacks', imageUrl: 'https://via.placeholder.com/50/FFC107/000000?Text=Nachos' },
-        { id: 'drink1', name: 'Cola Large', price: 3.99, category: 'Drinks', imageUrl: 'https://via.placeholder.com/50/F44336/FFFFFF?Text=Cola' },
-        { id: 'drink2', name: 'Water Bottle', price: 2.00, category: 'Drinks', imageUrl: 'https://via.placeholder.com/50/2196F3/FFFFFF?Text=Water' },
-        { id: 'combo1', name: 'Popcorn + Cola Combo', price: 8.99, category: 'Combos', imageUrl: 'https://via.placeholder.com/50/4CAF50/FFFFFF?Text=Combo' },
-      ];
-      setTimeout(() => {
-        setAvailableFoodItems(mockFoodItems);
-        setLoading(false);
-      }, 500);
-    }
+    const fetchFoodItems = async () => {
+      if (activeStep === 2) {
+        try {
+          setLoading(true);
+          
+          // Gọi API lấy danh sách đồ ăn/uống
+          const response = await bookingService.getFoodItems();
+          
+          if (response?.data) {
+            setAvailableFoodItems(response.data);
+          }
+        } catch (err: any) {
+          console.error('Error fetching food items:', err);
+          setError(err.message || 'Error fetching food and drinks');
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    
+    fetchFoodItems();
   }, [activeStep]);
 
   // Helper function to find selected showtime details
@@ -269,9 +301,26 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId }) => {
     let total = 0;
     // Add price for seats (assuming each selected seat has a price, e.g. from seatLayout or a fixed price)
     // For simplicity, let's assume a fixed price per seat for now if not on seat object
-    const seatPrice = seatLayout[0]?.[0]?.price || 10; // Fallback, ideally get from selected seats
-    total += formik.values.seatIds.length * seatPrice;
+    const seatPrice = 10; // Default price if not available from seat
+    const selectedSeats = formik.values.seatIds.map(id => {
+      // Find the seat in the layout
+      for (const row of seatLayout) {
+        const seat = row.find(s => s.id === id);
+        if (seat) return seat;
+      }
+      return null;
+    }).filter(seat => seat !== null);
+    
+    // Add up seat prices
+    for (const seat of selectedSeats) {
+      if (seat && seat.price) {
+        total += seat.price;
+      } else {
+        total += seatPrice; // Default price
+      }
+    }
 
+    // Add up food items
     getSelectedFoodItemsDetails().forEach(item => {
       total += item.subtotal || 0;
     });
@@ -279,6 +328,78 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId }) => {
   };
 
   const renderStepContent = (step: number) => {
+    // Nếu booking đã hoàn thành, hiển thị thông tin booking
+    if (bookingCompleted) {
+      return (
+        <Box sx={{ textAlign: 'center', py: 3 }}>
+          <Alert severity="success" sx={{ mb: 3 }}>
+            {successMessage || t('booking.bookingSuccess', 'Booking Success!')}
+          </Alert>
+          
+          {bookingDetails && (
+            <Paper sx={{ p: 3, mt: 2, mb: 4, borderRadius: 2, textAlign: 'left' }}>
+              <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
+                {t('booking.bookingDetails', 'Booking Details')}
+              </Typography>
+              
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle1" fontWeight="600">{t('booking.bookingCode', 'Booking Code')}:</Typography>
+                  <Typography variant="body1" sx={{ mb: 1.5 }}>{bookingDetails.bookingCode}</Typography>
+                  
+                  <Typography variant="subtitle1" fontWeight="600">{t('booking.movie', 'Movie')}:</Typography>
+                  <Typography variant="body1" sx={{ mb: 1.5 }}>{bookingDetails.movie.movieName}</Typography>
+                  
+                  <Typography variant="subtitle1" fontWeight="600">{t('booking.cinema', 'Cinema')}:</Typography>
+                  <Typography variant="body1" sx={{ mb: 1.5 }}>{bookingDetails.cinema.cinemaName}</Typography>
+                  
+                  <Typography variant="subtitle1" fontWeight="600">{t('booking.showtime', 'Showtime')}:</Typography>
+                  <Typography variant="body1" sx={{ mb: 1.5 }}>
+                    {new Date(bookingDetails.movie.date).toLocaleDateString()} {bookingDetails.movie.startTime}
+                  </Typography>
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle1" fontWeight="600">{t('booking.seats', 'Seats')}:</Typography>
+                  <Typography variant="body1" sx={{ mb: 1.5 }}>{bookingDetails.seats.join(', ')}</Typography>
+                  
+                  <Typography variant="subtitle1" fontWeight="600">{t('booking.foodAndDrinks', 'Food & Drinks')}:</Typography>
+                  {bookingDetails.foodItems && bookingDetails.foodItems.length > 0 ? (
+                    <List dense sx={{ mb: 1.5 }}>
+                      {bookingDetails.foodItems.map((item: { name: string; quantity: number; price: number }, index: number) => (
+                        <ListItem key={index} disablePadding>
+                          <ListItemText 
+                            primary={`${item.name} x${item.quantity}`}
+                            secondary={`${item.price * item.quantity} VND`}
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  ) : (
+                    <Typography variant="body2" sx={{ mb: 1.5 }}>{t('booking.noFoodSelected', 'No food or drinks selected')}</Typography>
+                  )}
+                  
+                  <Typography variant="subtitle1" fontWeight="600">{t('booking.totalAmount', 'Total Amount')}:</Typography>
+                  <Typography variant="body1" sx={{ mb: 1.5, fontWeight: 'bold', color: 'primary.main' }}>
+                    {bookingDetails.totalAmount.toLocaleString()} VND
+                  </Typography>
+                </Grid>
+              </Grid>
+              
+              <Box sx={{ textAlign: 'center', mt: 3 }}>
+                <Button variant="contained" sx={{ mr: 2 }}>
+                  {t('booking.printTicket', 'Print Ticket')}
+                </Button>
+                <Button variant="outlined">
+                  {t('booking.backToHome', 'Back to Home')}
+                </Button>
+              </Box>
+            </Paper>
+          )}
+        </Box>
+      );
+    }
+    
     switch (step) {
       case 0:
         return (
@@ -329,7 +450,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId }) => {
                   </List>
                 </RadioGroup>
                 {formik.touched.showtimeId && formik.errors.showtimeId && (
-                  <Typography color="error" variant="caption">{formik.errors.showtimeId}</Typography>
+                  <Typography color="error" variant="caption">{formik.errors.showtimeId as string}</Typography>
                 )}
               </FormControl>
             )}
@@ -440,7 +561,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId }) => {
                         )}
                         <Typography variant="subtitle1" fontWeight="bold">{item.name}</Typography>
                         <Typography variant="body2" color="text.secondary">${item.price.toFixed(2)}</Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{mb:1}}>{item.category}</Typography>
                         <Box sx={{ mt: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Button size="small" variant="outlined" onClick={() => handleQuantityChange(Math.max(0, quantity - 1))} disabled={quantity === 0}>
                             -
@@ -548,46 +668,53 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId }) => {
       <Typography variant="h4" fontWeight="700" color="text.primary" sx={{ mb: 4, textAlign: 'center' }}>
         {t('booking.title', 'Book Your Tickets')}
       </Typography>
-      <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-        {steps.map((label) => (
-          <Step key={label}>
-            <StepLabel>{label}</StepLabel>
-          </Step>
-        ))}
-      </Stepper>
+      
+      {!bookingCompleted && (
+        <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+          {steps.map((label) => (
+            <Step key={label}>
+              <StepLabel>{label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
+      )}
+      
       <form onSubmit={formik.handleSubmit}>
         {loading && <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}><CircularProgress /></Box>}
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {successMessage && !bookingCompleted && <Alert severity="success" sx={{ mb: 2 }}>{successMessage}</Alert>}
         
         {renderStepContent(activeStep)}
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-          <Button
-            disabled={activeStep === 0}
-            onClick={handleBack}
-            sx={{ borderRadius: 2, textTransform: 'none' }}
-          >
-            {t('common.back', 'Back')}
-          </Button>
-          {activeStep === steps.length - 1 ? (
-            <Button 
-              type="submit" 
-              variant="contained" 
-              disabled={loading}
+        {!bookingCompleted && (
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+            <Button
+              disabled={activeStep === 0}
+              onClick={handleBack}
               sx={{ borderRadius: 2, textTransform: 'none' }}
             >
-              {t('booking.confirmAndPay', 'Confirm & Pay')}
+              {t('common.back', 'Back')}
             </Button>
-          ) : (
-            <Button 
-              variant="contained" 
-              onClick={handleNext}
-              sx={{ borderRadius: 2, textTransform: 'none' }}
-            >
-              {t('common.next', 'Next')}
-            </Button>
-          )}
-        </Box>
+            {activeStep === steps.length - 1 ? (
+              <Button 
+                type="submit" 
+                variant="contained" 
+                disabled={loading}
+                sx={{ borderRadius: 2, textTransform: 'none' }}
+              >
+                {t('booking.confirmAndPay', 'Confirm & Pay')}
+              </Button>
+            ) : (
+              <Button 
+                variant="contained" 
+                onClick={handleNext}
+                sx={{ borderRadius: 2, textTransform: 'none' }}
+              >
+                {t('common.next', 'Next')}
+              </Button>
+            )}
+          </Box>
+        )}
       </form>
     </Paper>
   );

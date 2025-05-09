@@ -19,20 +19,11 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useTranslation } from 'react-i18next';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-
-interface Movie {
-  id: number;
-  title: string;
-  description: string;
-  duration: number;
-  releaseDate: string;
-  status: 'ACTIVE' | 'INACTIVE';
-  posterUrl: string;
-}
+import { Movie, MovieFormData } from '../../types';
 
 interface MovieFormProps {
   movie: Movie | null;
-  onSave: (movie: Omit<Movie, 'id'>) => void;
+  onSave: (formData: MovieFormData) => void;
   onCancel: () => void;
 }
 
@@ -51,7 +42,7 @@ const MovieForm: React.FC<MovieFormProps> = ({ movie, onSave, onCancel }) => {
     posterUrl: Yup.string().url(t('validation.url')),
   });
 
-  const formik = useFormik({
+  const formik = useFormik<MovieFormData>({
     initialValues: {
       title: movie?.title || '',
       description: movie?.description || '',
@@ -59,22 +50,25 @@ const MovieForm: React.FC<MovieFormProps> = ({ movie, onSave, onCancel }) => {
       releaseDate: movie?.releaseDate ? new Date(movie.releaseDate) : new Date(),
       status: movie?.status || 'ACTIVE',
       posterUrl: movie?.posterUrl || '',
+      posterFile: null
     },
     validationSchema,
     onSubmit: (values) => {
-      // TODO: Implement save functionality
-      console.log('Form values:', values);
-      onSave({
+      // Include the selectedFile in the form data
+      const formData = {
         ...values,
-        releaseDate: values.releaseDate.toISOString().split('T')[0],
-        posterUrl: values.posterUrl || movie?.posterUrl || '',
-      });
+        posterFile: selectedFile
+      };
+      onSave(formData);
     },
   });
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setSelectedFile(event.target.files[0]);
+      const file = event.target.files[0];
+      setSelectedFile(file);
+      // Optional: You might want to clear the posterUrl field if a new file is selected
+      // formik.setFieldValue('posterUrl', '');
     }
   };
 

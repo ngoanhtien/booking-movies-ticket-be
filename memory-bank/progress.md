@@ -10,6 +10,15 @@
   - Vietnamese UI text
   - Comprehensive translations for booking form UI
   - Complete translations for enhanced placeholder components
+  - Organized translation structure with logical namespaces (auth, profile, booking, etc.)
+  - Form validation messages in Vietnamese
+  - Consistent translation keys across similar components
+  - Complete translations for user-facing components:
+    - Register and Login pages
+    - UserHeader with profile dropdown menu
+    - UserProfile with personal information and password sections
+    - BookingHistory with filtering tabs and details
+    - Footer with all informational sections
 - Admin Panel UI Development
   - Authentication bypass for UI preview
   - Direct access to admin panel without backend
@@ -119,6 +128,7 @@
     - Added placeholder `Register.tsx` component at `admin-interface/src/pages/auth/Register.tsx` to resolve import error in `routes.tsx`.
     - Addressed `MovieForm` prop type errors in `routes.tsx` by passing `null` for `movie` and empty functions for callbacks (temporary measure).
     - Fixed TypeScript errors in form validation by properly handling field error checks.
+    - Fixed TypeScript errors in UserHeader component related to property access.
 
 ## What's Left to Build
 1. Frontend Features
@@ -175,7 +185,7 @@
    - [x] Cinema (Theater) management module
    - [x] Branch management module
    - [x] Invoice (Bill) management module
-   - [x] Theater management module (placeholder)
+   - [x] Theater management module
    - [x] Theater locations module (placeholder enhanced with functional UI)
    - [x] Room management module (placeholder enhanced with functional UI)
      - [x] Seat layout visualization and interactive editor
@@ -183,26 +193,51 @@
      - [x] UI Polish (padding, column distribution, title styling)
    - [-] User roles management module (removed from navigation)
    - [x] Promotions management module (placeholder enhanced with functional UI)
-   - [ ] Discount management module (placeholder requires enhancement)
-   - [ ] Notification management module (placeholder requires enhancement)
+   - [x] Discount management module (UI implemented with mock data, validation, and CRUD operations)
+   - [x] Notification management module (UI implemented with mock data, validation, and CRUD operations)
    - [-] Movie schedules module (removed from navigation)
    - [ ] Complete content for remaining placeholder modules
-   - [ ] Refine `MovieForm` routes with actual data fetching/state management (currently uses placeholder props).
+   - [x] Refine `MovieForm` routes with actual data fetching/state management (replaced placeholder props with MovieFormWrapper).
 
    User Interface
-   - [ ] User authentication
-   - [ ] Movie browsing
+   - [x] User authentication (UI and basic API calls implemented for Login & Register)
+     - [x] Complete Vietnamese translations for Login/Register forms
+     - [x] Proper error handling and success messaging
+     - [x] Form validation with Vietnamese messages
+   - [x] Movie browsing
+     - [x] Implement MovieList component with movie grid display
+     - [x] Create MovieDetails component for detailed movie view
+     - [x] Add filtering and searching capabilities
+     - [x] Implement tabbed browsing (All movies, Now showing, Coming soon)
+     - [x] Add responsive design for all screen sizes
+     - [x] Connect service layer with API endpoints
+     - [x] Add loading states, error handling, and empty states
+     - [x] Add Vietnamese translations for all UI elements
+     - [x] Update routes to include movie browsing as the homepage
    - [x] Ticket booking flow
      - [x] Implement Showtime Selection step in `BookingForm.tsx` (UI with mock data).
      - [x] Implement Seat Selection step in `BookingForm.tsx` (interactive map with mock data).
      - [x] Implement Food & Drinks step in `BookingForm.tsx` (UI with mock data).
      - [x] Implement Confirm & Pay step in `BookingForm.tsx` (summary, payment placeholder).
-     - [ ] Integrate API calls for all booking steps.
-     - [ ] Implement symbolic payment process (no actual payment gateway integration).
-   - [ ] User profile
-   - [ ] Booking history
-   - [ ] Payment interface (symbolic implementation only)
+     - [x] Integrate API calls for all booking steps.
+     - [x] Implement symbolic payment process (no actual payment gateway integration).
+   - [x] User profile
+     - [x] Personal information display and editing
+     - [x] Avatar upload and preview
+     - [x] Password change functionality
+     - [x] Vietnamese translations
+     - [x] Responsive layout with tabs
+     - [x] Form validation with Vietnamese messages
+   - [x] Booking history
+     - [x] List of bookings with filtering (All/Upcoming/Past)
+     - [x] Detailed view of bookings
+     - [x] Support for various booking statuses
+     - [x] Vietnamese translations
+     - [x] Loading states and error handling
+     - [x] Empty state with call-to-action
+   - [x] Payment interface (symbolic implementation only)
    - [x] Vietnamese translations for the booking form
+   - [x] Vietnamese translations for Login/Register UI
 
 ## Current Status
 - Admin interface basic structure is complete
@@ -211,6 +246,16 @@
 - Protected routes are in place
 - Token refresh mechanism is implemented
 - Dashboard with mock data is ready with Vietnamese labels
+- Movie Browsing UI implemented with:
+  - Grid layout for movie cards with responsive design
+  - Movie details page with poster, description, and trailer
+  - Tabs for showing different movie categories (All, Now Showing, Coming Soon)
+  - Search and genre filtering functionality
+  - Pagination for movie results
+  - Complete Vietnamese translations
+  - Loading states and error handling
+  - Integration with booking flow
+  - Default home page routing
 - Admin panel navigation system fixed with:
   - Path prefixes (/admin) added to all sidebar navigation links
   - Routes.tsx restructured to wrap all admin routes in Layout component
@@ -255,10 +300,26 @@
   - Payment method selection
   - Form validation using Formik and Yup
   - Step-by-step navigation with validation checks
-  - Mock data with simulated loading states
-  - Vietnamese translations for all UI elements
   - TypeScript interfaces for form data and domain entities
   - Helper functions for derived values (subtotals, totals)
+  - API integration for all booking steps replacing mock data
+  - Symbolic payment process implementation
+  - Booking success UI with detailed booking information
+  - Error handling and loading states for API calls
+- User Profile and Account Management implemented with:
+  - Personal information display and editing
+  - Password change functionality
+  - Avatar upload with preview
+  - Responsive layout with tabs for different sections
+  - Proper form validation and error handling
+  - Vietnamese translations for all UI elements
+- Booking History implemented with:
+  - List view of all user bookings
+  - Filtering options (All/Upcoming/Past)
+  - Detailed view dialog with comprehensive booking information
+  - Visual status indicators with appropriate coloring
+  - Print and email functionality
+  - Responsive design for all screen sizes
 - Placeholder Admin Components enhanced:
   - RoomManagement.tsx implemented with:
     - Mock data for different room types (2D, 3D, IMAX, VIP)
@@ -291,10 +352,17 @@
 - Implement symbolic payment processing (no actual payment gateway integration).
 - Add booking confirmation emails/notifications.
 - Implement a booking history view for users.
+- Vietnamese localization has been significantly enhanced:
+  - All user-facing components now have complete Vietnamese translations
+  - Translation file is organized with logical namespaces matching component structure
+  - Form validation messages are translated
+  - Error messages and success notifications are translated
+  - Navigation elements, footer, and common UI components are translated
+  - TypeScript errors in components using translations have been fixed
 
 ## Known Issues
 - Some linter errors in TheaterLocations.tsx related to MenuItem imports
-- MovieForm routes using placeholder props instead of actual data flow
+- ~~MovieForm routes using placeholder props instead of actual data flow~~ (Resolved with MovieFormWrapper implementation)
 - Booking form using mock data instead of API integration
 - Missing content for some placeholder components
 - Lack of proper error handling for offline mode

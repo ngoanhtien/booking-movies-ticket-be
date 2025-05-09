@@ -20,7 +20,8 @@ import {
   FormHelperText,
   Switch,
   FormControlLabel,
-  TextareaAutosize
+  TextareaAutosize,
+  InputAdornment
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import {
@@ -35,7 +36,8 @@ import {
   Schedule as ScheduleIcon,
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
-  Pending as PendingIcon
+  Pending as PendingIcon,
+  Search as SearchIcon
 } from '@mui/icons-material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -162,7 +164,28 @@ const NotificationManagement: React.FC = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [dialogType, setDialogType] = useState<'add' | 'edit' | 'view'>('add');
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [sendConfirmOpen, setSendConfirmOpen] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+
+  // Search and filter state
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<'all' | Notification['status']>( 'all');
+  const [filterChannel, setFilterChannel] = useState<'all' | Notification['channel']>('all');
+
+  // Get filtered notifications
+  const filteredNotifications = notifications.filter(notification => {
+    const matchesSearch = 
+      notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      notification.message.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = 
+      filterStatus === 'all' || filterStatus === notification.status;
+
+    const matchesChannel =
+      filterChannel === 'all' || filterChannel === notification.channel;
+
+    return matchesSearch && matchesStatus && matchesChannel;
+  });
 
   // Format Date
   const formatDate = (date: Date) => {
@@ -260,102 +283,134 @@ const NotificationManagement: React.FC = () => {
     formik.resetForm({ values: initialFormValues });
   };
 
+  const handleSendClick = (notification: Notification) => {
+    setSelectedNotification(notification);
+    setSendConfirmOpen(true);
+  };
+
+  const handleConfirmSend = () => {
+    if (selectedNotification) {
+      setNotifications(notifications.map(n => 
+        n.id === selectedNotification.id ? { ...n, status: 'SENT', sendTime: new Date() } : n
+      ));
+    }
+    setSendConfirmOpen(false);
+    setSelectedNotification(null);
+  };
+
   const columns: GridColDef[] = [
-    { field: 'id', headerName: 'ID', width: 80 },
-    { 
-      field: 'title', 
-      headerName: 'Tiêu đề', 
-      width: 250,
-      renderCell: (params: GridRenderCellParams) => (
-        <Tooltip title={params.value}>
-          <Typography variant="body2" noWrap>{params.value}</Typography>
-        </Tooltip>
+    {
+      field: 'title',
+      headerName: t('notification.title', 'Tiêu đề'),
+      flex: 2,
+      minWidth: 250,
+      renderCell: (params: GridRenderCellParams<Notification>) => (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <NotificationIcon sx={{ color: 'primary.main', mr: 1 }} />
+          <Tooltip title={params.row.message}>
+             <Typography variant="body2" sx={{ fontWeight: 'bold' }} noWrap>{params.value}</Typography>
+          </Tooltip>
+        </Box>
       )
     },
-    { 
-      field: 'channel', 
-      headerName: 'Kênh gửi', 
-      width: 150,
-      renderCell: (params: GridRenderCellParams) => (
+    {
+      field: 'targetAudience',
+      headerName: t('notification.targetAudience', 'Đối tượng'),
+      flex: 1,
+      minWidth: 180,
+      renderCell: (params: GridRenderCellParams<Notification>) => {
+        const option = targetAudienceOptions.find(o => o.value === params.row.targetAudience);
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {option?.icon && React.cloneElement(option.icon, { sx: { mr: 1, color: 'text.secondary'}})}
+            <Typography variant="body2">{option?.label || params.row.targetAudience}</Typography>
+          </Box>
+        );
+      }
+    },
+    {
+      field: 'channel',
+      headerName: t('notification.channel', 'Kênh'),
+      flex: 0.8,
+      minWidth: 120,
+      renderCell: (params: GridRenderCellParams<Notification>) => (
         <Chip 
-          label={channelOptions.find(c => c.value === params.value)?.label || params.value} 
+          label={channelOptions.find(c => c.value === params.value)?.label || params.value}
           size="small" 
           variant="outlined"
-          color={params.value === 'PUSH' ? 'primary' : params.value === 'EMAIL' ? 'secondary' : 'info'}
         />
       )
     },
-    { 
-      field: 'targetAudience', 
-      headerName: 'Đối tượng', 
-      width: 180,
-      renderCell: (params: GridRenderCellParams) => {
-        const audience = targetAudienceOptions.find(opt => opt.value === params.value);
+    {
+      field: 'sendTime',
+      headerName: t('notification.sendTime', 'Thời gian gửi'),
+      flex: 1.2,
+      minWidth: 180,
+      valueGetter: (params) => new Date(params.row.sendTime),
+      renderCell: (params: GridRenderCellParams<Notification>) => (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <ScheduleIcon sx={{ color: 'text.secondary', mr: 1 }} />
+          <Typography variant="body2">{formatDate(params.row.sendTime)}</Typography>
+        </Box>
+      ),
+      type: 'dateTime',
+    },
+    {
+      field: 'status',
+      headerName: t('notification.status', 'Trạng thái'),
+      flex: 1,
+      minWidth: 150,
+      renderCell: (params: GridRenderCellParams<Notification>) => {
+        const statusInfo = statusMapping[params.row.status];
         return (
           <Chip 
-            icon={audience?.icon}
-            label={audience?.label || params.row.customSegmentId || params.value}
-            size="small" 
+            icon={React.cloneElement(statusInfo.icon, {fontSize: 'small'})}
+            label={statusInfo.label}
+            color={statusInfo.color}
+            size="small"
           />
         );
       }
     },
-    { 
-      field: 'sendTime', 
-      headerName: 'Thời gian gửi', 
-      width: 180,
-      valueFormatter: (params) => formatDate(params.value as Date)
-    },
-    {
-      field: 'status',
-      headerName: 'Trạng thái',
-      width: 150,
-      renderCell: (params: GridRenderCellParams) => {
-        const statusInfo = statusMapping[params.value as Notification['status']];
-        return <Chip icon={statusInfo.icon} label={statusInfo.label} color={statusInfo.color} size="small" />;
-      }
-    },
-    { 
-      field: 'sentRead', 
-      headerName: 'Đã gửi/Đã đọc', 
-      width: 150,
-      valueGetter: (params) => {
-        const row = params.row as Notification;
-        if (row.status === 'SENT') {
-          return `${row.sentCount || 0} / ${row.readCount || 0}`;
-        }
-        return '-';
-      }
-    },
-    { field: 'createdBy', headerName: 'Người tạo', width: 150 },
     {
       field: 'actions',
-      headerName: 'Thao tác',
-      width: 180,
-      renderCell: (params: GridRenderCellParams) => {
-        const notification = params.row as Notification;
-        return (
-          <Box>
-            <Tooltip title="Xem chi tiết">
-              <IconButton color="info" onClick={() => handleViewClick(notification)} size="small">
-                <ViewIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            {notification.status !== 'SENT' && (
-              <Tooltip title="Chỉnh sửa">
-                <IconButton color="primary" onClick={() => handleEditClick(notification)} size="small">
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-            <Tooltip title="Xóa">
-              <IconButton color="error" onClick={() => handleDeleteClick(notification.id)} size="small">
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        );
-      },
+      headerName: t('common.actions', 'Thao tác'),
+      width: 180, // Increased width for more actions
+      sortable: false,
+      renderCell: (params: GridRenderCellParams<Notification>) => (
+        <Box>
+          <Tooltip title={t('common.view', 'Xem chi tiết')}>
+            <IconButton onClick={() => handleViewClick(params.row)} size="small" sx={{ color: 'info.main'}}>
+              <ViewIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t('common.edit', 'Chỉnh sửa')}>
+            <IconButton 
+              onClick={() => handleEditClick(params.row)} 
+              size="small" 
+              disabled={params.row.status === 'SENT'}
+              sx={{ color: params.row.status !== 'SENT' ? 'primary.main' : 'text.disabled' }}
+            >
+              <EditIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t('notification.sendNow', 'Gửi ngay')}>
+            <IconButton 
+              onClick={() => handleSendClick(params.row)} 
+              size="small" 
+              disabled={params.row.status === 'SENT'}
+              sx={{ color: params.row.status !== 'SENT' ? 'success.main' : 'text.disabled' }}
+            >
+              <SendIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t('common.delete', 'Xóa')}>
+            <IconButton onClick={() => handleDeleteClick(params.row.id)} size="small" sx={{ color: 'error.main'}}>
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      )
     },
   ];
 
@@ -363,26 +418,84 @@ const NotificationManagement: React.FC = () => {
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
       <Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, alignItems: 'center' }}>
-          <Typography variant="h4">Gửi thông báo</Typography>
+          <Typography variant="h4">{t('notification.manageTitle','Quản lý Thông báo')}</Typography>
           <Button variant="contained" startIcon={<AddIcon />} onClick={handleAddClick}>
-            Tạo thông báo mới
+            {t('notification.addNew', 'Tạo thông báo mới')}
           </Button>
         </Box>
 
-        <Paper sx={{ height: 'calc(100vh - 200px)', width: '100%' }}>
+        {/* Search and filter section */}
+        <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+          <TextField
+            label={t('common.search', 'Tìm kiếm')}
+            placeholder={t('notification.searchPlaceholder', 'Tìm theo tiêu đề, nội dung...')}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            variant="outlined"
+            size="small"
+            sx={{ width: { xs: '100%', sm: 'auto', flexGrow: 1 } }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel>{t('notification.statusFilter', 'Trạng thái')}</InputLabel>
+            <Select
+              value={filterStatus}
+              label={t('notification.statusFilter', 'Trạng thái')}
+              onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
+            >
+              <MenuItem value="all">{t('common.all', 'Tất cả')}</MenuItem>
+              {Object.entries(statusMapping).map(([key, value]) => (
+                <MenuItem key={key} value={key}>{value.label}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel>{t('notification.channelFilter', 'Kênh gửi')}</InputLabel>
+            <Select
+              value={filterChannel}
+              label={t('notification.channelFilter', 'Kênh gửi')}
+              onChange={(e) => setFilterChannel(e.target.value as typeof filterChannel)}
+            >
+              <MenuItem value="all">{t('common.all', 'Tất cả')}</MenuItem>
+              {channelOptions.map(option => (
+                <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
+        {/* Stats Summary */}
+        <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+          <Paper elevation={1} sx={{ p: 2, display: 'flex', alignItems: 'center', width: { xs: '100%', sm: 'auto' }, flexGrow: 1 }}>
+            <Box sx={{ mr: 1.5, backgroundColor: 'primary.light', borderRadius: '50%', p: 1, display: 'flex'}}><NotificationIcon sx={{color: 'primary.main'}} /></Box>
+            <Box><Typography variant="body2" color="text.secondary">{t('notification.stats.total','Tổng số thông báo')}</Typography><Typography variant="h6">{notifications.length}</Typography></Box>
+          </Paper>
+          <Paper elevation={1} sx={{ p: 2, display: 'flex', alignItems: 'center', width: { xs: '100%', sm: 'auto' }, flexGrow: 1 }}>
+            <Box sx={{ mr: 1.5, backgroundColor: statusMapping.SCHEDULED.color + '.light', borderRadius: '50%', p: 1, display: 'flex'}}>{React.cloneElement(statusMapping.SCHEDULED.icon, {sx: {color: statusMapping.SCHEDULED.color + '.main'}})}</Box>
+            <Box><Typography variant="body2" color="text.secondary">{t('notification.stats.scheduled','Đã lên lịch')}</Typography><Typography variant="h6">{notifications.filter(n=>n.status === 'SCHEDULED').length}</Typography></Box>
+          </Paper>
+          <Paper elevation={1} sx={{ p: 2, display: 'flex', alignItems: 'center', width: { xs: '100%', sm: 'auto' }, flexGrow: 1 }}>
+            <Box sx={{ mr: 1.5, backgroundColor: statusMapping.SENT.color + '.light', borderRadius: '50%', p: 1, display: 'flex'}}>{React.cloneElement(statusMapping.SENT.icon, {sx: {color: statusMapping.SENT.color + '.main'}})}</Box>
+            <Box><Typography variant="body2" color="text.secondary">{t('notification.stats.sent','Đã gửi')}</Typography><Typography variant="h6">{notifications.filter(n=>n.status === 'SENT').length}</Typography></Box>
+          </Paper>
+        </Box>
+
+        <Paper sx={{ height: 'calc(100vh - 300px)', width: '100%' }}>
           <DataGrid
-            rows={notifications}
+            rows={filteredNotifications}
             columns={columns}
             initialState={{
-              pagination: {
-                paginationModel: { page: 0, pageSize: 10 },
-              },
-              sorting: {
-                sortModel: [{ field: 'sendTime', sort: 'desc' }]
-              }
+              pagination: { paginationModel: { page: 0, pageSize: 10 } },
+              sorting: { sortModel: [{ field: 'sendTime', sort: 'desc' }] }
             }}
-            pageSizeOptions={[5, 10, 20]}
-            density="standard"
+            pageSizeOptions={[5, 10, 20, 50]}
+            density="compact"
             disableRowSelectionOnClick
             sx={{ '& .MuiDataGrid-cell:focus': { outline: 'none' } }}
           />
@@ -391,26 +504,28 @@ const NotificationManagement: React.FC = () => {
         <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
           <form onSubmit={formik.handleSubmit}>
             <DialogTitle>
-              {dialogType === 'add' ? 'Tạo thông báo mới' : dialogType === 'edit' ? 'Chỉnh sửa thông báo' : 'Chi tiết thông báo'}
+              {dialogType === 'add' && t('notification.dialog.addTitle', 'Tạo thông báo mới')}
+              {dialogType === 'edit' && t('notification.dialog.editTitle', 'Chỉnh sửa thông báo')}
+              {dialogType === 'view' && t('notification.dialog.viewTitle', 'Xem chi tiết thông báo')}
             </DialogTitle>
             <DialogContent>
               <Grid container spacing={2} sx={{ mt: 1 }}>
                 <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Tiêu đề thông báo"
-                    name="title"
+                  <TextField 
+                    fullWidth 
+                    label={t('notification.form.title', 'Tiêu đề')} 
+                    name="title" 
                     value={formik.values.title}
                     onChange={formik.handleChange}
                     error={formik.touched.title && Boolean(formik.errors.title)}
                     helperText={formik.touched.title && formik.errors.title}
-                    disabled={dialogType === 'view'}
+                    InputProps={{ readOnly: dialogType === 'view' }}
                   />
                 </Grid>
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
-                    label="Nội dung thông báo"
+                    label={t('notification.form.message', 'Nội dung thông báo')}
                     name="message"
                     multiline
                     rows={4}
@@ -418,138 +533,148 @@ const NotificationManagement: React.FC = () => {
                     onChange={formik.handleChange}
                     error={formik.touched.message && Boolean(formik.errors.message)}
                     helperText={formik.touched.message && formik.errors.message}
-                    disabled={dialogType === 'view'}
+                    InputProps={{ readOnly: dialogType === 'view' }}
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth error={formik.touched.channel && Boolean(formik.errors.channel)}>
-                    <InputLabel>Kênh gửi</InputLabel>
-                    <Select
-                      name="channel"
-                      value={formik.values.channel}
-                      onChange={formik.handleChange}
-                      label="Kênh gửi"
-                      disabled={dialogType === 'view'}
-                    >
-                      {channelOptions.map(option => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    {formik.touched.channel && formik.errors.channel && (
-                      <FormHelperText>{formik.errors.channel}</FormHelperText>
-                    )}
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} sm={6}>
                   <FormControl fullWidth error={formik.touched.targetAudience && Boolean(formik.errors.targetAudience)}>
-                    <InputLabel>Đối tượng nhận</InputLabel>
+                    <InputLabel>{t('notification.form.targetAudience', 'Đối tượng nhận')}</InputLabel>
                     <Select
                       name="targetAudience"
                       value={formik.values.targetAudience}
                       onChange={formik.handleChange}
-                      label="Đối tượng nhận"
-                      disabled={dialogType === 'view'}
+                      label={t('notification.form.targetAudience', 'Đối tượng nhận')}
+                      inputProps={{ readOnly: dialogType === 'view' }}
                     >
                       {targetAudienceOptions.map(option => (
                         <MenuItem key={option.value} value={option.value}>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            {option.icon && React.cloneElement(option.icon, { sx: { mr: 1 } })}
+                           <Box sx={{display: 'flex', alignItems: 'center'}}>
+                            {option.icon && React.cloneElement(option.icon, { sx: { mr: 1}})}
                             {option.label}
                           </Box>
                         </MenuItem>
                       ))}
                     </Select>
-                    {formik.touched.targetAudience && formik.errors.targetAudience && (
-                      <FormHelperText>{formik.errors.targetAudience}</FormHelperText>
-                    )}
+                    <FormHelperText>{formik.touched.targetAudience && formik.errors.targetAudience}</FormHelperText>
                   </FormControl>
                 </Grid>
                 {formik.values.targetAudience === 'CUSTOM_SEGMENT' && (
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="ID Phân khúc tùy chỉnh"
+                  <Grid item xs={12} sm={6}>
+                    <TextField 
+                      fullWidth 
+                      label={t('notification.form.customSegmentId', 'ID Phân khúc tùy chỉnh')} 
                       name="customSegmentId"
                       value={formik.values.customSegmentId}
                       onChange={formik.handleChange}
                       error={formik.touched.customSegmentId && Boolean(formik.errors.customSegmentId)}
                       helperText={formik.touched.customSegmentId && formik.errors.customSegmentId}
-                      disabled={dialogType === 'view'}
+                      InputProps={{ readOnly: dialogType === 'view' }}
                     />
                   </Grid>
                 )}
-                <Grid item xs={12} md={formik.values.targetAudience === 'CUSTOM_SEGMENT' ? 6 : 12}>
-                  <DateTimePicker
-                    label="Thời gian gửi"
-                    value={formik.values.sendTime}
-                    onChange={(date) => formik.setFieldValue('sendTime', date)}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        error: formik.touched.sendTime && Boolean(formik.errors.sendTime),
-                        helperText: formik.touched.sendTime && formik.errors.sendTime as string
-                      }
-                    }}
-                    disabled={dialogType === 'view'}
-                  />
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth error={formik.touched.channel && Boolean(formik.errors.channel)}>
+                    <InputLabel>{t('notification.form.channel', 'Kênh gửi')}</InputLabel>
+                    <Select
+                      name="channel"
+                      value={formik.values.channel}
+                      onChange={formik.handleChange}
+                      label={t('notification.form.channel', 'Kênh gửi')}
+                      inputProps={{ readOnly: dialogType === 'view' }}
+                    >
+                      {channelOptions.map(option => (
+                        <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+                      ))}
+                    </Select>
+                    <FormHelperText>{formik.touched.channel && formik.errors.channel}</FormHelperText>
+                  </FormControl>
                 </Grid>
-                {dialogType === 'view' && selectedNotification && (
+                <Grid item xs={12} sm={6}>
+                    <DateTimePicker
+                        label={t('notification.form.sendTime', 'Thời gian gửi')}
+                        value={formik.values.sendTime}
+                        onChange={(newValue) => formik.setFieldValue('sendTime', newValue)}
+                        slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                error: formik.touched.sendTime && Boolean(formik.errors.sendTime),
+                                helperText: formik.touched.sendTime && typeof formik.errors.sendTime === 'string' ? formik.errors.sendTime : null,
+                            },
+                        }}
+                        readOnly={dialogType === 'view'}
+                        disablePast={dialogType !== 'view'}
+                    />
+                </Grid>
+                 {dialogType === 'view' && selectedNotification && (
                   <>
-                    <Grid item xs={12} md={6}>
-                      <Typography variant="subtitle2">Trạng thái:</Typography>
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="subtitle2">{t('notification.form.status', 'Trạng thái')}:</Typography>
                       <Chip 
-                        icon={statusMapping[selectedNotification.status].icon}
-                        label={statusMapping[selectedNotification.status].label} 
-                        color={statusMapping[selectedNotification.status].color} 
+                        icon={React.cloneElement(statusMapping[selectedNotification.status].icon, {fontSize: 'small'})}
+                        label={statusMapping[selectedNotification.status].label}
+                        color={statusMapping[selectedNotification.status].color}
+                        size="small"
                       />
                     </Grid>
-                    <Grid item xs={12} md={6}>
-                      <Typography variant="subtitle2">Người tạo:</Typography>
+                     <Grid item xs={12} sm={6}>
+                      <Typography variant="subtitle2">{t('notification.form.createdBy', 'Tạo bởi')}:</Typography>
                       <Typography>{selectedNotification.createdBy}</Typography>
                     </Grid>
-                    {selectedNotification.status === 'SENT' && (
-                      <>
-                        <Grid item xs={12} md={6}>
-                          <Typography variant="subtitle2">Số lượng đã gửi:</Typography>
-                          <Typography>{selectedNotification.sentCount || 0}</Typography>
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                          <Typography variant="subtitle2">Số lượng đã đọc:</Typography>
-                          <Typography>{selectedNotification.readCount || 0}</Typography>
-                        </Grid>
-                      </>
+                    {selectedNotification.sentCount !== undefined && (
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="subtitle2">{t('notification.form.sentCount', 'Đã gửi')}:</Typography>
+                        <Typography>{selectedNotification.sentCount}</Typography>
+                      </Grid>
+                    )}
+                    {selectedNotification.readCount !== undefined && (
+                       <Grid item xs={12} sm={6}>
+                        <Typography variant="subtitle2">{t('notification.form.readCount', 'Đã đọc')}:</Typography>
+                        <Typography>{selectedNotification.readCount}</Typography>
+                      </Grid>
                     )}
                   </>
                 )}
               </Grid>
             </DialogContent>
             <DialogActions>
-              <Button onClick={handleCloseDialog}>Đóng</Button>
+              <Button onClick={handleCloseDialog}>{t('common.close', 'Đóng')}</Button>
               {dialogType !== 'view' && (
-                <Button type="submit" variant="contained" startIcon={<SendIcon />}>
-                  {dialogType === 'add' ? 'Lên lịch/Gửi' : 'Lưu thay đổi'}
+                <Button type="submit" variant="contained" disabled={formik.isSubmitting}>
+                  {dialogType === 'add' ? t('common.add', 'Thêm') : t('common.save', 'Lưu')}
                 </Button>
               )}
             </DialogActions>
           </form>
         </Dialog>
 
+        {/* Delete Confirmation Dialog */}
         <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
-          <DialogTitle>Xác nhận xóa thông báo</DialogTitle>
+          <DialogTitle>{t('notification.dialog.deleteConfirmTitle', 'Xác nhận xóa thông báo')}</DialogTitle>
           <DialogContent>
             <Typography>
-              Bạn có chắc chắn muốn xóa thông báo "{selectedNotification?.title}"? Hành động này không thể hoàn tác.
+              {t('notification.dialog.deleteConfirmMessage', 'Bạn có chắc chắn muốn xóa thông báo "{title}"? Hành động này không thể hoàn tác.', { title: selectedNotification?.title })}
             </Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setDeleteConfirmOpen(false)}>Hủy</Button>
-            <Button onClick={handleConfirmDelete} color="error" variant="contained">
-              Xóa
-            </Button>
+            <Button onClick={() => setDeleteConfirmOpen(false)}>{t('common.cancel', 'Hủy')}</Button>
+            <Button onClick={handleConfirmDelete} color="error" variant="contained">{t('common.delete', 'Xóa')}</Button>
           </DialogActions>
         </Dialog>
+
+        {/* Send Confirmation Dialog */}
+        <Dialog open={sendConfirmOpen} onClose={() => setSendConfirmOpen(false)}>
+          <DialogTitle>{t('notification.dialog.sendConfirmTitle', 'Xác nhận gửi thông báo')}</DialogTitle>
+          <DialogContent>
+            <Typography>
+              {t('notification.dialog.sendConfirmMessage', 'Bạn có chắc chắn muốn gửi thông báo "{title}" ngay bây giờ? Thông báo sẽ được gửi đến đối tượng đã chọn.', { title: selectedNotification?.title })}
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setSendConfirmOpen(false)}>{t('common.cancel', 'Hủy')}</Button>
+            <Button onClick={handleConfirmSend} color="primary" variant="contained">{t('notification.sendNow', 'Gửi ngay')}</Button>
+          </DialogActions>
+        </Dialog>
+
       </Box>
     </LocalizationProvider>
   );

@@ -1,13 +1,50 @@
 # Active Context
 
 ## Current Focus
-- Moving from implementing the user-facing Booking System (now with complete UI for all form steps) to completing the placeholder admin modules that have been enhanced:
-    - RoomManagement
-    - PromotionsManagement
-    - TheaterLocations
-    - Next candidates: RolesManagement and other placeholder components 
+- Refining API integrations and improving user-facing features, continuing with the "Next Steps" in priority order:
+    - Implementing Movie Browsing UI
+    - Creating User Profile and Booking History
+    - Testing the completed features with focus on API integrations
+    - Comprehensive Vietnamese localization across all UI components
 
 ## Recent Changes
+- **MovieForm Routes Refinement**:
+    - Created a new `MovieFormWrapper.tsx` component to handle data fetching and state management:
+        - Implemented proper data fetching for movie edit mode using `useQuery`
+        - Added loading and error states
+        - Created mock API functions for create/update operations using `useMutation`
+        - Handled navigation after save/cancel actions
+    - Created centralized type definitions:
+        - Added `admin-interface/src/types/movie.ts` with `Movie` and `MovieFormData` interfaces
+        - Created a barrel file `admin-interface/src/types/index.ts` for clean imports
+    - Updated `MovieForm.tsx` to:
+        - Use the new centralized type definitions
+        - Handle file uploads properly with the `posterFile` field
+        - Improve the component interface to work with `MovieFormData`
+    - Updated `routes.tsx` to use `MovieFormWrapper` instead of directly using `MovieForm`
+    - Updated `MovieManagement.tsx` to:
+        - Use the new centralized type definitions
+        - Update the `handleSave` function to work with `MovieFormData`
+        - Add proper handling for poster file uploads
+    - Used consistent barrel imports across components for better maintainability
+- **User Authentication UI Implementation**:
+    - Updated `Login.tsx` with existing API call logic and UI.
+    - Significantly updated `Register.tsx`:
+        - Added state management using Formik.
+        - Implemented validation using Yup.
+        - Added logic to call the registration API endpoint.
+        - Included loading and error/success message handling.
+        - Integrated `useTranslation` for i18n.
+        - Added link to Login page.
+    - Verified routes in `routes.tsx`.
+- **API Integration for User-Facing Booking System**:
+    - Created `bookingService.ts` service file for handling all booking-related API calls
+    - Implemented interfaces for booking data types (Showtime, Seat, FoodItem, etc.)
+    - Updated `BookingForm.tsx` to replace mock data with real API calls
+    - Added proper error handling and loading states
+    - Implemented symbolic payment process that simulates payment without actual gateway integration
+    - Added booking success UI with booking details display
+    - Structured API endpoints to match expected backend structure
 - **Movie Schedule Calendar Integration for Rooms**:
     - Added a "Calendar" button to the `RoomManagement` component that links to room-specific showtimes.
     - Created a new `RoomScheduleCalendar` component, adapting `MovieScheduleCalendar` for room-specific views.
@@ -63,33 +100,31 @@
     - Resolved issues with `Register.tsx` import in `routes.tsx` which was causing persistent linter errors.
     - Explicitly typed Formik's fields to prevent TypeScript "argument of type string is not assignable to type never" errors.
     - Encountered but couldn't fully resolve import errors in TheaterLocations.tsx related to MenuItem components.
+- **Vietnamese Localization Enhancements**:
+    - Fixed translation issues in the user interface components for better Vietnamese language support:
+        - Added comprehensive translations for Register page including form labels and validation messages
+        - Added translations for the UserHeader component including profile dropdown menu items
+        - Added translations for UserProfile component with personal information editing and password changing sections
+        - Added translations for BookingHistory component with filtering tabs and booking details display
+        - Added translations for the Footer component with all links and information sections
+    - Organized translations hierarchically in the i18n structure to match UI component hierarchy:
+        - Created separate translation namespaces (auth, profile, booking, bookings.history, etc.) for better organization
+        - Added proper validation message translations for form validation
+        - Ensured consistent translation keys across similar components
+    - Fixed TypeScript errors in UserHeader component related to property access
 
 ## Next Steps
-1. **Complete Placeholder Admin Modules**:
-   * Enhance remaining placeholder components with mock data and UI:
-     * `DiscountManagement.tsx` 
-     * `NotificationManagement.tsx`
-   * Fix remaining linter errors in enhanced components.
-   * Ensure consistent Vietnamese translations across all new components.
-2. **API Integration for Booking System**:
-   * Replace mock data with actual API calls for each step:
-     * Fetch showtimes from backend based on movieId (or all upcoming showtimes)
-     * Fetch seat layout based on selected showtime
-     * Fetch available food/drink items from backend
-     * Implement actual booking submission with payment processing
-   * Implement proper error handling for API failures
-   * Add loading states for API calls
-   * Consider optimistic UI updates for better user experience
-3. **Refine `MovieForm` Routes**:
-   * Modify the `movies/add` and `movies/edit/:id` routes in `admin-interface/src/routes.tsx`
-   * For "edit", fetch movie data based on `id` and pass it to `MovieForm`
-   * Implement actual `onSave` and `onCancel` handlers (e.g., API calls, navigation)
-4. **Enhance User Experience for Booking Form**:
-   * Add animations for step transitions
-   * Improve responsive design for mobile users
-   * Add more detailed validation messages
-   * Implement better error recovery for failed operations
-5. **Testing**: Conduct a thorough review and test of the recently implemented features, especially the enhanced admin components and the multi-step booking form.
+1. ~~**Create User Profile and Booking History**~~ (Completed):
+   * ~~Design and implement user profile page~~ - Implemented with personal info editing, avatar upload, and password changing
+   * ~~Create booking history view~~ - Implemented with filtering (All/Upcoming/Past), booking details dialog, and proper status indicators
+   * ~~Add Vietnamese translations~~ - Added for all UI elements and status indicators
+   * ~~Ensure mobile responsiveness~~ - Implemented responsive design for all screen sizes
+   * ~~Connect to relevant API endpoints~~ - Connected to `/user/profile` and `/user/bookings` endpoints
+2. **Testing**: Conduct a thorough review and test of the implemented features, especially the authentication flow and booking form.
+3. **Data Integration**: Xử lý vấn đề dữ liệu cho các UI hiện tại:
+   * Triển khai mock data cho Movie Browsing UI nếu backend chưa sẵn sàng
+   * Tạo các hàm API service giả lập để đảm bảo UI hoạt động mà không cần backend đầy đủ
+4. **UI Polish**: Review all user-facing components to ensure consistent styling and proper Vietnamese translations.
 
 ## Active Decisions
 - Using JPA for entity relationships
@@ -115,6 +150,8 @@
 - Using Material-UI DataGrid for consistent data table presentation in admin components.
 - Implementing view mode toggles (grid/list) for location-based data visualization.
 - Providing rich mock data that closely resembles expected production data patterns.
+- Điều hướng trang chủ mặc định đến trang Movie List để tạo trải nghiệm người dùng tốt hơn
+- Sử dụng React Query cho việc tải dữ liệu phim với các trạng thái loading và error
 
 ## Important Patterns
 - JPA entity relationships
@@ -150,6 +187,12 @@
 - View mode toggles (grid/list) for different data visualization contexts.
 - Common dialog pattern for CRUD operations across admin components.
 - Status indicators with consistent color coding (success/error/warning).
+- Creating wrapper components (like `MovieFormWrapper`) to separate data fetching and UI rendering concerns.
+- Using barrel files for clean and maintainable imports.
+- Hiển thị nội dung có điều kiện dựa trên trạng thái dữ liệu (loading, error, empty)
+- Sử dụng các tab để phân loại dữ liệu (tất cả phim, đang chiếu, sắp chiếu)
+- Hierarchy-based translation structure matching component structure
+- Namespace organization for translations based on feature domains
 
 ## Project Insights
 - Entity relationships are crucial for data integrity
@@ -177,13 +220,12 @@
 - Type mismatches, especially with file inputs (e.g., `File` vs. `string` for `imageUrl`), are common when bridging form data with backend/display models and require careful handling in data submission logic.
 - Multi-step forms require careful state management to ensure data consistency between steps.
 - Explicitly typing form fields in Formik helps TypeScript correctly infer types and prevent errors.
-- Vietnamese translations should be organized hierarchically to match the UI structure.
-- Form validation should provide immediate feedback but avoid disrupting user flow.
-- Mock data with simulated API delays helps test loading states and error handling.
-- Complex UIs like seat maps benefit from a component-based approach with clear visual state indicators.
-- Implementing placeholder components with rich mock data helps visualize the final product better and identify potential UX issues early.
-- Consistent import patterns across components are crucial to prevent linter errors.
-- Maintaining consistent data models and form validation patterns across similar components improves code maintainability.
+- Vietnamese translations should be organized hierarchically to match the UI structure
+- Providing fallback text in the t() function helps with development and ensures graceful degradation
+- Translation keys should follow a consistent naming convention across similar components
+- Separating translations into logical namespaces improves maintainability and organization
+- Translations should be tested with actual UI rendering to catch any display or formatting issues
+- Translation file structure should mirror component organization for easier maintenance
 
 ## Areas for Improvement
 - Add more chart customization options
@@ -207,7 +249,6 @@
 - Complete content for placeholder pages
 - Add more interactive elements to management interfaces
 - Enhance form validation with more comprehensive rules
-- The `MovieForm` routes currently use placeholder props; these need to be replaced with actual data fetching and callback implementations.
 - The booking form needs real API integration to replace the current mock data.
 - Add animations for smoother transitions between booking form steps.
 - Implement better mobile responsiveness for the seat selection UI.
@@ -221,6 +262,10 @@
 - Add more sophisticated filtering options to DataGrid components.
 - Implement proper error handling for image upload failures.
 - Add confirmation dialogs for critical actions (delete, status changes).
+- Triển khai mock data cho Movie Browsing UI khi backend chưa sẵn sàng
+- Thêm tính năng đánh giá và bình luận cho phim
+- Tối ưu hóa hiệu suất tải trang với số lượng phim lớn
+- Cải thiện UX cho việc tìm kiếm và lọc phim
 
 ## Current Considerations
 - API integration approach for the booking form
@@ -248,6 +293,13 @@
 - Integration of Google Maps for theater locations
 - Handling real-time room availability updates
 - Promotion code validation and application workflow
+- Security considerations for user profile data
+- Optimizing API calls for booking history to handle large datasets
+- Implementing real-time booking status updates
+- Error handling strategies for API integration failures
+- Ensuring consistent Vietnamese translations across all components
+- Implementing proper locale detection and switching
+- Maintaining translation key consistency across components
 
 ## Learnings
 - JPA entity relationship implementation

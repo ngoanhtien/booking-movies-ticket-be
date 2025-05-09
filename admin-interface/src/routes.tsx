@@ -19,10 +19,14 @@ import PromotionsManagement from './pages/promotions/PromotionsManagement';
 import DiscountManagement from './pages/promotions/DiscountManagement';
 import NotificationManagement from './pages/promotions/NotificationManagement';
 import BookingPage from './pages/bookings/BookingPage';
-import MovieForm from './pages/movies/MovieForm';
+import MovieFormWrapper from './pages/movies/MovieFormWrapper';
 import Register from './pages/auth/Register';
 import MovieScheduleCalendar from './pages/movies/MovieScheduleCalendar';
 import RoomScheduleCalendar from './pages/rooms/RoomScheduleCalendar';
+import MovieList from './pages/user/MovieList';
+import MovieDetails from './pages/user/MovieDetails';
+import UserProfile from './pages/user/UserProfile';
+import BookingHistory from './pages/user/BookingHistory';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -30,14 +34,28 @@ const AppRoutes: React.FC = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
+      {/* User Routes */}
+      <Route path="/movies" element={<MovieList />} />
+      <Route path="/movies/:id" element={<MovieDetails />} />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <UserProfile />
+        </ProtectedRoute>
+      } />
+      <Route path="/booking-history" element={
+        <ProtectedRoute>
+          <BookingHistory />
+        </ProtectedRoute>
+      } />
+
       <Route path="/admin" element={<ProtectedRoute>
         <Layout />
       </ProtectedRoute>}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="movies" element={<MovieManagement />} />
-        <Route path="movies/add" element={<MovieForm movie={null} onSave={() => {}} onCancel={() => {}} />} />
-        <Route path="movies/edit/:id" element={<MovieForm movie={null} onSave={() => {}} onCancel={() => {}} />} />
+        <Route path="movies/add" element={<MovieFormWrapper />} />
+        <Route path="movies/edit/:id" element={<MovieFormWrapper />} />
         <Route path="movies/schedules" element={<MovieScheduleCalendar />} />
         <Route path="showtimes" element={<ShowtimeManagement />} />
         <Route path="users" element={<UserManagement />} />
@@ -61,7 +79,8 @@ const AppRoutes: React.FC = () => {
 
       <Route path="/admin/*" element={<Navigate to="/admin/dashboard" replace />} />
 
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<Navigate to="/movies" replace />} />
+      <Route path="*" element={<Navigate to="/movies" replace />} />
     </Routes>
   );
 };

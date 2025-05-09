@@ -1,5 +1,6 @@
 {
   "common": {
+    "appName": "Cinema Plus",
     "dashboard": "Bảng điều khiển",
     "movies": "Phim",
     "showtimes": "Lịch chiếu",
@@ -21,7 +22,42 @@
     "branches": "Chi nhánh",
     "invoices": "Hóa đơn",
     "back": "Quay lại",
-    "next": "Tiếp theo"
+    "next": "Tiếp theo",
+    "search": "Tìm kiếm",
+    "all": "Tất cả",
+    "retry": "Thử lại",
+    "backToMovies": "Quay lại danh sách phim",
+    "language": "Ngôn ngữ",
+    "loading": "Đang tải...",
+    "refresh": "Làm mới",
+    "print": "In",
+    "sendEmail": "Gửi email",
+    "close": "Đóng",
+    "viewDetails": "Xem chi tiết"
+  },
+  "navigation": {
+    "movies": "Phim",
+    "profile": "Hồ sơ",
+    "bookTicket": "Đặt vé",
+    "bookingHistory": "Lịch sử đặt vé"
+  },
+  "profile": {
+    "personalInfo": "Thông tin cá nhân",
+    "security": "Bảo mật",
+    "fullName": "Họ và tên",
+    "email": "Email",
+    "phone": "Số điện thoại",
+    "birthDate": "Ngày sinh",
+    "currentPassword": "Mật khẩu hiện tại",
+    "newPassword": "Mật khẩu mới",
+    "confirmPassword": "Xác nhận mật khẩu mới",
+    "passwordMismatch": "Mật khẩu không khớp",
+    "changePassword": "Đổi mật khẩu",
+    "updateSuccess": "Cập nhật thông tin thành công",
+    "updateError": "Lỗi khi cập nhật thông tin",
+    "passwordChangeSuccess": "Đổi mật khẩu thành công",
+    "passwordChangeError": "Lỗi khi đổi mật khẩu",
+    "fetchError": "Lỗi khi tải thông tin cá nhân"
   },
   "booking": {
     "title": "Đặt Vé Của Bạn",
@@ -73,7 +109,21 @@
     "trailer": "Trailer",
     "language": "Ngôn ngữ",
     "categories": "Thể loại",
-    "actors": "Diễn viên"
+    "actors": "Diễn viên",
+    "minutes": "phút",
+    "showing": "Đang chiếu",
+    "upcoming": "Sắp chiếu",
+    "bookTickets": "Đặt vé",
+    "browseMovies": "Danh Sách Phim",
+    "allMovies": "Tất cả phim",
+    "nowShowing": "Đang chiếu",
+    "comingSoon": "Sắp chiếu",
+    "genre": "Thể loại",
+    "movieDetails": "Chi tiết phim",
+    "noMoviesFound": "Không tìm thấy phim nào",
+    "ratings": "đánh giá",
+    "director": "Đạo diễn",
+    "ageRestriction": "Giới hạn tuổi"
   },
   "showtimes": {
     "title": "Quản lý lịch chiếu",
@@ -142,6 +192,56 @@
       "statusRequired": "Vui lòng chọn trạng thái"
     }
   },
+  "auth": {
+    "login": "Đăng nhập",
+    "register": "Đăng ký",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "username": "Tên đăng nhập",
+    "fullName": "Họ và tên",
+    "signIn": "Đăng nhập",
+    "signingIn": "Đang đăng nhập...",
+    "alreadyHaveAccount": "Đã có tài khoản? Đăng nhập ngay",
+    "registerSuccess": "Đăng ký thành công! Bạn có thể đăng nhập ngay.",
+    "registerError": "Đăng ký thất bại. Vui lòng thử lại."
+  },
+  "validation": {
+    "required": "{{field}} là bắt buộc",
+    "email": "Email không hợp lệ",
+    "minLength": "{{field}} phải có ít nhất {{min}} ký tự",
+    "maxLength": "{{field}} không được vượt quá {{max}} ký tự",
+    "url": "URL không hợp lệ",
+    "phone": "Số điện thoại không hợp lệ",
+    "passwordMin": "Mật khẩu phải có ít nhất 6 ký tự",
+    "passwordMatch": "Mật khẩu không khớp"
+  },
+  "reports": {
+    "title": "Báo cáo và Phân tích",
+    "startDate": "Ngày bắt đầu",
+    "endDate": "Ngày kết thúc",
+    "reportType": "Loại báo cáo",
+    "daily": "Hàng ngày",
+    "weekly": "Hàng tuần",
+    "monthly": "Hàng tháng",
+    "sales": "Doanh số",
+    "attendance": "Lượt xem",
+    "export": "Xuất báo cáo",
+    "exportSuccess": "Xuất báo cáo thành công",
+    "exportError": "Lỗi khi xuất báo cáo",
+    "fetchError": "Lỗi khi tải dữ liệu báo cáo",
+    "salesByMovie": "Doanh số theo phim",
+    "salesByFormat": "Doanh số theo định dạng",
+    "salesByCinema": "Doanh số theo rạp",
+    "salesByTime": "Doanh số theo khung giờ",
+    "salesTrend": "Xu hướng doanh số",
+    "monthlyComparison": "So sánh doanh số theo tháng",
+    "attendanceByMovie": "Lượt xem theo phim",
+    "attendanceByCinema": "Lượt xem theo rạp",
+    "attendanceTrend": "Xu hướng lượt xem",
+    "revenue": "Doanh thu",
+    "tickets": "Vé"
+  },
   "bookings": {
     "title": "Quản lý đặt vé",
     "code": "Mã đặt vé",
@@ -174,49 +274,29 @@
       "confirmed": "Đã xác nhận",
       "cancelled": "Đã hủy",
       "completed": "Hoàn thành"
+    },
+    "history": {
+      "title": "Lịch sử đặt vé",
+      "allBookings": "Tất cả đặt vé",
+      "upcoming": "Sắp tới",
+      "past": "Đã qua",
+      "noBookings": "Bạn chưa có đặt vé nào",
+      "bookMoviePrompt": "Đặt vé xem phim ngay hôm nay!",
+      "browseMovies": "Xem phim",
+      "bookingCode": "Mã đặt vé",
+      "totalAmount": "Tổng tiền",
+      "bookingDetails": "Chi tiết đặt vé",
+      "bookingId": "Mã đặt vé",
+      "paymentSummary": "Thông tin thanh toán",
+      "subtotal": "Tạm tính",
+      "total": "Tổng cộng",
+      "concessions": "Đồ ăn và thức uống",
+      "fetchError": "Lỗi khi tải lịch sử đặt vé. Vui lòng thử lại sau."
     }
   },
-  "auth": {
-    "login": "Đăng nhập",
-    "email": "Email",
-    "password": "Mật khẩu",
-    "signIn": "Đăng nhập",
-    "signingIn": "Đang đăng nhập..."
-  },
-  "validation": {
-    "required": "{{field}} là bắt buộc",
-    "email": "Email không hợp lệ",
-    "minLength": "{{field}} phải có ít nhất {{min}} ký tự",
-    "maxLength": "{{field}} không được vượt quá {{max}} ký tự",
-    "url": "URL không hợp lệ",
-    "phone": "Số điện thoại không hợp lệ"
-  },
-  "reports": {
-    "title": "Báo cáo và Phân tích",
-    "startDate": "Ngày bắt đầu",
-    "endDate": "Ngày kết thúc",
-    "reportType": "Loại báo cáo",
-    "daily": "Hàng ngày",
-    "weekly": "Hàng tuần",
-    "monthly": "Hàng tháng",
-    "sales": "Doanh số",
-    "attendance": "Lượt xem",
-    "export": "Xuất báo cáo",
-    "exportSuccess": "Xuất báo cáo thành công",
-    "exportError": "Lỗi khi xuất báo cáo",
-    "fetchError": "Lỗi khi tải dữ liệu báo cáo",
-    "salesByMovie": "Doanh số theo phim",
-    "salesByFormat": "Doanh số theo định dạng",
-    "salesByCinema": "Doanh số theo rạp",
-    "salesByTime": "Doanh số theo khung giờ",
-    "salesTrend": "Xu hướng doanh số",
-    "monthlyComparison": "So sánh doanh số theo tháng",
-    "attendanceByMovie": "Lượt xem theo phim",
-    "attendanceByCinema": "Lượt xem theo rạp",
-    "attendanceTrend": "Xu hướng lượt xem",
-    "revenue": "Doanh thu",
-    "tickets": "Vé",
-    "attendance": "Lượt xem"
+  "errors": {
+    "fetchFailed": "Không thể tải {{entity}}",
+    "somethingWentWrong": "Đã xảy ra lỗi. Vui lòng thử lại sau."
   },
   "sidebar": {
     "userManagement": "Quản lý người dùng",
@@ -258,5 +338,17 @@
     "delete": "Xóa",
     "cancel": "Hủy",
     "save": "Lưu"
+  },
+  "footer": {
+    "tagline": "Hệ thống đặt vé xem phim trực tuyến hàng đầu Việt Nam",
+    "quickLinks": "Liên kết nhanh",
+    "help": "Trợ giúp",
+    "contact": "Liên hệ",
+    "faq": "Câu hỏi thường gặp",
+    "terms": "Điều khoản sử dụng",
+    "privacy": "Chính sách bảo mật",
+    "address": "123 Đường Lê Lợi, Quận 1, TP. Hồ Chí Minh",
+    "phone": "Điện thoại",
+    "rightsReserved": "Đã đăng ký bản quyền"
   }
 } 
