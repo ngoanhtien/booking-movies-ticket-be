@@ -4,6 +4,7 @@ import com.booking.movieticket.dto.criteria.MovieCriteria;
 import com.booking.movieticket.dto.request.admin.update.MovieForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.MovieForCreateRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
+import com.booking.movieticket.dto.response.admin.MovieResponse;
 import com.booking.movieticket.dto.response.admin.create.MovieCreatedResponse;
 import com.booking.movieticket.entity.Movie;
 import com.booking.movieticket.service.MovieService;
@@ -39,14 +40,14 @@ public class MovieController {
     MovieService movieService;
 
     @GetMapping("")
-    public ResponseEntity<ApiResponse<Page<Movie>>> getAllMovies(MovieCriteria movieCriteria,
-                                                                 @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+    public ResponseEntity<ApiResponse<Page<MovieResponse>>> getAllMovies(MovieCriteria movieCriteria,
+                                                                         @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ApiResponse<>("Movie fetched successfully.", movieService.getAllMovies(movieCriteria, pageable)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Movie>> getMovieById(@PathVariable @Min(value = 1, message = "Id must be greater than or equal to 1.") Long id) {
+    public ResponseEntity<ApiResponse<MovieResponse>> getMovieById(@PathVariable @Min(value = 1, message = "Id must be greater than or equal to 1.") Long id) {
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("Movie details fetched successfully.", movieService.getMovieById(id)));
     }
 

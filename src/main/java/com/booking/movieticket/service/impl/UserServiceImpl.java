@@ -79,7 +79,7 @@ public class UserServiceImpl implements UserService {
             user.setIsDeleted(false);
             return userMapper.convertEntityToUserCreatedResponse(userRepository.save(user));
         } catch (IOException e) {
-            throw new AppException(ErrorCode.USER_NOT_FOUND);
+            throw new AppException(ErrorCode.UPLOAD_IMAGE_FAILED);
         }
     }
 

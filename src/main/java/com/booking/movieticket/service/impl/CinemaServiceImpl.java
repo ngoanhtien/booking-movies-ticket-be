@@ -1,8 +1,9 @@
 package com.booking.movieticket.service.impl;
 
 import com.booking.movieticket.dto.criteria.CinemaCriteria;
-import com.booking.movieticket.dto.request.admin.update.CinemaForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.CinemaForCreateRequest;
+import com.booking.movieticket.dto.request.admin.update.CinemaForUpdateRequest;
+import com.booking.movieticket.dto.response.admin.CinemaResponse;
 import com.booking.movieticket.dto.response.admin.create.CinemaCreatedResponse;
 import com.booking.movieticket.entity.Cinema;
 import com.booking.movieticket.exception.AppException;
@@ -37,16 +38,16 @@ public class CinemaServiceImpl implements CinemaService {
     ImageUploadService imageUploadService;
 
     @Override
-    public Cinema getCinemaById(Long id) {
+    public CinemaResponse getCinemaById(Long id) {
         if (id == null) {
             throw new AppException(ErrorCode.CINEMA_NOT_FOUND);
         }
-        return cinemaRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.CINEMA_NOT_FOUND));
+        return cinemaMapper.convertCinemaToResponse(cinemaRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.CINEMA_NOT_FOUND)));
     }
 
     @Override
-    public Page<Cinema> getAllCinemas(CinemaCriteria cinemaCriteria, Pageable pageable) {
-        return cinemaRepository.findAll(CinemaSpecificationBuilder.findByCriteria(cinemaCriteria), pageable);
+    public Page<CinemaResponse> getAllCinemas(CinemaCriteria cinemaCriteria, Pageable pageable) {
+        return cinemaRepository.findAll(CinemaSpecificationBuilder.findByCriteria(cinemaCriteria), pageable).map(cinemaMapper::convertCinemaToResponse);
     }
 
     @Override
@@ -61,7 +62,7 @@ public class CinemaServiceImpl implements CinemaService {
             cinema.setIsDeleted(false);
             return cinemaMapper.convertEntityToCinemaCreatedResponse(cinemaRepository.save(cinema));
         } catch (IOException e) {
-            throw new AppException(ErrorCode.CINEMA_NOT_FOUND);
+            throw new AppException(ErrorCode.UPLOAD_IMAGE_FAILED);
         }
     }
 

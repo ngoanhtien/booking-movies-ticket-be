@@ -27,6 +27,7 @@ public enum ErrorCode {
     SHOWTIMESEAT_NOT_FOUND(1202, "Showtime seat not found", HttpStatus.NOT_FOUND),
     SHOWING_MOVIE_NOT_FOUND(1203, "Showing movie not found", HttpStatus.NOT_FOUND),
     UPCOMING_MOVIE_NOT_FOUND(1203, "Showing movie not found", HttpStatus.NOT_FOUND),
+    BRANCH_NOT_FOUND(1204, "Brand not found", HttpStatus.NOT_FOUND),
 
     // Transaction Errors (1300-1399)
     BILL_NOT_FOUND(1300, "Bill not found", HttpStatus.NOT_FOUND),
