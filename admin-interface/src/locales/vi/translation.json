@@ -237,5 +237,26 @@
     "allPromotions": "Tất cả khuyến mãi",
     "discounts": "Giảm giá",
     "sendNotifications": "Gửi thông báo"
+  },
+  "schedule": {
+    "movieScheduleManagement": "Quản lý Lịch chiếu phim",
+    "cinema": "Rạp phim",
+    "movie": "Phim",
+    "room": "Phòng chiếu",
+    "timezone": "Múi giờ",
+    "date": "Ngày",
+    "startTime": "Giờ bắt đầu",
+    "endTime": "Giờ kết thúc",
+    "price": "Giá vé",
+    "minutes": "phút",
+    "seats": "ghế",
+    "selectCinemaMovieRoom": "Vui lòng chọn rạp phim, phim và phòng chiếu trước khi tạo lịch chiếu mới",
+    "fillAllFields": "Vui lòng điền đầy đủ thông tin",
+    "selectionError": "Đã xảy ra lỗi khi chọn dữ liệu",
+    "addSchedule": "Thêm lịch chiếu mới",
+    "editSchedule": "Chỉnh sửa lịch chiếu",
+    "delete": "Xóa",
+    "cancel": "Hủy",
+    "save": "Lưu"
   }
 } 

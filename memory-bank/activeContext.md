@@ -8,6 +8,31 @@
     - Next candidates: RolesManagement and other placeholder components 
 
 ## Recent Changes
+- **Movie Schedule Calendar Integration for Rooms**:
+    - Added a "Calendar" button to the `RoomManagement` component that links to room-specific showtimes.
+    - Created a new `RoomScheduleCalendar` component, adapting `MovieScheduleCalendar` for room-specific views.
+    - Implemented room-specific filtering of showtimes in `RoomScheduleCalendar`.
+    - Added new routes for room schedules in `routes.tsx`.
+    - Enabled features for viewing, adding, editing, and deleting movie showtimes for specific rooms, including time zone selection and date/time management.
+    - Fixed linter error related to `RoomScheduleCalendar` import in `routes.tsx`.
+- **Room Management UI Enhancements**:
+    - Improved the title area of the `RoomManagement` page by adding padding and a bottom border for better visual separation.
+    - Added padding to the `Paper` component that wraps the `DataGrid` for a less cramped look.
+    - Configured `DataGrid` columns (`id`, `name`, `theaterName`, `roomType`, `status`) to use `flex` and `minWidth` properties, allowing them to distribute space more effectively and fill the table width. Adjusted fixed widths for `capacity`, `dimensions`, and `actions` columns.
+    - Styled `DataGrid` column headers with a background color, bottom border, and bolded titles for improved readability.
+- **Movie Schedule Calendar Implementation**:
+    - Created a new `MovieScheduleCalendar.tsx` component using FullCalendar for a calendar-based movie schedule management interface.
+    - Implemented time zone support with multiple selectable time zones (Vietnam, Bangkok, Singapore, Tokyo, London, New York).
+    - Added interactive functionality for creating, editing, and deleting movie schedules.
+    - Implemented filtering by cinema, movie, and room with dynamic room filtering based on selected cinema.
+    - Added a dialog for schedule creation and editing with form validation.
+    - Created comprehensive Vietnamese translations for all calendar UI elements.
+    - Added the navigation item back to the sidebar under the Movies Management section.
+    - Styled with Material-UI components to maintain design consistency.
+- **Admin Panel Navigation Update**:
+    - Removed "Lịch chiếu phim" (Movie Schedules) tab from the movies management section in the sidebar navigation.
+    - Deleted the MovieSchedules.tsx component as it's no longer needed.
+    - Updated progress.md to reflect this change.
 - **Admin Panel Navigation Update**:
     - Removed "Vai trò & Phân quyền" (Roles & Permissions) tab from the user management section in the sidebar navigation.
     - Deleted the RolesManagement.tsx component as it's no longer needed.
@@ -44,7 +69,6 @@
    * Enhance remaining placeholder components with mock data and UI:
      * `DiscountManagement.tsx` 
      * `NotificationManagement.tsx`
-     * `MovieSchedules.tsx`
    * Fix remaining linter errors in enhanced components.
    * Ensure consistent Vietnamese translations across all new components.
 2. **API Integration for Booking System**:
@@ -202,7 +226,7 @@
 - API integration approach for the booking form
 - How to structure API endpoints for the multi-step booking process
 - Best practices for handling seat availability in real-time
-- Payment integration options
+- Symbolic payment implementation (no actual payment gateway for internship project)
 - Performance optimization for seat map rendering with large theaters
 - State management for complex forms across multiple steps
 - Optimistic UI updates for better user experience

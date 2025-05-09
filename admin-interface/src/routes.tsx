@@ -3,10 +3,8 @@ import { Route, Routes, Navigate } from 'react-router-dom';
 import Login from './pages/auth/Login';
 import Dashboard from './pages/dashboard/Dashboard';
 import MovieManagement from './pages/movies/MovieManagement';
-import MovieSchedules from './pages/movies/MovieSchedules';
 import ShowtimeManagement from './pages/showtimes/ShowtimeManagement';
 import UserManagement from './pages/users/UserManagement';
-import UserList from './pages/users/UserList';
 import BookingManagement from './pages/bookings/BookingManagement';
 import ReportsAndAnalytics from './pages/reports/ReportsAndAnalytics';
 import CinemaManagement from './pages/cinemas/CinemaManagement';
@@ -23,6 +21,8 @@ import NotificationManagement from './pages/promotions/NotificationManagement';
 import BookingPage from './pages/bookings/BookingPage';
 import MovieForm from './pages/movies/MovieForm';
 import Register from './pages/auth/Register';
+import MovieScheduleCalendar from './pages/movies/MovieScheduleCalendar';
+import RoomScheduleCalendar from './pages/rooms/RoomScheduleCalendar';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -38,9 +38,9 @@ const AppRoutes: React.FC = () => {
         <Route path="movies" element={<MovieManagement />} />
         <Route path="movies/add" element={<MovieForm movie={null} onSave={() => {}} onCancel={() => {}} />} />
         <Route path="movies/edit/:id" element={<MovieForm movie={null} onSave={() => {}} onCancel={() => {}} />} />
-        <Route path="movies/schedules" element={<MovieSchedules />} />
+        <Route path="movies/schedules" element={<MovieScheduleCalendar />} />
         <Route path="showtimes" element={<ShowtimeManagement />} />
-        <Route path="users" element={<UserList />} />
+        <Route path="users" element={<UserManagement />} />
         <Route path="bookings" element={<BookingManagement />} />
         <Route path="reports" element={<ReportsAndAnalytics />} />
         <Route path="cinemas" element={<CinemaManagement />} />
@@ -49,6 +49,8 @@ const AppRoutes: React.FC = () => {
         <Route path="theaters" element={<TheaterManagement />} />
         <Route path="theaters/locations" element={<TheaterLocations />} />
         <Route path="rooms" element={<RoomManagement />} />
+        <Route path="rooms/schedules/:roomId" element={<RoomScheduleCalendar />} />
+        <Route path="rooms/schedules" element={<RoomScheduleCalendar />} />
         <Route path="promotions" element={<PromotionsManagement />} />
         <Route path="promotions/discounts" element={<DiscountManagement />} />
         <Route path="promotions/notifications" element={<NotificationManagement />} />

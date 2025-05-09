@@ -20,9 +20,9 @@
   - Path prefixes for proper route nesting
   - Placeholder components for all menu items
   - Enhanced placeholder components with rich mock data and full UI:
-    - Room Management with room types, capacity, status and features
-    - Promotions Management with various discount types and targets
-    - Theater Locations with map integration and dual view modes
+    - RoomManagement.tsx with DataGrid, form validation, status indicators, support for different room types (2D, 3D, IMAX, VIP), interactive seat layout editor, and improved table/title UI aesthetics (padding, column distribution).
+    - PromotionsManagement.tsx with rich promotion data, different discount types (percentage/fixed), various targets (all/movie/food/combo), and date range selection
+    - TheaterLocations.tsx with location data, dual view modes (grid/list), Google Maps integration, and search functionality
 - Showtime Management Interface
   - Showtime list view with DataGrid
   - Add/Edit showtime form
@@ -101,10 +101,6 @@
   - Add/edit/delete UI
   - Routing and sidebar link
   - Vietnamese translations
-- Placeholder components enhanced with functional UI and mock data:
-  - RoomManagement.tsx with DataGrid, form validation, status indicators, and support for different room types (2D, 3D, IMAX, VIP)
-  - PromotionsManagement.tsx with rich promotion data, different discount types (percentage/fixed), various targets (all/movie/food/combo), and date range selection
-  - TheaterLocations.tsx with location data, dual view modes (grid/list), Google Maps integration, and search functionality
 - Partially functional placeholder components:
   - RolesManagement.tsx (basic structure)
   - MovieSchedules.tsx (basic structure)
@@ -140,6 +136,11 @@
      - [x] Add/Edit showtime form
      - [x] Movie-showtime relationship
      - [x] Schedule management
+     - [x] Vietnamese translations
+   - [x] Movie schedule calendar implementation
+     - [x] FullCalendar integration with time zone support
+     - [x] Interactive schedule creation and editing
+     - [x] Cinema, movie, and room filtering
      - [x] Vietnamese translations
    - [x] User management interface
      - [x] User list view
@@ -177,11 +178,14 @@
    - [x] Theater management module (placeholder)
    - [x] Theater locations module (placeholder enhanced with functional UI)
    - [x] Room management module (placeholder enhanced with functional UI)
+     - [x] Seat layout visualization and interactive editor
+     - [x] Integration with room-specific schedule calendar
+     - [x] UI Polish (padding, column distribution, title styling)
    - [-] User roles management module (removed from navigation)
    - [x] Promotions management module (placeholder enhanced with functional UI)
    - [ ] Discount management module (placeholder requires enhancement)
    - [ ] Notification management module (placeholder requires enhancement)
-   - [ ] Movie schedules module (placeholder requires enhancement)
+   - [-] Movie schedules module (removed from navigation)
    - [ ] Complete content for remaining placeholder modules
    - [ ] Refine `MovieForm` routes with actual data fetching/state management (currently uses placeholder props).
 
@@ -194,10 +198,10 @@
      - [x] Implement Food & Drinks step in `BookingForm.tsx` (UI with mock data).
      - [x] Implement Confirm & Pay step in `BookingForm.tsx` (summary, payment placeholder).
      - [ ] Integrate API calls for all booking steps.
-     - [ ] Implement actual payment processing.
+     - [ ] Implement symbolic payment process (no actual payment gateway integration).
    - [ ] User profile
    - [ ] Booking history
-   - [ ] Payment interface
+   - [ ] Payment interface (symbolic implementation only)
    - [x] Vietnamese translations for the booking form
 
 ## Current Status
@@ -281,6 +285,12 @@
     - Visual status indicators
     - Appropriate error handling
 - Remaining placeholder components have basic structure and Vietnamese headers but require further enhancement
+- Add more detailed validation feedback for each booking step.
+- Consider implementing a seat category system with different pricing.
+- Add visual indicators of selected seats count and total price on all steps.
+- Implement symbolic payment processing (no actual payment gateway integration).
+- Add booking confirmation emails/notifications.
+- Implement a booking history view for users.
 
 ## Known Issues
 - Some linter errors in TheaterLocations.tsx related to MenuItem imports
@@ -302,10 +312,10 @@
    - Add validation
    - Implement booking workflow
 2. Implement Payment Integration:
-   - Integrate payment gateway
-   - Implement transaction management
-   - Add payment status tracking
-   - Add Vietnamese translations
+   - Implement simplified payment flow (symbolic only, no actual payment gateway integration required)
+   - Add basic payment status tracking
+   - Add payment simulation for user experience
+   - Add Vietnamese translations for payment UI
 3. Add Real-time Updates:
    - Implement WebSocket
    - Add real-time notifications
@@ -326,7 +336,7 @@
 - Improve error handling
 - Enhance documentation
 - Complete booking system implementation
-- Add payment integration
+- Add symbolic payment integration (no actual payment gateway)
 - Implement real-time updates
 - Add mock data for UI development
 - Enhance offline mode error handling
