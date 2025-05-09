@@ -136,67 +136,92 @@ const MovieDetails: React.FC = () => {
               color={movie.status === 'ACTIVE' ? 'success' : 'warning'} 
               variant="outlined"
             />
+            {movie.ageRestriction && (
+              <Chip 
+                label={movie.ageRestriction} 
+                color="error" 
+                variant="filled" 
+                size="small"
+                sx={{ fontWeight: 'bold' }}
+              />
+            )}
           </Box>
           
           <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
-            <Rating value={4} readOnly precision={0.5} />
+            <Rating value={movie.rating ? parseFloat(movie.rating) : 4} readOnly precision={0.5} />
             <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-              4.0/5.0 ({Math.floor(Math.random() * 1000) + 100} {t('movies.ratings')})
+              {movie.rating ? `${movie.rating}/5.0` : '4.0/5.0'} ({Math.floor(Math.random() * 1000) + 100} {t('movies.ratings')})
             </Typography>
           </Box>
           
           <Typography variant="h6" gutterBottom>
             {t('movies.description')}
           </Typography>
-          <Typography variant="body1" paragraph>
+          <Typography variant="body1" paragraph sx={{ whiteSpace: 'pre-line' }}>
             {movie.description}
           </Typography>
           
           <Divider sx={{ my: 3 }} />
           
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            {movie.director && movie.director.length > 0 && (
+              <Grid item xs={12} sm={6}>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  {t('movies.director')}
+                </Typography>
+                <Typography variant="body1">
+                  {movie.director.join(', ')}
+                </Typography>
+              </Grid>
+            )}
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 {t('movies.genre')}
               </Typography>
               <Typography variant="body1">
                 Action, Adventure
               </Typography>
             </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                {t('movies.director')}
-              </Typography>
-              <Typography variant="body1">
-                John Doe
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 {t('movies.language')}
               </Typography>
               <Typography variant="body1">
                 English
               </Typography>
             </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                {t('movies.ageRestriction')}
-              </Typography>
-              <Typography variant="body1">
-                PG-13
-              </Typography>
-            </Grid>
+            {movie.ageRestriction && (
+                <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        {t('movies.ageRestriction')}
+                    </Typography>
+                    <Typography variant="body1">
+                        {movie.ageRestriction}
+                    </Typography>
+                </Grid>
+            )}
+            {movie.actors && movie.actors.length > 0 && (
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  {t('movies.actors')}
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {movie.actors.map((actor, index) => (
+                    <Chip key={index} label={actor} variant="outlined" />
+                  ))}
+                </Box>
+              </Grid>
+            )}
           </Grid>
           
-          <Box sx={{ mt: 4 }}>
+          <Box sx={{ mt: 4, display: 'flex', justifyContent: isMobile ? 'center' : 'flex-start' }}>
             <Button
               variant="contained"
               color="primary"
               size="large"
               fullWidth={isMobile}
-              onClick={() => navigate(`/booking/${movie.id}`)}
-              sx={{ px: 4 }}
+              onClick={() => navigate(`/select-cinema/${movie.id}`)}
+              sx={{ px: { xs: 2, sm: 4 }, py: 1.5, fontSize: { xs: '0.9rem', sm: '1rem'} }}
             >
               {t('movies.bookTickets')}
             </Button>
@@ -205,36 +230,39 @@ const MovieDetails: React.FC = () => {
       </Grid>
       
       {/* Movie Trailer */}
-      <Box sx={{ mt: 6 }}>
-        <Typography variant="h5" gutterBottom>
-          {t('movies.trailer')}
-        </Typography>
-        <Paper 
-          elevation={2} 
-          sx={{ 
-            borderRadius: '8px', 
-            overflow: 'hidden',
-            position: 'relative',
-            paddingTop: '56.25%', // 16:9 aspect ratio
-          }}
-        >
-          <Box
-            component="iframe"
-            src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-            title={`${movie.title} Trailer`}
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
+      {movie.trailerUrl && (
+        <Box sx={{ mt: { xs: 4, md: 6 } }}>
+          <Typography variant="h5" gutterBottom>
+            {t('movies.trailer')}
+          </Typography>
+          <Paper 
+            elevation={3} 
+            sx={{ 
+              borderRadius: '12px', 
+              overflow: 'hidden',
+              position: 'relative',
+              paddingTop: '56.25%', // 16:9 aspect ratio
+              backgroundColor: 'black' // Background for the iframe container
             }}
-          />
-        </Paper>
-      </Box>
+          >
+            <Box
+              component="iframe"
+              src={movie.trailerUrl.includes('youtube.com/embed') ? movie.trailerUrl : `https://www.youtube.com/embed/${movie.trailerUrl}`}
+              title={`${movie.title} Trailer`}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+              }}
+            />
+          </Paper>
+        </Box>
+      )}
     </Container>
   );
 };

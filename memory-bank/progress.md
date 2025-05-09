@@ -4,6 +4,26 @@
 - Project initialization with React and TypeScript
 - Material-UI theme configuration
 - Basic routing structure
+- **User Authentication & Registration (Frontend & Backend)**:
+    - Frontend forms for Login and Register (`Login.tsx`, `Register.tsx`).
+    - Backend API endpoints for `/auth/login` and `/auth/register`.
+    - JWT generation and token-based authentication flow.
+    - Frontend correctly calls backend via proxy (`package.json`).
+    - Backend DTOs (`RegisterRequest`) correctly map frontend payloads (e.g., `fullName`, `email`).
+    - Backend validation for existing username and email during registration.
+    - Frontend correctly parses API responses (e.g., `response.data.result` for tokens).
+    - Endpoint `GET /user/me` implemented in backend to fetch current user details after login.
+    - Successful login now correctly redirects based on user role (admin to `/admin/dashboard`, user to `/`).
+- **Security and Access Control**:
+    - Frontend role-based route protection with `AdminProtectedRoute` component
+    - Backend API security with Spring Security role-based permissions
+    - Modified `DomainUserDetailsService` to add "ROLE_" prefix to roles for Spring Security
+    - Restricted admin routes and API endpoints to users with ADMIN role
+    - Added axios interceptors for automatic token handling on all requests
+    - Authentication persistence across page refreshes
+    - UserLayout with integrated logout functionality in header
+    - Proper cleanup of authentication tokens on logout
+    - Debug logging for authentication flow troubleshooting
 - Vietnamese Language Support
   - Translation configuration with i18next
   - Vietnamese translation file
@@ -129,11 +149,19 @@
     - Addressed `MovieForm` prop type errors in `routes.tsx` by passing `null` for `movie` and empty functions for callbacks (temporary measure).
     - Fixed TypeScript errors in form validation by properly handling field error checks.
     - Fixed TypeScript errors in UserHeader component related to property access.
+- Minor UI Fixes:
+    - Login Page: Removed unnecessary "auth.noAccount" text.
+    - `Register.tsx`: Simplified by removing a `Typography` wrapper.
+    - Translation Files: Added "logout" key for consistency.
 
 ## What's Left to Build
 1. Frontend Features
    Admin Interface (Priority)
-   - [x] Admin authentication UI
+   - [x] Admin authentication UI (Login & Register forms fully functional)
+   - [x] Proper authentication flow (JWT, proxy, API calls, response handling, /user/me functional)
+   - [x] Role-based access control for admin pages
+   - [x] Authentication persistence across page refreshes 
+   - [x] Logout functionality in user interface
    - [x] Dashboard layout
    - [x] Movie management interface
      - [x] Movie list view
@@ -178,7 +206,6 @@
      - [x] Excel export
      - [x] Caching implementation
      - [x] More visualization options
-   - [x] Proper authentication flow
    - [x] Mock data for UI preview
    - [ ] Error handling for offline mode
    - [ ] Loading states for data-dependent components
@@ -200,13 +227,21 @@
    - [x] Refine `MovieForm` routes with actual data fetching/state management (replaced placeholder props with MovieFormWrapper).
 
    User Interface
-   - [x] User authentication (UI and basic API calls implemented for Login & Register)
+   - [x] User authentication (UI and API calls for Login & Register are now fully functional and tested)
      - [x] Complete Vietnamese translations for Login/Register forms
      - [x] Proper error handling and success messaging
      - [x] Form validation with Vietnamese messages
    - [x] Movie browsing
      - [x] Implement MovieList component with movie grid display
+     - [ ] **Enhance `MovieList.tsx` for MoMo-like UX (CURRENT TASK)**
+        - [ ] Implement clearer "Now Showing" vs. "Coming Soon" sections.
+        - [ ] Display movie ratings (e.g., 4.5/5 stars) and age restrictions (e.g., P, C13, C16, C18).
+        - [ ] Enhance grid layout for better visual appeal and information density.
      - [x] Create MovieDetails component for detailed movie view
+     - [ ] **Enhance `MovieDetails.tsx` for MoMo-like UX**
+        - [ ] Include detailed cast/crew information (director, actors).
+        - [ ] Embed a movie trailer (e.g., YouTube).
+        - [ ] Ensure a prominent "Book Ticket" button.
      - [x] Add filtering and searching capabilities
      - [x] Implement tabbed browsing (All movies, Now showing, Coming soon)
      - [x] Add responsive design for all screen sizes
@@ -214,11 +249,25 @@
      - [x] Add loading states, error handling, and empty states
      - [x] Add Vietnamese translations for all UI elements
      - [x] Update routes to include movie browsing as the homepage
-   - [x] Ticket booking flow
-     - [x] Implement Showtime Selection step in `BookingForm.tsx` (UI with mock data).
-     - [x] Implement Seat Selection step in `BookingForm.tsx` (interactive map with mock data).
-     - [x] Implement Food & Drinks step in `BookingForm.tsx` (UI with mock data).
-     - [x] Implement Confirm & Pay step in `BookingForm.tsx` (summary, payment placeholder).
+   - [x] Ticket booking flow (Initial UI with mock data complete, API integration for core booking done)
+     - [ ] **Implement Standalone Cinema/Theater Selection step**
+        - [ ] Allow filtering by city/region.
+        - [ ] Display different prices based on cinema, day of the week, and showtime.
+     - [x] Implement Showtime Selection step in `BookingForm.tsx` (UI with mock data, API integrated).
+     - [x] Implement Seat Selection step in `BookingForm.tsx` (interactive map with mock data, API integrated).
+     - [ ] **Upgrade Seat Selection UI**
+        - [ ] Clearly differentiate seat types (e.g., regular, VIP, couple/sweetbox).
+        - [ ] Show varying prices per seat type directly on the seat map or legend.
+        - [ ] Improve visual cues for selected, booked, and unavailable seats.
+     - [x] Implement Food & Drinks step in `BookingForm.tsx` (UI with mock data, API integrated).
+     - [ ] **Develop Enhanced Food & Drink Selection**
+        - [ ] Offer options for different sizes (e.g., Small, Medium, Large for drinks/popcorn).
+        - [ ] Provide flavor choices where applicable.
+        - [ ] Showcase popular combos with clear pricing and contents.
+     - [x] Implement Confirm & Pay step in `BookingForm.tsx` (summary, payment placeholder, API integrated).
+     - [ ] **Refine Confirmation & Payment UI**
+        - [ ] Provide a very clear and itemized booking summary before payment.
+        - [ ] Integrate/mock multiple payment methods (e.g., MoMo, ZaloPay, Credit Card, Bank Transfer placeholders).
      - [x] Integrate API calls for all booking steps.
      - [x] Implement symbolic payment process (no actual payment gateway integration).
    - [x] User profile
@@ -231,6 +280,9 @@
    - [x] Booking history
      - [x] List of bookings with filtering (All/Upcoming/Past)
      - [x] Detailed view of bookings
+     - [ ] **Improve Booking History Page (MoMo-inspired)**
+        - [ ] Display QR code/barcode for each ticket.
+        - [ ] Add options to print or email tickets.
      - [x] Support for various booking statuses
      - [x] Vietnamese translations
      - [x] Loading states and error handling
@@ -241,10 +293,23 @@
 
 ## Current Status
 - Admin interface basic structure is complete
+- **Authentication and Registration flows are now fully functional and tested end-to-end.**
+    - Issues related to frontend proxy, backend DTO mapping, API response parsing, and missing/me endpoint have been resolved.
+    - Login redirection is now role-based (admin to admin dashboard, user to homepage).
+- **Security and Access Control are properly implemented**
+    - Frontend uses AdminProtectedRoute to check user role before allowing admin access
+    - Backend Spring Security configuration enforces role-based permissions with hasRole("ADMIN")
+    - Authentication persists properly across page refreshes with proper token handling
+    - All user pages have a UserLayout with header containing logout functionality
+    - Axios interceptors handle token management and 401 responses automatically
 - Authentication UI is implemented with Vietnamese text
 - Authentication flow is properly implemented with JWT tokens
 - Protected routes are in place
 - Token refresh mechanism is implemented
+- **Backend is now operational after addressing entity relationship errors and database schema conflicts.**
+  - Resolved `AnnotationException` in `Cinema` entity related to `Room` and `Showtime` relationships.
+  - Fixed `QueryCreationException` in `BookingRepository.findSalesReport` by correcting JPQL join paths.
+  - Addressed DDL `ERROR: column "address" of relation "cinemas" contains null values` by making `Cinema.address` nullable.
 - Dashboard with mock data is ready with Vietnamese labels
 - Movie Browsing UI implemented with:
   - Grid layout for movie cards with responsive design
@@ -359,10 +424,14 @@
   - Error messages and success notifications are translated
   - Navigation elements, footer, and common UI components are translated
   - TypeScript errors in components using translations have been fixed
+- **MoMo Cinema booking flow analysis completed.**
+- **Memory Bank updated to reflect new plans for booking flow enhancements.**
 
 ## Known Issues
 - Some linter errors in TheaterLocations.tsx related to MenuItem imports
 - ~~MovieForm routes using placeholder props instead of actual data flow~~ (Resolved with MovieFormWrapper implementation)
+- ~~Backend startup failures due to Hibernate AnnotationException and QueryCreationException~~ (Resolved)
+- ~~Backend DDL errors due to NOT NULL constraint on `cinemas.address` with existing NULL data~~ (Resolved by making address nullable in Entity)
 - Booking form using mock data instead of API integration
 - Missing content for some placeholder components
 - Lack of proper error handling for offline mode
@@ -373,7 +442,41 @@
 - Lack of proper error handling for image upload failures in some components
 
 ## Next Steps
-1. Complete Booking System:
+1.  **MoMo-Inspired Booking Flow Enhancements (User Interface - IMMEDIATE PRIORITY):**
+    *   **Improve `MovieList.tsx` (User-Facing Movie List) - CURRENT TASK:**
+        *   Implement clearer "Now Showing" vs. "Coming Soon" sections.
+        *   Display movie ratings (e.g., 4.5/5 stars) and age restrictions (e.g., P, C13, C16, C18).
+        *   Enhance grid layout for better visual appeal and information density.
+    *   **Enhance `MovieDetails.tsx` (User-Facing Movie Details):**
+        *   Include detailed cast/crew information (director, actors).
+        *   Embed a movie trailer (e.g., YouTube).
+        *   Ensure a prominent "Book Ticket" button.
+    *   **Implement Standalone Cinema/Theater Selection Step:**
+        *   Allow filtering by city/region.
+        *   Display different prices based on cinema, day of the week, and showtime.
+    *   **Upgrade Seat Selection UI:**
+        *   Clearly differentiate seat types (e.g., regular, VIP, couple/sweetbox).
+        *   Show varying prices per seat type directly on the seat map or legend.
+        *   Improve visual cues for selected, booked, and unavailable seats.
+    *   **Develop Enhanced Food & Drink Selection:**
+        *   Offer options for different sizes (e.g., Small, Medium, Large for drinks/popcorn).
+        *   Provide flavor choices where applicable.
+        *   Showcase popular combos with clear pricing and contents.
+    *   **Refine Confirmation & Payment UI:**
+        *   Provide a very clear and itemized booking summary before payment.
+        *   Integrate/mock multiple payment methods (e.g., MoMo, ZaloPay, Credit Card, Bank Transfer placeholders).
+    *   **Improve Booking History Page:**
+        *   Display a QR code or barcode for each ticket.
+        *   Add options to print or email tickets.
+2. **Frontend Testing & Verification (Post-Backend Fixes)**:
+    *   Thoroughly test Movie Browsing UI and other frontend features to ensure correct data fetching and display now that the backend is operational.
+    *   Verify API integrations across all user-facing features.
+2. **Backend Warning Resolution**:
+    *   Address MapStruct "Unmapped target properties" warnings in various mappers.
+    *   Evaluate and explicitly configure `spring.jpa.open-in-view`.
+3. **Data Integrity for `Cinema.address`**:
+    *   Review `NULL` values in `cinemas.address` and decide on a data update strategy or confirm if optionality is permanent.
+4. Complete Booking System:
    - Implement booking service layer
    - Add booking controller
    - Create booking DTOs
@@ -401,6 +504,8 @@
 - Implement data caching
 - Optimize database queries
 - Add more test coverage
+- **Address remaining backend warnings (MapStruct, open-in-view).**
+- **Review and potentially enforce `NOT NULL` constraint on `Cinema.address` after data cleanup.**
 - Improve error handling
 - Enhance documentation
 - Complete booking system implementation
@@ -411,6 +516,7 @@
 
 ## Notes
 - Core booking system structure is in place
+- **Backend is now stable and starting correctly.**
 - Focus on completing booking workflow
 - Plan payment integration
 - Consider performance optimization
@@ -419,4 +525,25 @@
 - Admin panel UI development decoupled from backend
 - Authentication flow is properly implemented with JWT tokens
 - Protected routes are in place
-- Token refresh mechanism is implemented 
+- Token refresh mechanism is implemented
+
+## Update (11/29/2023)
+
+### Issues Fixed:
+
+1. **API Connection Issues Between Frontend and Backend:**
+   - Resolved CORS issues by using relative paths instead of absolute URLs.
+   - Modified `API_URL`, `API_BASE_URL`, and `baseURL` in axiosInstance to empty strings to leverage proxy functionality.
+
+2. **API Response Data Handling Issues:**
+   - Fixed "Cannot read properties of undefined (reading 'length')" error in MovieList component.
+   - Improved handling of various API response formats through normalizeResponse() function.
+   - Added robust array type checking in UI before accessing properties.
+   - Ensured data returned to the frontend is normalized regardless of the backend JSON structure.
+
+### Lessons Learned:
+
+1. **Defensive Data Handling:** Always check data structures and provide default values to avoid runtime errors.
+2. **Data Normalization:** Create an adapter layer between API and UI to ensure consistent data.
+3. **Appropriate Logging:** Add API data logging for easier debugging.
+4. **Effective CORS Handling:** Using client-side proxy is a simple and effective solution. 

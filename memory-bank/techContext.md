@@ -59,6 +59,9 @@
    - Excel export configuration
    - Vietnamese localization
 
+3. Frontend-Backend Communication
+   - **Proxy for Development**: The `admin-interface/package.json` includes a `"proxy": "http://localhost:8080"` setting. This allows the React development server to forward API calls made to relative paths (e.g., `/auth/login`) to the backend server running on port 8080, avoiding CORS issues and simplifying API call URIs in frontend code during development.
+
 ## Dependencies
 1. Frontend
    ```json

@@ -1,13 +1,102 @@
 # Active Context
 
 ## Current Focus
-- Refining API integrations and improving user-facing features, continuing with the "Next Steps" in priority order:
-    - Implementing Movie Browsing UI
-    - Creating User Profile and Booking History
-    - Testing the completed features with focus on API integrations
-    - Comprehensive Vietnamese localization across all UI components
+- **Enhance User-Facing Booking Flow to mirror MoMo Cinema's UX (Primary Focus):**
+    - Implement enhancements to `MovieList.tsx` as the immediate next step.
+    - Systematically improve the entire booking flow: `MovieDetails.tsx`, cinema/location selection, seat selection UI, food/drink selection, payment interface, and booking history display.
+- Verify frontend functionality (Ongoing, especially after backend fixes).
+- Address warnings from backend startup (MapStruct unmapped properties, Hibernate open-in-view).
+- Continue with frontend testing, data integration, and UI polish.
 
 ## Recent Changes
+- **MoMo Cinema Booking Flow Analysis & Planning (Key Recent Activity):**
+    - **Minor UI Fixes Implemented:**
+        - Removed "auth.noAccount" text from the login page.
+        - Simplified `Register.tsx` by removing unnecessary `Typography` wrapper.
+        - Added "logout" key to the translation file for consistency.
+    - **MoMo Cinema Booking Flow Analysis Conducted:**
+        - Key steps identified: Homepage (listings, posters, ratings, age restrictions), Movie Detail (cast/crew, trailer), Cinema Selection (by location), Showtime Selection (date/time, pricing), Seat Selection (visual types), Food/Beverage (combos), Confirmation/Payment, Order Completion (QR/barcode).
+    - **Comparison with Current System & Identified Improvements:**
+        - `MovieList.tsx`: Needs better categorization, ratings, age restrictions.
+        - `MovieDetails.tsx`: Requires more comprehensive info (cast, director, trailer).
+        - New separate cinema/location selection step needed.
+        - Seat selection UI: Needs to show different seat types and pricing.
+        - Food/drink selection: Requires size options and combos.
+        - Payment interface and booking history display need improvements.
+    - **Memory Bank Update:** Files were updated to reflect these new plans (this current update log reflects that process).
+- **Security Access Control Implementation**:
+  - **Issue Identification**:
+    - Discovered that users with role USER could access admin pages (/admin/dashboard)
+    - Found that role-based access control was not properly implemented in both frontend and backend
+  - **Frontend Fixes**:
+    - Created `AdminProtectedRoute` component that checks user role is 'ADMIN' before allowing access to admin routes
+    - Updated routes.tsx to use AdminProtectedRoute for all admin-specific paths
+    - Removed mock data in authSlice.ts that was bypassing proper authentication
+    - Enhanced authentication persistence by adding axios interceptors in App.tsx to handle token expiration
+    - Improved AuthCheck.tsx to properly fetch user details when token exists in localStorage
+    - Added detailed logging for authentication debugging
+  - **Backend Fixes**:
+    - Updated `SecurityConfiguration.java` to apply role-based access control to admin endpoints
+    - Modified `DomainUserDetailsService.java` to add "ROLE_" prefix to role names for Spring Security compatibility
+    - Secured API endpoints with role-based permissions (hasRole("ADMIN"))
+  - **UI Improvements**:
+    - Implemented UserLayout for all user-facing pages to provide consistent header with logout functionality
+    - Fixed routing structure to nest user pages properly
+    - Ensured proper user role checking and redirect after login/refresh
+    - Added logout functionality accessible from both desktop and mobile views
+
+- **User Authentication and Registration Flow - Troubleshooting & Fixes (Frontend & Backend)**:
+    - **Initial Login Attempt (404 Error)**:
+        - Symptom: Frontend login request to `/auth/login` (on port 3000) resulted in a 404 Not Found.
+        - Cause: Frontend was sending API requests to itself instead of the backend (port 8080) because no proxy was configured.
+        - Fix: Added `"proxy": "http://localhost:8080"` to `admin-interface/package.json` and restarted the frontend development server.
+    - **Login Attempt (Backend 500 Error - User Not Found)**:
+        - Symptom: After proxy fix, login request to `/auth/login` (forwarded to backend) resulted in a 500 Internal Server Error. Backend log showed `Failed to find user 'user@example.com'` followed by a confusing `User already exists` error from `AuthServiceImpl`.
+        - Cause: The test user `user@example.com` did not exist in the database with that username.
+        - Verification Step: Decided to test the registration flow first.
+    - **Registration Attempt (Backend 500 Error - `full_name` NULL constraint)**:
+        - Symptom: Frontend registration request to `/auth/register` resulted in a 500 Internal Server Error. Frontend displayed "Uncategorized error".
+        - Cause: Backend log showed `ERROR: null value in column "full_name" of relation "users" violates not-null constraint`.
+        - Investigation: Confirmed `Register.tsx` sends `fullName`. Found mismatch: frontend sends `fullName` (camelCase) while backend DTO `RegisterRequest.java` had `fullname` (lowercase). Also, `RegisterRequest.java` was missing an `email` field, though the entity had it.
+        - Fix (Backend DTO & Service):
+            - Modified `RegisterRequest.java`: changed field `fullname` to `fullName`, added `email` field with validation.
+            - Modified `AuthServiceImpl.java`: updated to use `registerRequest.getFullName()`, added `user.setEmail(registerRequest.getEmail())`, and included a check `userRepository.existsByEmail()`.
+    - **Registration Attempt (Backend Build FAILED - Missing ErrorCode)**:
+        - Symptom: Backend build failed with `cannot find symbol: variable EMAIL_ALREADY_EXISTS location: class ErrorCode`.
+        - Cause: The new `ErrorCode.EMAIL_ALREADY_EXISTS` used in `AuthServiceImpl` was not yet defined in `ErrorCode.java`.
+        - Fix: Added `EMAIL_ALREADY_EXISTS(1004, "Email already exists", HttpStatus.CONFLICT)` to `src/main/java/com/booking/movieticket/exception/ErrorCode.java`.
+    - **Registration Successful, Subsequent Login OK (Backend) but "Login failed" (Frontend)**:
+        - Symptom: Registration worked. Login request `/auth/login` received 200 OK from backend, backend logs showed "Authenticated user". However, frontend UI still displayed "Login failed".
+        - Frontend Console: Showed `GET http://localhost:3000/api/users/me 500 (Internal Server Error)` originating from `Login.tsx:56`.
+        - Frontend Network Tab for `/auth/login` Response: Backend returned `{"message": "Authentication successful", "result": {"accessToken": "...", "refreshToken": "..."}}`.
+        - Cause 1 (Frontend Token Parsing): `Login.tsx` was trying to access `response.data.data` for tokens, but backend returned them in `response.data.result`.
+        - Fix 1 (Frontend `Login.tsx`): Changed token extraction to `response.data.result`.
+        - Cause 2 (Frontend API Call for User Info): After fixing token parsing, the call to `GET /api/users/me` was made, but it failed with a 500 error. Backend logs for this specific request were initially uninformative beyond Spring Security securing the path.
+        - Investigation (Backend `/api/users/me`): Realized `UserController` was mapped to `/user` and lacked a specific handler for `/me` or `/api/users/me`.
+        - Fix 2 (Backend & Frontend):
+            - Created `UserDetailResponse.java` DTO.
+            - Added `@GetMapping("/me") public ResponseEntity<ApiResponse<UserDetailResponse>> getCurrentUser()` method to `UserController.java` to handle `GET /user/me`.
+            - Modified `admin-interface/src/pages/auth/Login.tsx` to call `axios.get('/user/me')` instead of `/api/users/me` and parse user from `userResponse.data.result` (tentatively).
+    - **Login and Redirection Successful**:
+        - After all fixes, user registration and login flows are now working, and the user is correctly redirected to the admin dashboard upon successful login.
+- **Login Redirection Fix (Frontend)**:
+    - Identified that all users were redirected to `/admin/dashboard` post-login.
+    - Removed hardcoded `role: 'ADMIN'` from login request payload in `Login.tsx`.
+    - Updated `Login.tsx` to fetch user role from `/user/me` response.
+    - Implemented conditional redirection:
+        - Admins are redirected to `/admin/dashboard`.
+        - Regular users are redirected to `/` (which maps to `/movies` - the user homepage).
+    - Verified that regular users are correctly redirected to `/movies` after login.
+
+- **Backend Startup Troubleshooting & Fixes**:
+    - Resolved `AnnotationException` related to incorrect `mappedBy` properties in the `Cinema` entity:
+        - Removed the direct `@OneToMany` relationship from `Cinema` to `Room` as `Room` is related via `Branch`.
+        - Removed the direct `@OneToMany` relationship from `Cinema` to `Showtime` as `Showtime` does not have a direct `cinema` field.
+    - Resolved `QueryCreationException` in `BookingRepository.findSalesReport`:
+        - Modified the JPQL query to correctly join `Booking` -> `Showtime` -> `Schedule` -> `Movie` to fetch movie details.
+        - Ensured `WHERE` and `ORDER BY` clauses reference the correct aliases after rejoining.
+    - Addressed DDL execution error `ERROR: column "address" of relation "cinemas" contains null values`:
+        - Modified the `Cinema` entity's `address` field by removing `nullable = false` from the `@Column` annotation, allowing null values to prevent startup failure due to existing data.
 - **MovieForm Routes Refinement**:
     - Created a new `MovieFormWrapper.tsx` component to handle data fetching and state management:
         - Implemented proper data fetching for movie edit mode using `useQuery`
@@ -114,20 +203,57 @@
     - Fixed TypeScript errors in UserHeader component related to property access
 
 ## Next Steps
-1. ~~**Create User Profile and Booking History**~~ (Completed):
-   * ~~Design and implement user profile page~~ - Implemented with personal info editing, avatar upload, and password changing
-   * ~~Create booking history view~~ - Implemented with filtering (All/Upcoming/Past), booking details dialog, and proper status indicators
-   * ~~Add Vietnamese translations~~ - Added for all UI elements and status indicators
-   * ~~Ensure mobile responsiveness~~ - Implemented responsive design for all screen sizes
-   * ~~Connect to relevant API endpoints~~ - Connected to `/user/profile` and `/user/bookings` endpoints
-2. **Testing**: Conduct a thorough review and test of the implemented features, especially the authentication flow and booking form.
-3. **Data Integration**: Xử lý vấn đề dữ liệu cho các UI hiện tại:
-   * Triển khai mock data cho Movie Browsing UI nếu backend chưa sẵn sàng
-   * Tạo các hàm API service giả lập để đảm bảo UI hoạt động mà không cần backend đầy đủ
-4. **UI Polish**: Review all user-facing components to ensure consistent styling and proper Vietnamese translations.
+1.  **MoMo-Inspired Booking Flow Enhancements (User Interface - IMMEDIATE PRIORITY):**
+    *   **Improve `MovieList.tsx` (User-Facing Movie List) - CURRENT TASK:**
+        *   Implement clearer "Now Showing" vs. "Coming Soon" sections.
+        *   Display movie ratings (e.g., 4.5/5 stars) and age restrictions (e.g., P, C13, C16, C18).
+        *   Enhance grid layout for better visual appeal and information density.
+    *   **Enhance `MovieDetails.tsx` (User-Facing Movie Details):**
+        *   Include detailed cast/crew information (director, actors).
+        *   Embed a movie trailer (e.g., YouTube).
+        *   Ensure a prominent "Book Ticket" button.
+    *   **Implement Standalone Cinema/Theater Selection Step:**
+        *   Allow filtering by city/region.
+        *   Display different prices based on cinema, day of the week, and showtime.
+    *   **Upgrade Seat Selection UI:**
+        *   Clearly differentiate seat types (e.g., regular, VIP, couple/sweetbox).
+        *   Show varying prices per seat type directly on the seat map or legend.
+        *   Improve visual cues for selected, booked, and unavailable seats.
+    *   **Develop Enhanced Food & Drink Selection:**
+        *   Offer options for different sizes (e.g., Small, Medium, Large for drinks/popcorn).
+        *   Provide flavor choices where applicable.
+        *   Showcase popular combos with clear pricing and contents.
+    *   **Refine Confirmation & Payment UI:**
+        *   Provide a very clear and itemized booking summary before payment.
+        *   Integrate/mock multiple payment methods (e.g., MoMo, ZaloPay, Credit Card, Bank Transfer placeholders).
+    *   **Improve Booking History Page:**
+        *   Display a QR code or barcode for each ticket.
+        *   Add options to print or email tickets.
+2.  **Frontend Testing & Verification** (Ongoing):
+    *   Thoroughly test the Movie Browsing UI and other frontend features to ensure they fetch and display data correctly now that the backend is running.
+    *   Test user and admin role separation to ensure security measures are working correctly.
+    *   Verify page refresh behavior maintains authentication state properly.
+    *   Check that logout functionality works as expected across all pages.
+2.  **Backend Warning Resolution**:
+    *   Address MapStruct "Unmapped target properties" warnings in mappers (e.g., `CategoryMapper`, `CinemaMapper`, `ActorMapper`, `MovieMapper`, `UserMapper`) by either ignoring base entity fields explicitly or ensuring they are correctly mapped if intended.
+    *   Evaluate and explicitly configure `spring.jpa.open-in-view` (currently enabled by default, causing a warning).
+3.  **Data Integrity for `Cinema.address`**:
+    *   Review existing `NULL` values in the `cinemas` table for the `address` column.
+    *   Decide on a strategy: update existing `NULL`s to valid addresses or confirm that `address` can indeed be optional for cinemas. If it must be mandatory, plan to re-introduce `nullable = false` after data cleanup.
+4.  **Continue Previously Planned Frontend Work**:
+    *   **Testing**: Conduct a thorough review and test of the implemented features, especially the authentication flow and booking form.
+    *   **Data Integration**: Xử lý vấn đề dữ liệu cho các UI hiện tại:
+        *   Triển khai mock data cho Movie Browsing UI nếu backend chưa sẵn sàng (evaluate if still needed now backend is up).
+        *   Tạo các hàm API service giả lập để đảm bảo UI hoạt động mà không cần backend đầy đủ (evaluate if still needed).
+    *   **UI Polish**: Review all user-facing components to ensure consistent styling and proper Vietnamese translations.
+5.  **Verify User Info Display After Login**:
+    *   Confirm that user information (e.g., name in header, profile details) is correctly displayed after login, which depends on the `userResponse.data.result` assumption for `/user/me` in `Login.tsx`. Adjust if necessary based on the actual API response structure of `/user/me`.
 
 ## Active Decisions
-- Using JPA for entity relationships
+- Using JPA for entity relationships.
+- Corrected `Cinema` entity relationships by removing direct links to `Room` and `Showtime` where indirection through `Branch` and `Schedule` is appropriate.
+- Modified `BookingRepository.findSalesReport` to use correct entity paths for joins.
+- Allowed `Cinema.address` to be nullable to permit backend startup with existing `NULL` data.
 - Implementing lazy loading for entity relationships
 - Using enum for booking status management
 - Using Apache POI for Excel export functionality
@@ -154,6 +280,17 @@
 - Sử dụng React Query cho việc tải dữ liệu phim với các trạng thái loading và error
 
 ## Important Patterns
+- JPA entity relationship mapping and `mappedBy` usage.
+- JPQL query construction, especially `JOIN FETCH` for performance and correct path resolution.
+- Handling Hibernate DDL auto-generation issues with existing data (e.g., `NOT NULL` constraints on columns with `NULL`s).
+- **Frontend-Backend API Path Alignment**: Ensuring API paths called by the frontend (e.g., in Axios calls, considering the proxy) correctly match the `@RequestMapping` and specific method mappings (`@GetMapping`, `@PostMapping`, etc.) in backend Spring Boot controllers.
+- **DTO Field Naming Consistency**: Maintaining consistent field naming (e.g., camelCase `fullName`) between frontend JSON payloads and backend DTOs is crucial for correct data binding. Mismatches (e.g., `fullName` vs `fullname`) can lead to `null` values and subsequent errors.
+- **API Response Parsing**: Frontend must accurately parse the structure of backend API responses. If the backend wraps data (e.g., `{"result": {...}}`), the frontend must access it accordingly (e.g., `response.data.result`) rather than assuming a different structure (e.g., `response.data.data`).
+- **Step-by-Step Debugging for Auth Flows**: Authentication issues often require meticulous checking of each step: frontend request, proxy (if any), backend controller entry, service logic, database interaction, token generation, backend response, frontend response handling, and subsequent API calls using the token.
+- **Role-Based Route Protection**: Creating specialized route wrappers like `AdminProtectedRoute` that check both authentication and specific roles before rendering protected components.
+- **Spring Security Role Configuration**: Adding the "ROLE_" prefix to role names for proper Spring Security integration and using hasRole() to protect endpoints.
+- **Authentication Persistence**: Using axios interceptors to automatically include tokens in requests and handle 401 responses for token expiration.
+- **Nested Route Structure**: Using outlet-based layouts with proper route nesting to maintain consistent UI components like headers and navigation.
 - JPA entity relationships
 - Status management using enums
 - Consistent use of Material-UI components
@@ -195,6 +332,13 @@
 - Namespace organization for translations based on feature domains
 
 ## Project Insights
+- Incorrect `mappedBy` definitions in JPA entities are a common source of `AnnotationException` during Hibernate's metadata building.
+- JPQL queries require precise path navigation; an incorrect path (e.g., `s.movie` when `Showtime` links to `Movie` via `Schedule`) leads to `QueryCreationException` / `UnknownPathException`.
+- Hibernate's `ddl-auto` feature (especially `update`) can conflict with existing database states if new constraints (like `NOT NULL`) are added to entities for columns that currently violate those constraints in the DB.
+- **Proxy Configuration is Key for Dev**: For local development with separate frontend/backend servers, a proxy (e.g., in `package.json`) is essential to avoid CORS and simplify frontend API calls.
+- **Backend DTOs Must Match Frontend Payloads**: The structure and field names of backend DTOs used for request bodies must precisely match the JSON objects sent by the frontend.
+- **Frontend Must Correctly Parse Backend Responses**: Assumptions about response structure (e.g., `response.data.data` vs. `response.data.result`) can break frontend logic even if the API call itself returns a 200 OK.
+- **Missing Controller Endpoint Mappings**: If a frontend API call reaches the backend but there's no specific controller method mapped to that exact path and HTTP method, it can lead to generic errors (like 500 Uncategorized) without clear application-level logs.
 - Entity relationships are crucial for data integrity
 - Status management improves workflow control
 - Data visualization is crucial for effective reporting
@@ -268,6 +412,9 @@
 - Cải thiện UX cho việc tìm kiếm và lọc phim
 
 ## Current Considerations
+- Strategy for addressing MapStruct warnings (ignore vs. map base entity fields).
+- Decision on `spring.jpa.open-in-view` configuration.
+- Long-term plan for `Cinema.address` nullability and data cleanup.
 - API integration approach for the booking form
 - How to structure API endpoints for the multi-step booking process
 - Best practices for handling seat availability in real-time
@@ -302,6 +449,9 @@
 - Maintaining translation key consistency across components
 
 ## Learnings
+- Debugging Hibernate `AnnotationException` often involves carefully checking `mappedBy` values against the field names in the owning side of relationships.
+- Resolving Hibernate `QueryCreationException` and `UnknownPathException` requires verifying that JPQL paths correctly reflect the defined entity relationships.
+- When Hibernate's `ddl-auto = update` fails due to constraints (e.g., adding `NOT NULL` to a column with existing `NULL`s), temporarily relaxing the constraint in the entity or cleaning the data in the database are common workarounds.
 - JPA entity relationship implementation
 - Status management using enums
 - Effective use of Recharts for data visualization
@@ -336,4 +486,22 @@
 - Implementing view mode toggles for different data visualization contexts.
 - Creating rich mock data that closely resembles expected production data.
 - Using Material-UI DataGrid for efficient data presentation.
-- Implementing comprehensive CRUD operations with consistent UI patterns. 
+- Implementing comprehensive CRUD operations with consistent UI patterns.
+
+## Recent Updates (11/29/2023)
+
+### Fixed API Data Handling in MovieList
+
+Fixed the "Cannot read properties of undefined (reading 'length')" error in the MovieList component by:
+
+1. Improving data handling in MovieList.tsx:
+   - Added Array.isArray() check before accessing the length property
+   - Added default values for undefined data
+   - Added logging to debug the actual data structure from the API
+
+2. Normalized API data in movieService.ts:
+   - Created normalizeResponse() function to handle different API response formats
+   - Added support for multiple response structures (data in result, data, or directly)
+   - Ensured consistent data structure is returned to the frontend
+
+This error occurred due to inconsistency between the data structure expected by the frontend (movie array in .content) and the actual data structure from the API. 

@@ -13,11 +13,12 @@ import java.util.List;
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("SELECT b FROM Booking b " +
            "JOIN FETCH b.showtime s " +
-           "JOIN FETCH s.movie m " +
-           "WHERE s.date BETWEEN :startDate AND :endDate " +
+           "JOIN FETCH s.schedule sched " +
+           "JOIN FETCH sched.movie m " +
+           "WHERE sched.date BETWEEN :startDate AND :endDate " +
            "AND b.status = 'CONFIRMED' " +
            "AND (:type IS NULL OR m.status = :type) " +
-           "ORDER BY s.date")
+           "ORDER BY sched.date")
     List<Booking> findSalesReport(
         @Param("startDate") LocalDate startDate,
         @Param("endDate") LocalDate endDate,

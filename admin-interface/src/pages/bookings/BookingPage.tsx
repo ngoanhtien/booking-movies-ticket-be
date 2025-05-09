@@ -4,7 +4,7 @@ import BookingForm from './BookingForm'; // Assuming BookingForm is in the same 
 import { useParams } from 'react-router-dom';
 
 const BookingPage: React.FC = () => {
-  const { movieId } = useParams<{ movieId: string }>();
+  const { movieId, cinemaId } = useParams<{ movieId: string; cinemaId: string }>();
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -18,7 +18,7 @@ const BookingPage: React.FC = () => {
           </Box>
         )}
         */}
-        <BookingForm movieId={movieId} />
+        <BookingForm movieId={movieId} cinemaId={cinemaId} />
       </Box>
     </Container>
   );

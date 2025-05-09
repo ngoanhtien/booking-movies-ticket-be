@@ -23,6 +23,7 @@ import {
   ListItem,
   ListItemText,
   Divider,
+  Tooltip,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useFormik } from 'formik';
@@ -35,16 +36,18 @@ import {
   FoodItem, 
   FoodSelection 
 } from '../../services/bookingService';
+import { useTheme } from '@mui/material/styles';
 
 // Các interface đã được chuyển sang bookingService.ts
 
 const steps = ['Select Showtime', 'Select Seats', 'Add Food & Drinks', 'Confirm & Pay'];
 
 interface BookingFormProps {
-  movieId?: string; // Movie ID might be passed if navigating from a movie details page
+  movieId?: string; 
+  cinemaId?: string; // Thêm cinemaId vào props
 }
 
-const BookingForm: React.FC<BookingFormProps> = ({ movieId }) => {
+const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId }) => {
   const { t } = useTranslation();
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -57,6 +60,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId }) => {
   const [showtimes, setShowtimes] = useState<Showtime[]>([]);
   const [seatLayout, setSeatLayout] = useState<Seat[][]>([]); 
   const [availableFoodItems, setAvailableFoodItems] = useState<FoodItem[]>([]);
+
+  const theme = useTheme();
 
   const validationSchema = Yup.object().shape({
     // Define Yup validation based on activeStep
@@ -167,32 +172,41 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId }) => {
 
   // Fetch movie details and showtimes if movieId is provided
   useEffect(() => {
-    const fetchShowtimes = async () => {
+    const fetchShowtimesData = async () => {
       try {
         setLoading(true);
+        setError(null); // Reset error state
         let response;
         
-        if (movieId) {
-          // Nếu có movieId, gọi API lấy showtimes theo phim
+        if (movieId && cinemaId) {
+          // Nếu có movieId và cinemaId, gọi API lấy showtimes theo phim và rạp
+          response = await bookingService.getShowtimesByMovieAndCinema(movieId, cinemaId);
+        } else if (movieId) {
+          // Nếu chỉ có movieId, gọi API lấy showtimes theo phim
           response = await bookingService.getShowtimesByMovie(movieId);
         } else {
-          // Nếu không có movieId, lấy tất cả showtimes có sẵn
-          response = await bookingService.getAllShowtimes();
+          // Nếu không có cả hai, lấy tất cả showtimes có sẵn (hoặc có thể báo lỗi/yêu cầu chọn phim/rạp)
+          // Hiện tại, để đơn giản, vẫn gọi getAllShowtimes nếu không có movieId.
+          // Trong một flow hoàn chỉnh, bước này nên được xử lý trước khi vào BookingForm nếu không có đủ thông tin.
+          response = await bookingService.getAllShowtimes(); 
         }
         
         if (response?.data) {
           setShowtimes(response.data);
+        } else {
+          setShowtimes([]); // Nếu không có data, set mảng rỗng
         }
       } catch (err: any) {
         console.error('Error fetching showtimes:', err);
         setError(err.message || 'Error fetching showtimes');
+        setShowtimes([]); // Set mảng rỗng khi có lỗi
       } finally {
         setLoading(false);
       }
     };
     
-    fetchShowtimes();
-  }, [movieId]);
+    fetchShowtimesData();
+  }, [movieId, cinemaId]); // Thêm cinemaId vào dependencies
 
   // Fetch seat layout when showtimeId changes and we are on the seat selection step
   useEffect(() => {
@@ -200,46 +214,88 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId }) => {
       if (formik.values.showtimeId && activeStep === 1) {
         try {
           setLoading(true);
-          
-          // Tìm showtime được chọn
           const selectedShowtime = showtimes.find(st => st.id === formik.values.showtimeId);
           if (!selectedShowtime) {
             throw new Error('Không tìm thấy thông tin suất chiếu');
           }
-          
-          // Gọi API lấy sơ đồ ghế
-          const response = await bookingService.getSeatLayout(
-            selectedShowtime.scheduleId, 
-            selectedShowtime.roomId
-          );
-          
-          if (response?.data) {
-            // API sẽ trả về mảng 1 chiều, cần chuyển thành mảng 2 chiều theo hàng ghế
-            const seats = response.data;
-            
-            // Nhóm ghế theo hàng
-            const rowMap = new Map<string, Seat[]>();
-            seats.forEach((seat: Seat) => {
-              if (!rowMap.has(seat.row)) {
-                rowMap.set(seat.row, []);
+
+          // *** MOCK SEAT LAYOUT DATA WITH TYPES AND PRICES ***
+          // In a real scenario, this data would come from bookingService.getSeatLayout
+          const mockSeatsFromAPI: Seat[] = [];
+          const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+          const seatsPerRow = 12;
+          let idCounter = 1;
+
+          rows.forEach(row => {
+            for (let i = 1; i <= seatsPerRow; i++) {
+              let status = SeatStatus.Available;
+              let type: Seat['type'] = 'REGULAR';
+              let price = selectedShowtime.price || 70000; // Base price from showtime
+
+              // Randomly assign some booked seats
+              if (Math.random() < 0.2) status = SeatStatus.Booked;
+              // Randomly assign some unavailable seats (e.g., for lối đi, hỏng)
+              if (Math.random() < 0.05 && status === SeatStatus.Available) status = SeatStatus.Unavailable;
+
+
+              // Assign types and adjust prices based on type and row
+              if (row === 'G' || row === 'H') {
+                type = 'VIP';
+                price += 30000; // VIP price increase
+              } else if ((row === 'E' || row === 'F') && (i >= 5 && i <= 8)) {
+                type = 'COUPLE';
+                price += 50000; // Couple seat price (per seat, often sold as pair)
+              } else if (row === 'A' && (i === 1 || i === seatsPerRow)) {
+                  type = 'SWEETBOX'; // Example for another type
+                  price += 40000;
               }
-              rowMap.get(seat.row)?.push(seat);
-            });
-            
-            // Chuyển map thành mảng 2 chiều
-            const layout: Seat[][] = Array.from(rowMap.values());
-            
-            // Sắp xếp các hàng theo thứ tự chữ cái
-            layout.sort((a, b) => a[0].row.localeCompare(b[0].row));
-            
-            // Sắp xếp ghế trong mỗi hàng theo số thứ tự
-            layout.forEach(row => row.sort((a, b) => a.number - b.number));
-            
-            setSeatLayout(layout);
-            
-            // Clear previously selected seats when layout changes for a new showtime
-            formik.setFieldValue('seatIds', []);
-          }
+
+              // Some seats might be unavailable regardless of booking status
+              if ((row === 'D' && i === 6) || (row === 'D' && i === 7)) { // e.g. lối đi
+                  status = SeatStatus.Unavailable;
+                  type = 'AISLE'; // Custom type for aisle
+              }
+              
+              // Ensure unavailable seats don't get a price for selection
+              if (status === SeatStatus.Unavailable || status === SeatStatus.Booked) {
+                  // No specific price adjustment needed here for UI, as they are not selectable
+              }
+
+              mockSeatsFromAPI.push({
+                id: `seat-${row}${i}-${idCounter++}`,
+                row,
+                number: i,
+                status,
+                type,
+                price
+              });
+            }
+          });
+          // *** END OF MOCK SEAT LAYOUT DATA ***
+
+          // const response = await bookingService.getSeatLayout(
+          //   selectedShowtime.scheduleId, 
+          //   selectedShowtime.roomId
+          // );
+          // if (response?.data) { // Using mock data for now
+          // const seats = response.data; 
+          const seats = mockSeatsFromAPI; // Use mocked data
+
+          const rowMap = new Map<string, Seat[]>();
+          seats.forEach((seat: Seat) => {
+            if (!rowMap.has(seat.row)) {
+              rowMap.set(seat.row, []);
+            }
+            rowMap.get(seat.row)?.push(seat);
+          });
+          
+          const layout: Seat[][] = Array.from(rowMap.values());
+          layout.sort((a, b) => a[0].row.localeCompare(b[0].row));
+          layout.forEach(row => row.sort((a, b) => a.number - b.number));
+          
+          setSeatLayout(layout);
+          formik.setFieldValue('seatIds', []);
+          // }
         } catch (err: any) {
           console.error('Error fetching seat layout:', err);
           setError(err.message || 'Error fetching seat layout');
@@ -248,9 +304,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId }) => {
         }
       }
     };
-    
+
     fetchSeatLayout();
-  }, [formik.values.showtimeId, activeStep]);
+  }, [formik.values.showtimeId, activeStep, showtimes]); // Ensure all dependencies are listed
 
   // Effect to load food/drink items when entering step 2
   useEffect(() => {
@@ -296,33 +352,53 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId }) => {
     }).filter(item => item.id); // Filter out if any itemDetails were not found (should not happen with mock data)
   };
   
+  const getSeatColors = (seat: Seat, isSelected: boolean) => {
+    if (isSelected) return theme.palette.success.main; // Màu xanh lá cho ghế đang chọn
+
+    switch (seat.status) {
+      case SeatStatus.Booked:
+        return theme.palette.grey[700]; // Màu xám đậm cho ghế đã đặt
+      case SeatStatus.Unavailable:
+        return theme.palette.grey[400]; // Màu xám nhạt cho ghế không khả dụng (lối đi, hỏng)
+      case SeatStatus.Available:
+        switch (seat.type) {
+          case 'VIP':
+            return theme.palette.secondary.main; // Màu tím cho VIP
+          case 'COUPLE':
+            return theme.palette.error.light; // Màu hồng/đỏ nhạt cho Couple
+          case 'SWEETBOX':
+              return '#ff9800'; // Orange for Sweetbox
+          case 'REGULAR':
+          default:
+            return theme.palette.primary.main; // Màu xanh dương cho ghế thường
+        }
+      default:
+        return theme.palette.grey[500]; // Fallback
+    }
+  };
+
   // Calculate total price
   const calculateTotalPrice = () => {
     let total = 0;
-    // Add price for seats (assuming each selected seat has a price, e.g. from seatLayout or a fixed price)
-    // For simplicity, let's assume a fixed price per seat for now if not on seat object
-    const seatPrice = 10; // Default price if not available from seat
-    const selectedSeats = formik.values.seatIds.map(id => {
-      // Find the seat in the layout
-      for (const row of seatLayout) {
-        const seat = row.find(s => s.id === id);
-        if (seat) return seat;
-      }
-      return null;
-    }).filter(seat => seat !== null);
-    
-    // Add up seat prices
-    for (const seat of selectedSeats) {
-      if (seat && seat.price) {
-        total += seat.price;
-      } else {
-        total += seatPrice; // Default price
-      }
-    }
+    const currentShowtime = showtimes.find(st => st.id === formik.values.showtimeId);
 
-    // Add up food items
-    getSelectedFoodItemsDetails().forEach(item => {
-      total += item.subtotal || 0;
+    // Calculate seat price
+    formik.values.seatIds.forEach(seatId => {
+      for (const row of seatLayout) {
+        const seat = row.find(s => s.id === seatId);
+        if (seat) {
+          total += seat.price; // Use the individual seat price
+          break; 
+        }
+      }
+    });
+
+    // Calculate food price
+    formik.values.foodItems.forEach(item => {
+      const foodInfo = availableFoodItems.find(fi => fi.id === item.itemId);
+      if (foodInfo) {
+        total += foodInfo.price * item.quantity;
+      }
     });
     return total;
   };
@@ -458,87 +534,146 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId }) => {
         );
       case 1:
         return (
-          <Box>
-            <Typography variant="h6" sx={{ mb: 2 }}>{t('booking.selectSeats', 'Select Seats')}</Typography>
-            {loading && <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}><CircularProgress /></Box>}
-            {!loading && seatLayout.length === 0 && (
-                <Typography sx={{my: 2}}>{t('booking.noSeatLayout', 'Seat layout not available. Please select a showtime first.')}</Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+            <Typography variant="h5" gutterBottom sx={{ mb: 2, textAlign: 'center' }}>
+              {t('booking.selectSeats')}
+            </Typography>
+            {/* Screen Line */}
+            <Box 
+              sx={{ 
+                width: '80%', 
+                maxWidth: '500px',
+                height: '20px', 
+                backgroundColor: theme.palette.grey[300],
+                mb: 3, 
+                textAlign: 'center', 
+                lineHeight: '20px',
+                borderRadius: '3px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}
+            >
+              <Typography variant="caption" color="textSecondary">{t('booking.screen') || 'SCREEN'}</Typography>
+            </Box>
+
+            {loading ? (
+              <CircularProgress />
+            ) : error ? (
+              <Alert severity="error">{error}</Alert>
+            ) : seatLayout.length === 0 ? (
+              <Typography>{t('booking.noSeatLayout')}</Typography>
+            ) : (
+              <Paper elevation={2} sx={{ p: {xs: 1, sm: 2, md: 3}, overflowX: 'auto', width: '100%'}}>
+                {seatLayout.map((row, rowIndex) => (
+                  <Box key={rowIndex} sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
+                    <Typography sx={{ mr: 2, width: '20px', textAlign: 'center', alignSelf: 'center', fontWeight: 'bold' }}>
+                      {row[0]?.row}
+                    </Typography>
+                    {row.map((seat) => {
+                      const isSelected = formik.values.seatIds.includes(seat.id);
+                      const seatColor = getSeatColors(seat, isSelected);
+                      const isDisabled = seat.status === SeatStatus.Booked || seat.status === SeatStatus.Unavailable;
+
+                      return (
+                        <Tooltip 
+                          title={isDisabled ? t(`booking.seatStatus.${seat.status.toLowerCase()}`) : `${t(`booking.seatType.${seat.type?.toLowerCase() || 'regular'}`)} - ${seat.price.toLocaleString('vi-VN')}đ`} 
+                          key={seat.id}
+                          arrow
+                          placement="top"
+                        >
+                          <Box
+                            onClick={() => !isDisabled && formik.setFieldValue('seatIds', 
+                              isSelected 
+                                ? formik.values.seatIds.filter(id => id !== seat.id) 
+                                : [...formik.values.seatIds, seat.id]
+                            )}
+                            sx={{
+                              width: { xs: 28, sm: 32, md: 36 },
+                              height: { xs: 28, sm: 32, md: 36 },
+                              m: 0.5,
+                              backgroundColor: seatColor,
+                              color: theme.palette.getContrastText(seatColor),
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              borderRadius: '4px',
+                              cursor: isDisabled ? 'not-allowed' : 'pointer',
+                              opacity: isDisabled ? 0.6 : 1,
+                              fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                              fontWeight: 'bold',
+                              transition: 'transform 0.1s ease-in-out, background-color 0.2s',
+                              '&:hover': {
+                                transform: !isDisabled ? 'scale(1.1)' : 'none',
+                                boxShadow: !isDisabled ? theme.shadows[3] : 'none',
+                              },
+                              // Add specific icons or shapes for different seat types if needed
+                              // Example: border radius for couple seats, or an icon
+                              ...(seat.type === 'COUPLE' && { 
+                                // Could be wider, or have a specific icon/style
+                                // width: { xs: 56, sm: 64, md: 72 }, 
+                              }),
+                              ...(seat.type === 'AISLE' && { // Example: make aisle seats look different
+                                  backgroundColor: 'transparent',
+                                  border: `1px dashed ${theme.palette.grey[400]}`,
+                                  cursor: 'default',
+                              })
+                            }}
+                          >
+                            {/* Display seat number or icon */}
+                            {seat.type !== 'AISLE' ? seat.number : ''}
+                          </Box>
+                        </Tooltip>
+                      );
+                    })}
+                  </Box>
+                ))}
+              </Paper>
             )}
-            {/* Seat map UI here - to be implemented in next step */}
-             {seatLayout.map((row, rowIndex) => (
-              <Box key={`row-${rowIndex}`} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 0.5 }}>
-                <Typography sx={{width: '20px', textAlign:'center', mr: 1, fontSize: '0.8rem'}}>{row[0]?.row}</Typography> {/* Display row letter */} 
-                {row.map((seat) => {
-                  const isSelected = formik.values.seatIds.includes(seat.id);
-                  let seatColor: "primary" | "secondary" | "error" | "inherit" | "success" | "warning" | "info" = "primary";
-                  let seatVariant: "text" | "outlined" | "contained" = "outlined";
-
-                  if (seat.status === SeatStatus.Booked) {
-                    seatColor = "error";
-                    seatVariant = "contained";
-                  } else if (seat.status === SeatStatus.Unavailable) {
-                    seatColor = "inherit"; // or some other color to show it's an unusable space
-                    seatVariant = "text"; 
-                  } else if (isSelected) {
-                    seatColor = "success";
-                    seatVariant = "contained";
-                  }
-
-                  return (
-                    <Button 
-                      key={seat.id} 
-                      variant={seatVariant}
-                      color={seatColor}
-                      disabled={seat.status === SeatStatus.Booked || seat.status === SeatStatus.Unavailable}
-                      onClick={() => {
-                        if (seat.status === SeatStatus.Available || isSelected) {
-                          const currentSeatIds = formik.values.seatIds;
-                          if (isSelected) {
-                            formik.setFieldValue('seatIds', currentSeatIds.filter(id => id !== seat.id));
-                          } else {
-                            formik.setFieldValue('seatIds', [...currentSeatIds, seat.id]);
-                          }
-                        }
-                      }}
-                      sx={{ 
-                          minWidth: { xs: '28px', sm: '35px' }, width: { xs: '28px', sm: '35px' }, 
-                          height: { xs: '28px', sm: '35px' }, 
-                          p: 0, 
-                          m: {xs: '1px', sm: '2px'},
-                          fontSize: { xs: '0.6rem', sm: '0.7rem' },
-                          border: seat.status === SeatStatus.Unavailable ? 'none' : undefined,
-                          backgroundColor: seat.status === SeatStatus.Unavailable ? 'transparent' : undefined,
-                          color: seat.status === SeatStatus.Unavailable ? 'transparent' : undefined,
-                          cursor: seat.status === SeatStatus.Unavailable ? 'default' : 'pointer',
-                          '&:hover': {
-                            backgroundColor: seat.status === SeatStatus.Unavailable ? 'transparent !important' : undefined,
-                            border: seat.status === SeatStatus.Unavailable ? 'none' : undefined,
-                          }
-                      }}
-                    >
-                      {seat.status !== SeatStatus.Unavailable ? seat.number : ''} 
-                    </Button>
-                  );
-                })}
-              </Box>
-            ))}
+            {/* Legend Section */}
+            <Box sx={{ mt: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 2, p:1, backgroundColor: theme.palette.grey[100], borderRadius: 1 }}>
+              {[
+                { type: 'REGULAR', label: t('booking.seatType.regular') || 'Regular', status: SeatStatus.Available },
+                { type: 'VIP', label: t('booking.seatType.vip') || 'VIP', status: SeatStatus.Available },
+                { type: 'COUPLE', label: t('booking.seatType.couple') || 'Couple', status: SeatStatus.Available },
+                { type: 'SWEETBOX', label: t('booking.seatType.sweetbox') || 'Sweetbox', status: SeatStatus.Available },
+                { type: 'SELECTED', label: t('booking.seatStatus.selected') || 'Selected', status: SeatStatus.Selected }, // Special case for legend
+                { type: 'BOOKED', label: t('booking.seatStatus.booked') || 'Booked', status: SeatStatus.Booked },
+                { type: 'UNAVAILABLE', label: t('booking.seatStatus.unavailable') || 'Unavailable', status: SeatStatus.Unavailable },
+              ].map(item => (
+                <Box key={item.label} sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Box 
+                    sx={{ 
+                      width: 20, 
+                      height: 20, 
+                      backgroundColor: getSeatColors({ type: item.type, status: item.status } as Seat, item.status === SeatStatus.Selected), 
+                      mr: 1, 
+                      borderRadius: '3px',
+                      border: item.type === 'AISLE' ? `1px dashed ${theme.palette.grey[400]}` : 'none', // Consistent with AISLE style
+                    }} 
+                  />
+                  <Typography variant="caption">{item.label}</Typography>
+                </Box>
+              ))}
+            </Box>
             {formik.touched.seatIds && formik.errors.seatIds && (
-              <Typography color="error" variant="caption" sx={{mt: 1, display: 'block', textAlign: 'center'}}>
-                {formik.errors.seatIds}
-              </Typography>
+                <Alert severity="error" sx={{ mt: 2, width: '100%', justifyContent: 'center' }}>
+                    {formik.errors.seatIds}
+                </Alert>
             )}
           </Box>
         );
       case 2:
         return (
           <Box>
-            <Typography variant="h6" sx={{ mb: 2 }}>{t('booking.addFoodAndDrinks', 'Add Food & Drinks')}</Typography>
+            <Typography variant="h5" gutterBottom sx={{ mb: 3, textAlign: 'center' }}>
+              {t('booking.addFoodAndDrinks')}
+            </Typography>
             {loading && <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}><CircularProgress /></Box>}
-            {!loading && availableFoodItems.length === 0 && (
-              <Typography sx={{my: 2}}>{t('booking.noFoodItems', 'No food or drink items available at the moment.')}</Typography>
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+            {!loading && !error && availableFoodItems.length === 0 && (
+              <Typography sx={{my: 2, textAlign: 'center'}}>{t('booking.noFoodItems')}</Typography>
             )}
-            {!loading && availableFoodItems.length > 0 && (
-              <Grid container spacing={2}>
+            {!loading && !error && availableFoodItems.length > 0 && (
+              <Grid container spacing={3}>
                 {availableFoodItems.map((item) => {
                   const currentSelection = formik.values.foodItems.find(fi => fi.itemId === item.id);
                   const quantity = currentSelection ? currentSelection.quantity : 0;
@@ -553,20 +688,53 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId }) => {
 
                   return (
                     <Grid item xs={12} sm={6} md={4} key={item.id}>
-                      <Paper elevation={1} sx={{ p: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                        {item.imageUrl && (
-                          <Box sx={{ height: 100, mb: 1, display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-                            <img src={item.imageUrl} alt={item.name} style={{ maxHeight: '100%', maxWidth: '100%', borderRadius: '4px' }} />
-                          </Box>
-                        )}
-                        <Typography variant="subtitle1" fontWeight="bold">{item.name}</Typography>
-                        <Typography variant="body2" color="text.secondary">${item.price.toFixed(2)}</Typography>
+                      <Paper 
+                        elevation={quantity > 0 ? 4 : 1} 
+                        sx={{
+                          p: 2, 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          height: '100%',
+                          border: quantity > 0 ? `2px solid ${theme.palette.primary.main}` : `1px solid ${theme.palette.divider}`,
+                          transition: 'border 0.2s, box-shadow 0.2s',
+                          borderRadius: '8px',
+                        }}
+                      >
+                        <Box sx={{ height: 140, mb: 1.5, display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderRadius: '4px' }}>
+                          <img 
+                            src={item.imageUrl || 'https://via.placeholder.com/150x100?text=No+Image'} 
+                            alt={item.name} 
+                            style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} 
+                          />
+                        </Box>
+                        <Typography variant="h6" component="div" gutterBottom sx={{textAlign: 'center', minHeight: '48px' /* 2 lines */}}>
+                          {item.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{textAlign: 'center', mb: 1, minHeight: '40px' /* 2 lines */}}>
+                          {item.description || ''}
+                        </Typography>
+                        <Typography variant="h6" color="primary.main" sx={{ textAlign: 'center', mb: 2, fontWeight: 'bold' }}>
+                          {item.price.toLocaleString('vi-VN')}đ
+                        </Typography>
                         <Box sx={{ mt: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Button size="small" variant="outlined" onClick={() => handleQuantityChange(Math.max(0, quantity - 1))} disabled={quantity === 0}>
+                          <Button 
+                            size="small" 
+                            variant="outlined" 
+                            onClick={() => handleQuantityChange(Math.max(0, quantity - 1))} 
+                            disabled={quantity === 0}
+                            sx={{ minWidth: '40px', height: '40px', borderRadius: '50%'}}
+                          >
                             -
                           </Button>
-                          <Typography sx={{ mx: 2, minWidth: '20px', textAlign: 'center' }}>{quantity}</Typography>
-                          <Button size="small" variant="outlined" onClick={() => handleQuantityChange(quantity + 1)}>
+                          <Typography sx={{ mx: 2, minWidth: '30px', textAlign: 'center', fontSize: '1.1rem', fontWeight: '500' }}>
+                            {quantity}
+                          </Typography>
+                          <Button 
+                            size="small" 
+                            variant="outlined" 
+                            onClick={() => handleQuantityChange(quantity + 1)}
+                            sx={{ minWidth: '40px', height: '40px', borderRadius: '50%'}}
+                          >
                             +
                           </Button>
                         </Box>

@@ -247,6 +247,15 @@
    - Vietnamese analytics
    - Export tracking
 
+## API Communication Patterns
+- **Frontend to Backend Proxy:**
+    - The React development server (port 3000) uses a proxy configuration in `package.json` (`"proxy": "http://localhost:8080"`) to forward API requests to the Spring Boot backend (port 8080). This allows frontend code to use relative paths for API calls (e.g., `/auth/login`, `/user/me`).
+- **Consistent API Response Structure:**
+    - Backend APIs (e.g., for login, fetching user details) generally wrap successful responses in an `ApiResponse` object containing `message` and `result` fields (e.g., `{"message": "Success", "result": {...actual_data...}}`).
+    - The frontend must parse responses accordingly (e.g., `response.data.result` instead of `response.data.data` if the actual data is nested under `result`). Inconsistencies here can lead to frontend errors even with a 200 OK response from the backend.
+- **DTO Naming Conventions:**
+    - Discrepancies between JSON field names sent by the frontend (e.g., `fullName` in camelCase) and DTO field names in the backend (e.g., `fullname` in lowercase) can lead to `null` values in the DTO if not handled (e.g., by ensuring DTO field names match the expected JSON or using `@JsonProperty`). Resolved by aligning DTO field names (`fullName`) with frontend.
+
 ## Architecture Overview
 The system follows a modern React application architecture with TypeScript, focusing on maintainability, scalability, and type safety.
 

@@ -66,6 +66,20 @@
     "noShowtimes": "Không có lịch chiếu nào cho phim này hoặc lựa chọn này.",
     "seatsAvailable": "{{count}} ghế trống",
     "selectSeats": "Chọn Ghế",
+    "screen": "MÀN HÌNH",
+    "seatStatus": {
+      "available": "Trống",
+      "booked": "Đã đặt",
+      "selected": "Đang chọn",
+      "unavailable": "Không khả dụng"
+    },
+    "seatType": {
+      "regular": "Thường",
+      "vip": "VIP",
+      "couple": "Ghế đôi",
+      "sweetbox": "Sweetbox",
+      "aisle": "Lối đi"
+    },
     "noSeatLayout": "Sơ đồ ghế không có sẵn. Vui lòng chọn lịch chiếu trước.",
     "addFoodAndDrinks": "Thêm Đồ Ăn & Thức Uống",
     "noFoodItems": "Hiện không có đồ ăn hoặc thức uống nào.",
@@ -87,7 +101,29 @@
       "paymentMethod": "Phương Thức Thanh Toán",
       "creditCard": "Thẻ Tín Dụng (Mẫu)",
       "paypal": "PayPal (Mẫu)"
-    }
+    },
+    "bookingSuccess": "Đặt vé thành công!",
+    "bookingDetails": "Chi tiết đặt vé",
+    "bookingCode": "Mã đặt vé",
+    "movie": "Phim",
+    "cinema": "Rạp chiếu",
+    "seats": "Ghế",
+    "totalAmount": "Tổng tiền",
+    "noFoodSelected": "Không có đồ ăn hoặc thức uống nào được chọn",
+    "printTicket": "In Vé",
+    "backToHome": "Về Trang Chủ"
+  },
+  "cinemaSelection": {
+    "title": "Chọn Rạp Chiếu Phim",
+    "selectCity": "1. Chọn Thành Phố",
+    "city": "Thành phố",
+    "pleaseSelectCity": "Vui lòng chọn thành phố",
+    "selectCinema": "2. Chọn Rạp Chiếu",
+    "noCinemasInCity": "Không có rạp chiếu nào ở thành phố này.",
+    "promptSelectCity": "Vui lòng chọn thành phố để xem danh sách rạp.",
+    "priceFrom": "Giá từ: {{price}}đ",
+    "selectedCinema": "Rạp đã chọn",
+    "errorSelectCinema": "Vui lòng chọn một rạp chiếu phim để tiếp tục."
   },
   "dashboard": {
     "title": "Bảng điều khiển",
@@ -204,7 +240,8 @@
     "signingIn": "Đang đăng nhập...",
     "alreadyHaveAccount": "Đã có tài khoản? Đăng nhập ngay",
     "registerSuccess": "Đăng ký thành công! Bạn có thể đăng nhập ngay.",
-    "registerError": "Đăng ký thất bại. Vui lòng thử lại."
+    "registerError": "Đăng ký thất bại. Vui lòng thử lại.",
+    "logout": "Đăng xuất"
   },
   "validation": {
     "required": "{{field}} là bắt buộc",

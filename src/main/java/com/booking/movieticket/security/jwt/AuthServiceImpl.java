@@ -64,12 +64,19 @@ public class AuthServiceImpl implements AuthService {
             if (userRepository.existsByUsername(registerRequest.getUsername())) {
                 throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
             }
-            Role userRole = roleRepository.findByName(registerRequest.getRole())
+            // Check if email already exists
+            if (userRepository.existsByEmail(registerRequest.getEmail())) {
+                throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
+            }
+
+            // Lấy vai trò USER mặc định thay vì từ request
+            Role userRole = roleRepository.findByName("USER") 
                     .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
             User user = new User();
             user.setUsername(registerRequest.getUsername());
             user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-            user.setFullname(registerRequest.getFullname());
+            user.setFullname(registerRequest.getFullName());
+            user.setEmail(registerRequest.getEmail());
             user.setMembershipLevel(MembershipLevel.BASIC);
             user.setIsConfirmed(false);
             user.setIsDeleted(false);

@@ -168,10 +168,8 @@ const Register: React.FC = () => {
           </Button>
           <Grid container justifyContent="flex-end"> 
             <Grid item>
-              <Link to="/login" style={{ textDecoration: 'none' }}>
-                <Typography variant="body2">
-                  {t('auth.alreadyHaveAccount', 'Already have an account? Sign in')}
-                </Typography>
+              <Link to="/login" style={{ textDecoration: 'none', color: 'primary.main', fontSize: '0.875rem' }}>
+                {t('auth.alreadyHaveAccount', 'Already have an account? Sign in')}
               </Link>
             </Grid>
           </Grid>

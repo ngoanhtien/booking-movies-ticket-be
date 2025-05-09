@@ -11,7 +11,9 @@ import CinemaManagement from './pages/cinemas/CinemaManagement';
 import BranchManagement from './pages/branches/BranchManagement';
 import InvoiceManagement from './pages/invoices/InvoiceManagement';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminProtectedRoute from './components/AdminProtectedRoute';
 import Layout from './components/layout/Layout';
+import UserLayout from './components/user/UserLayout';
 import TheaterManagement from './pages/theaters/TheaterManagement';
 import TheaterLocations from './pages/theaters/TheaterLocations';
 import RoomManagement from './pages/rooms/RoomManagement';
@@ -27,6 +29,7 @@ import MovieList from './pages/user/MovieList';
 import MovieDetails from './pages/user/MovieDetails';
 import UserProfile from './pages/user/UserProfile';
 import BookingHistory from './pages/user/BookingHistory';
+import CinemaSelection from './pages/user/CinemaSelection';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -34,23 +37,34 @@ const AppRoutes: React.FC = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* User Routes */}
-      <Route path="/movies" element={<MovieList />} />
-      <Route path="/movies/:id" element={<MovieDetails />} />
-      <Route path="/profile" element={
-        <ProtectedRoute>
-          <UserProfile />
-        </ProtectedRoute>
-      } />
-      <Route path="/booking-history" element={
-        <ProtectedRoute>
-          <BookingHistory />
-        </ProtectedRoute>
-      } />
+      {/* User Routes - Cần đăng nhập và có UserLayout */}
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <UserLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="" element={<Navigate to="/movies" replace />} />
+        <Route path="movies" element={<MovieList />} />
+        <Route path="movies/:id" element={<MovieDetails />} />
+        <Route path="profile" element={<UserProfile />} />
+        <Route path="booking-history" element={<BookingHistory />} />
+        
+        {/* Updated Booking Flow Routes */}
+        <Route path="select-cinema/:movieId" element={<CinemaSelection />} />
+        {/* Giả sử BookingPage sẽ xử lý các bước còn lại (chọn suất, ghế, đồ ăn, thanh toán) 
+            và sẽ lấy cinemaId từ URL hoặc context/state */}
+        <Route path="booking/:movieId/showtimes/:cinemaId" element={<BookingPage />} /> 
+        {/* Route cũ /booking/:movieId có thể được giữ lại hoặc loại bỏ nếu không cần nữa */}
+        {/* <Route path="booking/:movieId" element={<BookingPage />} /> */}
+        <Route path="booking" element={<BookingPage />} />{/* Dành cho trường hợp vào thẳng trang booking không qua movieId*/}
+      </Route>
 
-      <Route path="/admin" element={<ProtectedRoute>
+      <Route path="/admin" element={<AdminProtectedRoute>
         <Layout />
-      </ProtectedRoute>}>
+      </AdminProtectedRoute>}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="movies" element={<MovieManagement />} />
@@ -74,13 +88,10 @@ const AppRoutes: React.FC = () => {
         <Route path="promotions/notifications" element={<NotificationManagement />} />
       </Route>
 
-      <Route path="/booking/:movieId" element={<BookingPage />} />
-      <Route path="/booking" element={<BookingPage />} />
-
       <Route path="/admin/*" element={<Navigate to="/admin/dashboard" replace />} />
 
-      <Route path="/" element={<Navigate to="/movies" replace />} />
-      <Route path="*" element={<Navigate to="/movies" replace />} />
+      {/* Chuyển hướng các đường dẫn không xác định đến trang đăng nhập */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 };

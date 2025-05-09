@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+// Sử dụng đường dẫn tương đối thay vì URL tuyệt đối để proxy hoạt động
+const API_URL = ''; // Tương đối với baseURL của axios
 
 // Định nghĩa các interface dựa trên API backend
 export interface Showtime {
@@ -28,6 +29,7 @@ export interface Seat {
   number: number;
   status: SeatStatus;
   price: number;
+  type?: 'REGULAR' | 'VIP' | 'COUPLE' | 'SWEETBOX' | string;
 }
 
 export interface FoodItem {
@@ -83,10 +85,34 @@ export const bookingService = {
   // Lấy danh sách suất chiếu theo phim
   getShowtimesByMovie: async (movieId: string) => {
     try {
-      const response = await axios.get(`${API_URL}/showtimes/movie/${movieId}`);
+      // Sử dụng ngày hiện tại để lấy lịch chiếu phim
+      const today = new Date().toISOString().split('T')[0];
+      const response = await axios.get(`${API_URL}/showtime/${movieId}/by-date`, {
+        params: { date: today }
+      });
+      // Đảm bảo trả về đúng cấu trúc dữ liệu
       return response.data;
     } catch (error) {
-      console.error('Error fetching showtimes:', error);
+      console.error('Error fetching showtimes by movie:', error);
+      throw error;
+    }
+  },
+
+  // Lấy danh sách suất chiếu theo phim VÀ RẠP
+  getShowtimesByMovieAndCinema: async (movieId: string, cinemaId: string) => {
+    try {
+      // Sử dụng endpoint filter với ngày hiện tại
+      const today = new Date().toISOString().split('T')[0];
+      const response = await axios.get(`${API_URL}/showtime/${movieId}/filter`, {
+        params: { 
+          date: today,
+          cinemaId: cinemaId
+        }
+      });
+      // Đảm bảo trả về đúng cấu trúc dữ liệu
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching showtimes by movie and cinema:', error);
       throw error;
     }
   },
@@ -94,7 +120,13 @@ export const bookingService = {
   // Lấy danh sách tất cả suất chiếu có sẵn
   getAllShowtimes: async () => {
     try {
-      const response = await axios.get(`${API_URL}/showtimes/available`);
+      // Sử dụng ngày hiện tại để lấy lịch chiếu phim
+      const today = new Date().toISOString().split('T')[0];
+      // Vì không có endpoint /showtimes/available, nên sẽ sử dụng một phim và ngày cố định
+      // Đây là giải pháp tạm thời, cần thêm endpoint mới trong backend
+      const response = await axios.get(`${API_URL}/showtime/1/by-date`, {
+        params: { date: today }
+      });
       return response.data;
     } catch (error) {
       console.error('Error fetching all showtimes:', error);
@@ -105,9 +137,8 @@ export const bookingService = {
   // Lấy sơ đồ ghế cho một suất chiếu
   getSeatLayout: async (scheduleId: number, roomId: number) => {
     try {
-      const response = await axios.get(`${API_URL}/seats/showtime`, {
-        params: { scheduleId, roomId }
-      });
+      // Sửa API endpoint để phù hợp với controller
+      const response = await axios.get(`${API_URL}/showtime/${scheduleId}/${roomId}/detail`);
       return response.data;
     } catch (error) {
       console.error('Error fetching seat layout:', error);
@@ -132,8 +163,7 @@ export const bookingService = {
       const response = await axios.post(`${API_URL}/bookings`, bookingData, {
         headers: {
           'Content-Type': 'application/json',
-          // Nếu cần thêm token xác thực
-          // 'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
       return response.data;

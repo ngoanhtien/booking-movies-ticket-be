@@ -8,10 +8,11 @@ import {
   Paper,
   Alert,
   CircularProgress,
+  Link,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { loginStart, loginSuccess, loginFailure } from '../../store/slices/authSlice';
 import axios from 'axios';
 
@@ -19,7 +20,11 @@ const Login: React.FC = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { loading, error } = useSelector((state: any) => state.auth);
+
+  // Lấy đường dẫn chuyển hướng từ location.state
+  const from = location.state?.from || '/movies';
 
   const [formData, setFormData] = useState({
     username: '',
@@ -38,12 +43,11 @@ const Login: React.FC = () => {
     dispatch(loginStart());
 
     try {
-      const response = await axios.post('/auth/login', {
-        ...formData,
-        role: 'ADMIN',
-      });
+      console.log("Đang đăng nhập với:", formData);
+      const response = await axios.post('/auth/login', formData);
+      console.log("Login API response:", response.data);
 
-      const { accessToken, refreshToken } = response.data.data;
+      const { accessToken, refreshToken } = response.data.result;
       
       // Store tokens
       localStorage.setItem('token', accessToken);
@@ -53,11 +57,34 @@ const Login: React.FC = () => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
 
       // Get user info
-      const userResponse = await axios.get('/api/users/me');
+      const userResponse = await axios.get('/user/me');
+      console.log("User info API response:", userResponse.data);
       
-      dispatch(loginSuccess({ user: userResponse.data.data, token: accessToken }));
-      navigate('/admin/dashboard');
+      const userData = userResponse.data.result;
+      
+      // Tạo object user với các trường cần thiết
+      const user = {
+        id: userData.id,
+        email: userData.email,
+        fullName: userData.fullName,  // Lưu fullName từ backend
+        name: userData.fullName,      // Tương thích với các component cũ sử dụng name
+        role: userData.role           // Quan trọng cho việc phân quyền
+      };
+      
+      console.log("User object for Redux:", user);
+      
+      dispatch(loginSuccess({ user: user, token: accessToken }));
+
+      // Chuyển hướng dựa trên vai trò người dùng và trang trước đó
+      console.log("User role:", user.role);
+      if (user.role === 'ADMIN') {
+        navigate('/admin/dashboard');
+      } else {
+        // Chuyển hướng về trang trước đó nếu có, hoặc về trang danh sách phim nếu không có
+        navigate(from);
+      }
     } catch (err: any) {
+      console.error("Login error:", err);
       dispatch(loginFailure(err.response?.data?.message || 'Login failed'));
     }
   };
@@ -126,6 +153,12 @@ const Login: React.FC = () => {
             >
               {loading ? <CircularProgress size={24} /> : t('auth.login')}
             </Button>
+            
+            <Box sx={{ mt: 2, textAlign: 'center' }}>
+              <Link component={RouterLink} to="/register" variant="body2">
+                {t('auth.register')}
+              </Link>
+            </Box>
           </Box>
         </Paper>
       </Box>

@@ -28,6 +28,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import { useNavigate } from 'react-router-dom';
 import { fetchMovies, fetchShowingMovies, fetchUpcomingMovies, MovieFilters } from '../../services/movieService';
 import { Movie } from '../../types';
+import StarIcon from '@mui/icons-material/Star';
 
 const MovieList: React.FC = () => {
   const { t } = useTranslation();
@@ -110,10 +111,11 @@ const MovieList: React.FC = () => {
             height: '100%', 
             display: 'flex', 
             flexDirection: 'column',
-            transition: 'transform 0.2s',
+            transition: 'transform 0.2s, box-shadow 0.2s',
             '&:hover': {
               transform: 'scale(1.03)',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              boxShadow: theme.shadows[6],
             }
           }}
           onClick={() => handleMovieClick(movie.id)}
@@ -125,35 +127,59 @@ const MovieList: React.FC = () => {
             alt={movie.title}
             sx={{ objectFit: 'cover' }}
           />
-          <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h6" component="div" gutterBottom noWrap>
+          <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2 }}>
+            <Typography variant="h6" component="div" gutterBottom noWrap sx={{ mb: 0.5, fontWeight: 'bold' }}>
               {movie.title}
             </Typography>
-            <Box sx={{ mb: 1, display: 'flex', gap: 0.5 }}>
-              <Chip 
-                label={`${movie.duration} ${t('movies.minutes')}`} 
-                size="small" 
-                color="primary" 
-                variant="outlined"
-              />
-              <Chip 
-                label={movie.status === 'ACTIVE' ? t('movies.showing') : t('movies.upcoming')} 
-                size="small" 
-                color={movie.status === 'ACTIVE' ? 'success' : 'warning'} 
-                variant="outlined" 
-              />
+            
+            {/* Enhanced Info Section: Rating, Age Restriction, Duration */}
+            <Box sx={{ mb: 1.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              {movie.rating && (
+                <Chip 
+                  icon={<StarIcon fontSize="small" />}
+                  label={`${movie.rating}/5`}
+                  size="small"
+                  variant="outlined"
+                  color="warning"
+                  sx={{ fontWeight: 'medium' }}
+                />
+              )}
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
+                {movie.ageRestriction && (
+                  <Chip 
+                    label={movie.ageRestriction}
+                    size="small"
+                    color="secondary"
+                    variant="filled"
+                    sx={{ fontWeight: 'bold' }}
+                  />
+                )}
+                <Chip 
+                  label={`${movie.duration} ${t('movies.minutes')}`} 
+                  size="small" 
+                  variant="outlined"
+                />
+                <Chip 
+                  label={movie.status === 'ACTIVE' ? t('movies.showing') : t('movies.upcoming')} 
+                  size="small" 
+                  color={movie.status === 'ACTIVE' ? 'success' : 'info'}
+                  variant="outlined" 
+                />
+              </Box>
             </Box>
+
             <Typography variant="body2" color="text.secondary" sx={{ 
               overflow: 'hidden', 
               textOverflow: 'ellipsis',
               display: '-webkit-box',
               WebkitLineClamp: 3,
               WebkitBoxOrient: 'vertical',
-              mb: 2
+              mb: 2,
+              minHeight: '60px'
             }}>
               {movie.description}
             </Typography>
-            <Box sx={{ mt: 'auto' }}>
+            <Box sx={{ mt: 'auto', pt: 1 }}>
               <Button 
                 variant="contained" 
                 fullWidth 
@@ -180,14 +206,21 @@ const MovieList: React.FC = () => {
   let totalPages = 0;
   
   if (tabValue === 0 && moviesData) {
-    moviesToRender = moviesData.content;
-    totalPages = moviesData.totalPages;
-  } else if (tabValue === 1 && showingMovies) {
-    moviesToRender = showingMovies;
-    totalPages = 1; // Pagination is not used for showing/upcoming tabs
-  } else if (tabValue === 2 && upcomingMovies) {
-    moviesToRender = upcomingMovies;
-    totalPages = 1; // Pagination is not used for showing/upcoming tabs
+    moviesToRender = Array.isArray(moviesData.content) ? moviesData.content : 
+                     Array.isArray(moviesData) ? moviesData : [];
+    totalPages = moviesData.totalPages || 1;
+    
+    console.log("Movies data structure:", moviesData);
+  } else if (tabValue === 1) {
+    moviesToRender = Array.isArray(showingMovies) ? showingMovies : [];
+    totalPages = 1;
+    
+    console.log("Showing movies data:", showingMovies);
+  } else if (tabValue === 2) {
+    moviesToRender = Array.isArray(upcomingMovies) ? upcomingMovies : [];
+    totalPages = 1;
+    
+    console.log("Upcoming movies data:", upcomingMovies);
   }
   
   // Generate mock genres for the filter
@@ -275,14 +308,14 @@ const MovieList: React.FC = () => {
       )}
       
       {/* Movie Grid */}
-      {!isLoading && !isError && moviesToRender.length > 0 && (
+      {!isLoading && !isError && Array.isArray(moviesToRender) && moviesToRender.length > 0 && (
         <Grid container spacing={3}>
           {moviesToRender.map(renderMovieCard)}
         </Grid>
       )}
       
       {/* Empty state */}
-      {!isLoading && !isError && moviesToRender.length === 0 && (
+      {!isLoading && !isError && (!Array.isArray(moviesToRender) || moviesToRender.length === 0) && (
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant="h6" color="textSecondary">
             {t('movies.noMoviesFound')}

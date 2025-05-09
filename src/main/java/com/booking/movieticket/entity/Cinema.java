@@ -36,7 +36,7 @@ public class Cinema extends BaseEntity {
     @Column(name = "logo_url", columnDefinition = "VARCHAR(1000)")
     private String logoUrl;
 
-    @Column(name = "address", nullable = false)
+    @Column(name = "address")
     private String address;
 
     @Column(name = "is_deleted", nullable = false)
@@ -44,10 +44,4 @@ public class Cinema extends BaseEntity {
 
     @OneToMany(mappedBy = "cinema", cascade = CascadeType.ALL)
     private Set<Branch> branches = new HashSet<>();
-
-    @OneToMany(mappedBy = "cinema", cascade = CascadeType.ALL)
-    private Set<Room> rooms = new HashSet<>();
-
-    @OneToMany(mappedBy = "cinema", cascade = CascadeType.ALL)
-    private Set<Showtime> showtimes = new HashSet<>();
 }

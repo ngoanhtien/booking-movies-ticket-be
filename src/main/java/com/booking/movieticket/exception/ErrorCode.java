@@ -11,6 +11,7 @@ public enum ErrorCode {
     USER_NOT_FOUND(1001, "User not found", HttpStatus.NOT_FOUND),
     USER_ALREADY_EXISTS(1002, "User already exists", HttpStatus.CONFLICT),
     ROLE_NOT_FOUND(1003, "Role not found", HttpStatus.NOT_FOUND),
+    EMAIL_ALREADY_EXISTS(1004, "Email already exists", HttpStatus.CONFLICT),
 
     // Content Errors (1100-1199)
     ACTOR_NOT_FOUND(1100, "Actor not found", HttpStatus.NOT_FOUND),
