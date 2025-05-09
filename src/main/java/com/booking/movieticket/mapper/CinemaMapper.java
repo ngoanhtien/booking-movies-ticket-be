@@ -16,6 +16,4 @@ public interface CinemaMapper {
     void updateCinemaFromRequest(CinemaForUpdateRequest request, @MappingTarget Cinema cinema);
 
     CinemaCreatedResponse convertEntityToCinemaCreatedResponse(Cinema cinema);
-
-    CinemaResponse convertEntityToCinemaResponse(Cinema cinema);
 }

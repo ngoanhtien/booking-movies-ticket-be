@@ -51,18 +51,18 @@ public class MovieController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<MovieCreatedResponse>> createMovie(@Valid @RequestBody MovieForCreateRequest movieRequest,
-                                                                         @RequestParam(value = "smallImgUrl", required = false) MultipartFile smallImgUrl,
-                                                                         @RequestParam(value = "largeImgUrl", required = false) MultipartFile largeImgUrl,
+    public ResponseEntity<ApiResponse<MovieCreatedResponse>> createMovie(@Valid @RequestPart MovieForCreateRequest movieRequest,
+                                                                         @RequestPart(value = "smallImgUrl", required = false) MultipartFile smallImgUrl,
+                                                                         @RequestPart(value = "largeImgUrl", required = false) MultipartFile largeImgUrl,
                                                                          BindingResult bindingResult) throws MethodArgumentNotValidException {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ApiResponse<>("Movie created successfully.", movieService.createMovie(movieRequest, smallImgUrl, largeImgUrl, bindingResult)));
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<String>> updateMovie(@Valid @RequestBody MovieForUpdateRequest movieRequest,
-                                                           @RequestParam(value = "smallImgUrl", required = false) MultipartFile smallImgUrl,
-                                                           @RequestParam(value = "largeImgUrl", required = false) MultipartFile largeImgUrl,
+    public ResponseEntity<ApiResponse<String>> updateMovie(@Valid @RequestPart MovieForUpdateRequest movieRequest,
+                                                           @RequestPart(value = "smallImgUrl", required = false) MultipartFile smallImgUrl,
+                                                           @RequestPart(value = "largeImgUrl", required = false) MultipartFile largeImgUrl,
                                                            BindingResult bindingResult) throws MethodArgumentNotValidException {
         movieService.updateMovie(movieRequest, smallImgUrl, largeImgUrl, bindingResult);
         return ResponseEntity.status(HttpStatus.ACCEPTED)

@@ -58,7 +58,7 @@ public class UserController {
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<String>> updateUser(@Valid @RequestPart("userRequestData") UserForUpdateRequest userRequest, @RequestPart(value = "avatarUrl", required = false) MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public ResponseEntity<ApiResponse<String>> updateUser(@Valid @RequestPart("user") UserForUpdateRequest userRequest, @RequestPart(value = "avatarUrl", required = false) MultipartFile avatarUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
         userService.updateUser(userRequest, avatarUrl, bindingResult);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponse<>("User details fetched successfully."));
     }

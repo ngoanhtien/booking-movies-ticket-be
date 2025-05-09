@@ -26,8 +26,6 @@ public interface MovieMapper {
 
     MovieCreatedResponse convertEntityToMovieCreatedResponse(Movie movie);
 
-    MovieResponse convertEntityToMovieResponse(Movie movie);
-
     @AfterMapping
     default void mapRelations(@MappingTarget Movie movie, MovieForCreateRequest movieRequest, @Context CategoryRepository categoryRepository, @Context ActorRepository actorRepository) {
         getActorsAndCategories(movie, categoryRepository, actorRepository, movieRequest.getCategoryIds(), movieRequest.getActorIds());

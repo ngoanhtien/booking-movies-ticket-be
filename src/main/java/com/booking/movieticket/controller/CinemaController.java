@@ -49,15 +49,15 @@ public class CinemaController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<CinemaCreatedResponse>> createCinema(@Valid @RequestBody CinemaForCreateRequest cinemaRequest,
-                                                                           @RequestParam(value = "logoUrl", required = false) MultipartFile logoUrl,
+    public ResponseEntity<ApiResponse<CinemaCreatedResponse>> createCinema(@Valid @RequestPart CinemaForCreateRequest cinemaRequest,
+                                                                           @RequestPart(value = "logoUrl", required = false) MultipartFile logoUrl,
                                                                            BindingResult bindingResult) throws MethodArgumentNotValidException {
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Cinema created successfully.", cinemaService.createCinema(cinemaRequest, logoUrl, bindingResult)));
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<String>> updateCinema(@Valid @RequestBody CinemaForUpdateRequest cinemaRequest,
-                                                            @RequestParam(value = "logoUrl", required = false) MultipartFile logoUrl,
+    public ResponseEntity<ApiResponse<String>> updateCinema(@Valid @RequestPart CinemaForUpdateRequest cinemaRequest,
+                                                            @RequestPart(value = "logoUrl", required = false) MultipartFile logoUrl,
                                                             BindingResult bindingResult) throws MethodArgumentNotValidException {
         cinemaService.updateCinema(cinemaRequest, logoUrl, bindingResult);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
