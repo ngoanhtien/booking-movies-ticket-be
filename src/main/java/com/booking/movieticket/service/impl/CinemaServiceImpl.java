@@ -1,8 +1,10 @@
 package com.booking.movieticket.service.impl;
 
 import com.booking.movieticket.dto.criteria.CinemaCriteria;
-import com.booking.movieticket.dto.request.admin.CinemaRequest;
+import com.booking.movieticket.dto.request.admin.create.CinemaForCreateRequest;
+import com.booking.movieticket.dto.request.admin.update.CinemaForUpdateRequest;
 import com.booking.movieticket.dto.response.admin.CinemaResponse;
+import com.booking.movieticket.dto.response.admin.create.CinemaCreatedResponse;
 import com.booking.movieticket.entity.Cinema;
 import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.exception.ErrorCode;
@@ -36,37 +38,36 @@ public class CinemaServiceImpl implements CinemaService {
     ImageUploadService imageUploadService;
 
     @Override
-    public Cinema getCinemaById(Long id) {
+    public CinemaResponse getCinemaById(Long id) {
         if (id == null) {
             throw new AppException(ErrorCode.CINEMA_NOT_FOUND);
         }
-        return cinemaRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.CINEMA_NOT_FOUND));
+        return cinemaMapper.convertCinemaToResponse(cinemaRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.CINEMA_NOT_FOUND)));
     }
 
     @Override
-    public Page<Cinema> getAllCinemas(CinemaCriteria cinemaCriteria, Pageable pageable) {
-        return cinemaRepository.findAll(CinemaSpecificationBuilder.findByCriteria(cinemaCriteria), pageable);
+    public Page<CinemaResponse> getAllCinemas(CinemaCriteria cinemaCriteria, Pageable pageable) {
+        return cinemaRepository.findAll(CinemaSpecificationBuilder.findByCriteria(cinemaCriteria), pageable).map(cinemaMapper::convertCinemaToResponse);
     }
 
     @Override
-    public CinemaResponse createCinema(CinemaRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public CinemaCreatedResponse createCinema(CinemaForCreateRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
         validateImages(logoUrl, bindingResult);
         if (bindingResult.hasErrors()) {
             throw new MethodArgumentNotValidException(null, bindingResult);
         }
         try {
-            Cinema cinema = cinemaMapper.toCinema(cinemaRequest);
+            Cinema cinema = cinemaMapper.convertRequestToCinema(cinemaRequest);
             processAndSetImages(cinema, logoUrl);
-            cinema.setId(null);
             cinema.setIsDeleted(false);
-            return cinemaMapper.toCinemaResponse(cinemaRepository.save(cinema));
+            return cinemaMapper.convertEntityToCinemaCreatedResponse(cinemaRepository.save(cinema));
         } catch (IOException e) {
-            throw new AppException(ErrorCode.CINEMA_NOT_FOUND);
+            throw new AppException(ErrorCode.UPLOAD_IMAGE_FAILED);
         }
     }
 
     @Override
-    public void updateCinema(CinemaRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public void updateCinema(CinemaForUpdateRequest cinemaRequest, MultipartFile logoUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
         validateImages(logoUrl, bindingResult);
         if (bindingResult.hasErrors()) {
             throw new MethodArgumentNotValidException(null, bindingResult);

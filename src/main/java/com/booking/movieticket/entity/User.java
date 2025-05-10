@@ -40,7 +40,7 @@ public class User extends BaseEntity {
 
     @Nationalized
     @Column(name = "full_name", nullable = false)
-    private String fullname;
+    private String fullName;
 
     @Column(name = "date_of_birth", columnDefinition = "DATE")
     private LocalDate dob;

@@ -1,4 +1,4 @@
-package com.booking.movieticket.dto.request.admin;
+package com.booking.movieticket.dto.request.admin.create;
 
 import com.booking.movieticket.entity.enums.StatusMovie;
 import jakarta.validation.constraints.*;
@@ -14,9 +14,7 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MovieRequest {
-
-    private Long id;
+public class MovieForCreateRequest {
 
     @NotBlank(message = "Movie name must not be blank.")
     @Size(min = 2, max = 225, message = "Movie name must be between 2 and 225 characters.")

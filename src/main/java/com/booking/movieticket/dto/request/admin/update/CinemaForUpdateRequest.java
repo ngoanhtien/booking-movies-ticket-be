@@ -1,4 +1,4 @@
-package com.booking.movieticket.dto.request.admin;
+package com.booking.movieticket.dto.request.admin.update;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CinemaRequest {
+public class CinemaForUpdateRequest {
 
     private Long id;
 

@@ -1,8 +1,15 @@
 package com.booking.movieticket.dto.response.admin;
 
-import lombok.Getter;
+import com.booking.movieticket.entity.Movie;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
+import java.util.Set;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ActorResponse {
 
     private Long id;

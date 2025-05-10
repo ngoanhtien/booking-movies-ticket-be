@@ -1,8 +1,10 @@
 package com.booking.movieticket.service;
 
 import com.booking.movieticket.dto.criteria.MovieCriteria;
-import com.booking.movieticket.dto.request.admin.MovieRequest;
+import com.booking.movieticket.dto.request.admin.update.MovieForUpdateRequest;
+import com.booking.movieticket.dto.request.admin.create.MovieForCreateRequest;
 import com.booking.movieticket.dto.response.admin.MovieResponse;
+import com.booking.movieticket.dto.response.admin.create.MovieCreatedResponse;
 import com.booking.movieticket.entity.Movie;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,13 +16,13 @@ import java.util.List;
 
 public interface MovieService {
 
-    Movie getMovieById(Long id);
+    MovieResponse getMovieById(Long id);
 
-    Page<Movie> getAllMovies(MovieCriteria movieCriteria, Pageable pageable);
+    Page<MovieResponse> getAllMovies(MovieCriteria movieCriteria, Pageable pageable);
 
-    MovieResponse createMovie(MovieRequest movieRequest, MultipartFile smallImgUrl, MultipartFile largeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
+    MovieCreatedResponse createMovie(MovieForCreateRequest movieRequest, MultipartFile smallImgUrl, MultipartFile largeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
 
-    void updateMovie(MovieRequest movieRequest, MultipartFile smallImgUrl, MultipartFile largeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
+    void updateMovie(MovieForUpdateRequest movieRequest, MultipartFile smallImgUrl, MultipartFile largeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
 
     void activateMovie(Long id);
 

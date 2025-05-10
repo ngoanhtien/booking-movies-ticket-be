@@ -7,7 +7,7 @@ import org.springframework.util.StringUtils;
 
 public class ActorSpecificationBuilder {
     public static Specification<Actor> findByCriteria(ActorCriteria criteria) {
-        Specification<Actor> spec = Specification.where(null);
+        Specification<Actor> spec = Specification.where(notDeleted());
         if (criteria != null && StringUtils.hasText(criteria.getName())) {
             spec = spec.and(hasNameLike(criteria.getName()));
         }
@@ -22,5 +22,12 @@ public class ActorSpecificationBuilder {
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("actorName")), searchTerm)
             );
         };
+    }
+
+    private static Specification<Actor> notDeleted() {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.or(
+                criteriaBuilder.isNull(root.get("isDeleted")),
+                criteriaBuilder.notEqual(root.get("isDeleted"), true)
+        );
     }
 }

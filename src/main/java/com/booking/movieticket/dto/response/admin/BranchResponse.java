@@ -7,9 +7,14 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CategoryResponse {
+public class BranchResponse {
 
     private Long id;
     private String name;
+    private String imageUrl;
+    private String address;
+    private String hotline;
     private String description;
+    private Long cinemaId;
+    private String cinemaName;
 }

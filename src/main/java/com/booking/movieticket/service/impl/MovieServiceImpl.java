@@ -1,10 +1,10 @@
 package com.booking.movieticket.service.impl;
 
 import com.booking.movieticket.dto.criteria.MovieCriteria;
-import com.booking.movieticket.dto.request.admin.MovieRequest;
+import com.booking.movieticket.dto.request.admin.update.MovieForUpdateRequest;
+import com.booking.movieticket.dto.request.admin.create.MovieForCreateRequest;
 import com.booking.movieticket.dto.response.admin.MovieResponse;
-import com.booking.movieticket.entity.Actor;
-import com.booking.movieticket.entity.Category;
+import com.booking.movieticket.dto.response.admin.create.MovieCreatedResponse;
 import com.booking.movieticket.entity.Movie;
 import com.booking.movieticket.entity.enums.StatusMovie;
 import com.booking.movieticket.exception.AppException;
@@ -46,39 +46,38 @@ public class MovieServiceImpl implements MovieService {
     ImageUploadService imageUploadService;
 
     @Override
-    public Movie getMovieById(Long id) {
+    public MovieResponse getMovieById(Long id) {
         if (id == null) {
             throw new AppException(ErrorCode.MOVIE_NOT_FOUND);
         }
-        return movieRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
+        return movieMapper.convertEntityToMovieResponse(movieRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND)));
     }
 
     @Override
-    public Page<Movie> getAllMovies(MovieCriteria movieCriteria, Pageable pageable) {
-        return movieRepository.findAll(MovieSpecificationBuilder.findByCriteria(movieCriteria), pageable);
+    public Page<MovieResponse> getAllMovies(MovieCriteria movieCriteria, Pageable pageable) {
+        return movieRepository.findAll(MovieSpecificationBuilder.findByCriteria(movieCriteria), pageable).map(movieMapper::convertEntityToMovieResponse);
     }
 
     @Override
-    public MovieResponse createMovie(MovieRequest movieRequest, MultipartFile smallImgUrl, MultipartFile largeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public MovieCreatedResponse createMovie(MovieForCreateRequest movieRequest, MultipartFile smallImgUrl, MultipartFile largeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
         validateImages(smallImgUrl, largeImgUrl, bindingResult);
         if (bindingResult.hasErrors()) {
             throw new MethodArgumentNotValidException(null, bindingResult);
         }
         try {
-            Movie movie = movieMapper.toMovie(movieRequest);
+            Movie movie = movieMapper.convertRequestToMovie(movieRequest);
             movieMapper.mapRelations(movie, movieRequest, categoryRepository, actorRepository);
             processAndSetImages(movie, smallImgUrl, largeImgUrl);
-            movie.setId(null);
             movie.setIsDeleted(false);
-            return movieMapper.toMovieResponse(movieRepository.save(movie));
+            return movieMapper.convertEntityToMovieCreatedResponse(movieRepository.save(movie));
         } catch (IOException e) {
-            throw new AppException(ErrorCode.MOVIE_NOT_FOUND);
+            throw new AppException(ErrorCode.UPLOAD_IMAGE_FAILED);
         }
     }
 
     @Override
     @Transactional
-    public void updateMovie(MovieRequest movieRequest, MultipartFile smallImgUrl, MultipartFile largeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public void updateMovie(MovieForUpdateRequest movieRequest, MultipartFile smallImgUrl, MultipartFile largeImgUrl, BindingResult bindingResult) throws MethodArgumentNotValidException {
         validateImages(smallImgUrl, largeImgUrl, bindingResult);
         if (bindingResult.hasErrors()) {
             throw new MethodArgumentNotValidException(null, bindingResult);

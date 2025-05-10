@@ -1,4 +1,4 @@
-package com.booking.movieticket.dto.response.admin;
+package com.booking.movieticket.dto.response.admin.create;
 
 import com.booking.movieticket.entity.Actor;
 import com.booking.movieticket.entity.Category;
@@ -14,7 +14,7 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MovieResponse {
+public class MovieCreatedResponse {
 
     private Long id;
     private String name;
