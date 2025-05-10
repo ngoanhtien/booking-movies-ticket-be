@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -33,6 +34,20 @@ public class BookingController {
         log.info("Creating booking for user: {}", userDetails.getUserId());
         BookingResponse bookingResponse = bookingService.createBooking(userDetails.getUserId(), bookingRequest);
         return ResponseEntity.ok(new ApiResponse<>("Booking created successfully", bookingResponse));
+    }
+
+    /**
+     * Get booking history for a specific user
+     *
+     * @param userDetails Authenticated user details
+     * @return List of bookings made by the user
+     */
+    @GetMapping("/history")
+    public ResponseEntity<ApiResponse<?>> getUserBookingHistory(
+            @AuthenticationPrincipal DomainUserDetails userDetails) {
+        log.info("Getting booking history for user: {}", userDetails.getUserId());
+        List<BookingResponse> bookingHistory = bookingService.getUserBookingHistory(userDetails.getUserId());
+        return ResponseEntity.ok(new ApiResponse<>("User booking history retrieved successfully", bookingHistory));
     }
 
     /**
