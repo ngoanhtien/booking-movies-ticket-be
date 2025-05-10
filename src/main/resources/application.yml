@@ -9,6 +9,9 @@ spring:
     hikari:
       pool-name: Hikari
       auto-commit: false
+    # Vô hiệu hóa tạm thời data SQL initialization
+    # initialization-mode: always
+    # data: classpath:data.sql
   jpa:
     hibernate:
       ddl-auto: update
@@ -17,6 +20,7 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+    # defer-datasource-initialization: true
   mail:
     host: smtp.gmail.com
     port: 587
@@ -31,6 +35,9 @@ spring:
           auth: true
           starttls:
             enable: true
+  sql:
+    init:
+      mode: never # Thay đổi mode từ always thành never
 logging:
   level:
     com:

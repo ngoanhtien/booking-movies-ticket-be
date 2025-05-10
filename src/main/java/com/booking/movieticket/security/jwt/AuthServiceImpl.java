@@ -2,6 +2,7 @@ package com.booking.movieticket.security.jwt;
 
 import com.booking.movieticket.dto.request.LoginRequest;
 import com.booking.movieticket.dto.request.RegisterRequest;
+import com.booking.movieticket.dto.request.RefreshTokenRequest;
 import com.booking.movieticket.dto.response.LoginResponse;
 import com.booking.movieticket.entity.Role;
 import com.booking.movieticket.entity.User;
@@ -86,6 +87,55 @@ public class AuthServiceImpl implements AuthService {
             userRepository.save(user);
         } catch (AppException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public LoginResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
+        try {
+            log.info("Starting refresh token process");
+            // Xác thực refresh token
+            if (refreshTokenRequest.getRefreshToken() == null || refreshTokenRequest.getRefreshToken().isEmpty()) {
+                log.error("Refresh token is null or empty");
+                throw new AppException(ErrorCode.INVALID_TOKEN);
+            }
+            
+            // Xác thực và tạo token mới từ refresh token
+            String username = tokenProvider.getUsernameFromRefreshToken(refreshTokenRequest.getRefreshToken());
+            log.info("Username from refresh token: {}", username);
+            if (username == null) {
+                log.error("Could not extract username from refresh token");
+                throw new AppException(ErrorCode.INVALID_TOKEN);
+            }
+            
+            // Tìm thông tin người dùng
+            log.info("Finding user with username: {}", username);
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> {
+                        log.error("User not found with username: {}", username);
+                        return new AppException(ErrorCode.USER_NOT_FOUND);
+                    });
+            log.info("User found: {}", user.getId());
+            
+            // Tạo authentication từ thông tin người dùng
+            DomainUserDetails userDetails = new DomainUserDetails(user);
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
+            
+            // Tạo token mới
+            String jwt = tokenProvider.createToken(authentication);
+            String refreshJwt = tokenProvider.generateRefreshToken(authentication);
+            log.info("New tokens generated successfully");
+            
+            // Trả về tokens mới
+            return LoginResponse.builder()
+                    .accessToken(jwt)
+                    .refreshToken(refreshJwt)
+                    .build();
+        } catch (Exception e) {
+            log.error("Error refreshing token: {}", e.getMessage(), e);
+            throw new AppException(ErrorCode.INVALID_TOKEN);
         }
     }
 }

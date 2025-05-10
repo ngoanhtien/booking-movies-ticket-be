@@ -1,86 +1,139 @@
 import React, { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch } from '../store';
 import { checkAuth, loginSuccess, loginFailure } from '../store/slices/authSlice';
-import axios from 'axios';
+import axiosInstance from '../utils/axios';
 import { Box, CircularProgress, Typography } from '@mui/material';
 
+interface RootState {
+  auth: {
+    isAuthenticated: boolean;
+    user: any;
+    initialized: boolean;
+    tokenExpiresAt: number | null;
+  };
+}
+
+interface UserData {
+  id: string;
+  email: string;
+  fullName: string;
+  role: string;
+}
+
+interface TokenData {
+  accessToken: string;
+  refreshToken?: string;
+}
+
 const AuthCheck: React.FC = () => {
-  const dispatch = useDispatch();
-  const [authChecked, setAuthChecked] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
+  const { isAuthenticated, user, initialized, tokenExpiresAt } = useSelector(
+    (state: RootState) => state.auth
+  );
+  const [isChecking, setIsChecking] = useState<boolean>(true);
 
   useEffect(() => {
-    const checkUserAuth = async () => {
+    const verifyAuth = async () => {
       try {
-        // Đầu tiên kiểm tra token trong localStorage
         const token = localStorage.getItem('token');
-        console.log("Token found in localStorage:", token ? "Yes" : "No");
-        
-        if (!token) {
-          console.log("No token found, user is not authenticated");
-          dispatch(checkAuth()); // Cập nhật state là không xác thực
-          setAuthChecked(true);
+        const refreshToken = localStorage.getItem('refreshToken');
+
+        if (!token && !refreshToken) {
+          dispatch(checkAuth());
+          setIsChecking(false);
           return;
         }
-        
-        // Token sẽ được thêm tự động bởi axios interceptor
-        // Không cần đặt token vào header thủ công
-        console.log("Fetching user info from /user/me...");
-        const userResponse = await axios.get('/user/me');
-        console.log("User API response:", userResponse.data);
-        
-        // Kiểm tra cả hai cấu trúc response có thể xảy ra
-        const userData = userResponse.data.result || userResponse.data.data;
-        
-        if (userData) {
-          console.log("User data found, updating Redux store");
-          // Tạo object user với các trường cần thiết
-          const user = {
-            id: userData.id,
-            email: userData.email,
-            fullName: userData.fullName,
-            name: userData.fullName,
-            role: userData.role
-          };
-          
-          // Lấy refreshToken từ localStorage và chuyển đổi null thành undefined
-          const refreshToken = localStorage.getItem('refreshToken') || undefined;
-          
-          // Cập nhật trạng thái với thông tin user và token
-          dispatch(loginSuccess({ 
-            user, 
-            token,
-            refreshToken
-          }));
-          console.log("Authentication successful, role:", user.role);
-        } else {
-          console.log("User data not found in API response");
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
-          dispatch(loginFailure('Không tìm thấy thông tin người dùng'));
+
+        if (isAuthenticated && user && initialized) {
+          setIsChecking(false);
+          return;
+        }
+
+        // Check if token is still valid
+        if (token && tokenExpiresAt && Date.now() < tokenExpiresAt - 5000) {
+          try {
+            const response = await axiosInstance.get('/user/me');
+            const userData = response.data?.result || response.data?.data;
+
+            if (userData) {
+              dispatch(loginSuccess({
+                user: {
+                  id: userData.id,
+                  email: userData.email,
+                  fullName: userData.fullName,
+                  name: userData.fullName,
+                  role: userData.role
+                },
+                token,
+                refreshToken: refreshToken || undefined
+              }));
+            }
+          } catch (error) {
+            console.error('Error verifying token:', error);
+            dispatch(checkAuth());
+          }
+        } else if (refreshToken) {
+          try {
+            const response = await axiosInstance.post<{result: TokenData}>('/auth/refresh-token', {
+              refreshToken
+            });
+
+            const newTokens = response.data.result;
+            if (newTokens?.accessToken) {
+              localStorage.setItem('token', newTokens.accessToken);
+              if (newTokens.refreshToken) {
+                localStorage.setItem('refreshToken', newTokens.refreshToken);
+              }
+
+              const userResponse = await axiosInstance.get('/user/me');
+              const userData = userResponse.data?.result || userResponse.data?.data;
+
+              if (userData) {
+                dispatch(loginSuccess({
+                  user: {
+                    id: userData.id,
+                    email: userData.email,
+                    fullName: userData.fullName,
+                    name: userData.fullName,
+                    role: userData.role
+                  },
+                  token: newTokens.accessToken,
+                  refreshToken: newTokens.refreshToken
+                }));
+              }
+            } else {
+              throw new Error('Invalid refresh token response');
+            }
+          } catch (error) {
+            console.error('Token refresh failed:', error);
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            dispatch(loginFailure('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'));
+          }
         }
       } catch (error) {
-        console.error('Error during authentication check:', error);
-        // Error sẽ được xử lý bởi axios interceptor
-        // Chỉ cần cập nhật state redux
-        dispatch(loginFailure('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'));
+        console.error('Auth check failed:', error);
+        dispatch(checkAuth());
       } finally {
-        setAuthChecked(true);
+        setIsChecking(false);
       }
     };
-    
-    checkUserAuth();
-  }, [dispatch]);
 
-  // Chờ cho đến khi kiểm tra xác thực hoàn tất
-  if (!authChecked) {
+    verifyAuth();
+  }, [dispatch, isAuthenticated, user, initialized, tokenExpiresAt]);
+
+  if (isChecking) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        height: '100vh' 
-      }}>
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          height: '100vh' 
+        }}
+      >
         <CircularProgress />
         <Typography variant="body1" sx={{ mt: 2 }}>
           Đang xác thực người dùng...
@@ -92,4 +145,4 @@ const AuthCheck: React.FC = () => {
   return null;
 };
 
-export default AuthCheck; 
+export default AuthCheck;

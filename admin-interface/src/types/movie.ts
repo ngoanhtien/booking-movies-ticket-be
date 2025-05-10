@@ -1,18 +1,33 @@
 export interface Movie {
   id: number;
-  title: string;
-  description: string;
+  name?: string; // API sử dụng name thay vì title
+  title?: string; // Giữ lại để tương thích với code cũ
+  summary?: string; // API sử dụng summary thay vì description
+  description?: string; // Giữ lại để tương thích với code cũ
+  descriptionLong?: string; // Mô tả dài từ API
   duration: number; // in minutes
-  releaseDate: string; // Format: YYYY-MM-DD
-  status: 'ACTIVE' | 'INACTIVE';
-  posterUrl: string; // URL to the movie poster
+  releaseDate?: string; // Format: YYYY-MM-DD
+  releasedDate?: string; // API sử dụng releasedDate thay vì releaseDate
+  status: 'ACTIVE' | 'INACTIVE' | 'SHOWING' | 'UPCOMING'; // Thêm trạng thái từ API
+  posterUrl?: string; // URL to the movie poster
+  imageSmallUrl?: string; // API sử dụng imageSmallUrl 
+  imageLargeUrl?: string; // API sử dụng imageLargeUrl
   rating?: string; // e.g., "PG-13", "R", "G"
   ageRestriction?: string; // e.g., "13+", "18+", "P"
-  director?: string[];
+  ageLimit?: number; // API sử dụng ageLimit thay vì ageRestriction
+  director?: string | string[]; // Có thể là string hoặc array từ API
   actors?: string[];
   trailerUrl?: string;
-  // Optional: Add other fields like genre, director, cast, etc. later if needed
+  language?: string; // Ngôn ngữ phim
+  schedules?: any[]; // Lịch chiếu
+  categories?: any[]; // Danh mục/thể loại
+  // Các trường từ API
+  createdBy?: string | null;
   createdAt?: string;
+  lastModifiedBy?: string | null;
+  lastModifiedAt?: string;
+  isDeleted?: boolean;
+  // Optional: Add other fields like genre, director, cast, etc. later if needed
   updatedAt?: string;
 }
 

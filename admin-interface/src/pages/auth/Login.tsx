@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { loginStart, loginSuccess, loginFailure } from '../../store/slices/authSlice';
-import axios from 'axios';
+import axiosInstance from '../../utils/axios';
 
 const Login: React.FC = () => {
   const { t } = useTranslation();
@@ -22,9 +22,19 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { loading, error } = useSelector((state: any) => state.auth);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   // Lấy đường dẫn chuyển hướng từ location.state
   const from = location.state?.from || '/movies';
+
+  // Kiểm tra xem phiên đăng nhập có hết hạn không
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const expired = queryParams.get('expired');
+    if (expired === 'true') {
+      setSessionExpired(true);
+    }
+  }, [location]);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -41,10 +51,11 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     dispatch(loginStart());
+    setSessionExpired(false); // Xóa thông báo phiên hết hạn khi người dùng thử đăng nhập lại
 
     try {
       console.log("Đang đăng nhập với:", formData);
-      const response = await axios.post('/auth/login', formData);
+      const response = await axiosInstance.post('/auth/login', formData);
       console.log("Login API response:", response.data);
 
       const { accessToken, refreshToken } = response.data.result;
@@ -53,11 +64,8 @@ const Login: React.FC = () => {
       localStorage.setItem('token', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
 
-      // Set default authorization header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-
       // Get user info
-      const userResponse = await axios.get('/user/me');
+      const userResponse = await axiosInstance.get('/user/me');
       console.log("User info API response:", userResponse.data);
       
       const userData = userResponse.data.result;
@@ -73,7 +81,11 @@ const Login: React.FC = () => {
       
       console.log("User object for Redux:", user);
       
-      dispatch(loginSuccess({ user: user, token: accessToken }));
+      dispatch(loginSuccess({ 
+        user: user, 
+        token: accessToken,
+        refreshToken: refreshToken 
+      }));
 
       // Chuyển hướng dựa trên vai trò người dùng và trang trước đó
       console.log("User role:", user.role);
@@ -116,6 +128,12 @@ const Login: React.FC = () => {
           {error && (
             <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
               {error}
+            </Alert>
+          )}
+
+          {sessionExpired && (
+            <Alert severity="warning" sx={{ mt: 2, width: '100%' }}>
+              Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại.
             </Alert>
           )}
 

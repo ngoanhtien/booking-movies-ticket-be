@@ -52,14 +52,36 @@ const AppRoutes: React.FC = () => {
         <Route path="profile" element={<UserProfile />} />
         <Route path="booking-history" element={<BookingHistory />} />
         
-        {/* Updated Booking Flow Routes */}
-        <Route path="select-cinema/:movieId" element={<CinemaSelection />} />
-        {/* Giả sử BookingPage sẽ xử lý các bước còn lại (chọn suất, ghế, đồ ăn, thanh toán) 
-            và sẽ lấy cinemaId từ URL hoặc context/state */}
-        <Route path="booking/:movieId/showtimes/:cinemaId" element={<BookingPage />} /> 
-        {/* Route cũ /booking/:movieId có thể được giữ lại hoặc loại bỏ nếu không cần nữa */}
-        {/* <Route path="booking/:movieId" element={<BookingPage />} /> */}
-        <Route path="booking" element={<BookingPage />} />{/* Dành cho trường hợp vào thẳng trang booking không qua movieId*/}
+        {/* Booking Flow Routes - Each booking-related route is protected */}
+        <Route path="select-cinema/:movieId" element={
+          <ProtectedRoute>
+            <CinemaSelection />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="booking/:movieId/showtimes/:cinemaId" element={
+          <ProtectedRoute>
+            <BookingPage />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="bookings/create/:movieId" element={
+          <ProtectedRoute>
+            <BookingPage />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="book-tickets/:movieId" element={
+          <ProtectedRoute>
+            <BookingPage directBooking={true} />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="booking" element={
+          <ProtectedRoute>
+            <BookingPage />
+          </ProtectedRoute>
+        } />
       </Route>
 
       <Route path="/admin" element={<AdminProtectedRoute>

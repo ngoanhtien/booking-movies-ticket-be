@@ -62,6 +62,16 @@
 3. Frontend-Backend Communication
    - **Proxy for Development**: The `admin-interface/package.json` includes a `"proxy": "http://localhost:8080"` setting. This allows the React development server to forward API calls made to relative paths (e.g., `/auth/login`) to the backend server running on port 8080, avoiding CORS issues and simplifying API call URIs in frontend code during development.
 
+4. Authentication Implementation
+   - JWT-based token authentication
+   - Token storage in localStorage
+   - Access token and refresh token pattern
+   - Token expiration tracking
+   - Axios interceptors for automatic token refresh
+   - 401 (Unauthorized) handling with graceful redirection
+   - Session expiration detection and messaging
+   - Booking form token validation before sensitive operations
+
 ## Dependencies
 1. Frontend
    ```json
@@ -106,6 +116,8 @@
    - Export file size
    - Vietnamese character support
    - Date format localization
+   - Token refresh timing and session expiration
+   - TypeScript type safety with axios interceptors
 
 2. Backend
    - Database performance
@@ -114,6 +126,7 @@
    - Vietnamese character encoding
    - Date handling
    - Memory usage
+   - JWT token expiration and refresh settings
 
 ## Tool Usage
 1. Development
@@ -165,7 +178,29 @@
            dialect: org.hibernate.dialect.PostgreSQLDialect
    ```
 
-3. React Query Configuration
+3. CORS Configuration
+   ```java
+   // WebConfig.java
+   @Configuration
+   public class WebConfig {
+       @Bean
+       public CorsConfigurationSource corsConfigurationSource() {
+           CorsConfiguration configuration = new CorsConfiguration();
+           configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "https://your-production-domain.com"));
+           configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+           configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+           configuration.setExposedHeaders(Collections.singletonList("Authorization"));
+           configuration.setAllowCredentials(true);
+           configuration.setMaxAge(3600L);
+           
+           UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+           source.registerCorsConfiguration("/**", configuration);
+           return source;
+       }
+   }
+   ```
+
+4. React Query Configuration
    ```typescript
    const queryClient = new QueryClient({
      defaultOptions: {
@@ -177,6 +212,65 @@
        },
      },
    });
+   ```
+
+5. Authentication Configuration
+   ```typescript
+   // axios.ts
+   import axios from 'axios';
+
+   const axiosInstance = axios.create();
+
+   axiosInstance.interceptors.request.use(
+     (config) => {
+       const token = localStorage.getItem('token');
+       if (token) {
+         config.headers.Authorization = `Bearer ${token}`;
+       }
+       return config;
+     },
+     (error) => Promise.reject(error)
+   );
+
+   // App.tsx or a dedicated auth interceptor file
+   axiosInstance.interceptors.response.use(
+     (response) => response,
+     async (error) => {
+       const originalRequest = error.config;
+       
+       // Handle 401 errors with token refresh
+       if (error.response.status === 401 && !originalRequest._retry) {
+         originalRequest._retry = true;
+         try {
+           const refreshToken = localStorage.getItem('refreshToken');
+           if (!refreshToken) {
+             throw new Error('No refresh token available');
+           }
+           
+           // Request new token
+           const response = await axios.post('/auth/refresh-token', { refreshToken });
+           const { accessToken } = response.data.result;
+           
+           // Update stored token
+           localStorage.setItem('token', accessToken);
+           
+           // Update authorization header and retry request
+           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+           return axios(originalRequest);
+         } catch (refreshError) {
+           // Clear auth data and redirect to login
+           localStorage.removeItem('token');
+           localStorage.removeItem('refreshToken');
+           window.location.href = '/login?expired=true';
+           return Promise.reject(refreshError);
+         }
+       }
+       
+       return Promise.reject(error);
+     }
+   );
+
+   export default axiosInstance;
    ```
 
 ## API Endpoints

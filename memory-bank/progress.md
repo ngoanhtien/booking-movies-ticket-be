@@ -4,6 +4,39 @@
 - Project initialization with React and TypeScript
 - Material-UI theme configuration
 - Basic routing structure
+- **API Circular Reference Resolution**:
+  - Successfully implemented multiple-level extraction strategy in movieService.ts
+  - Added standard, direct, deep search, and regex extraction methods as fallbacks
+  - Disabled Axios automatic JSON parsing with `transformResponse` to handle raw API responses
+  - Implemented cloning with targeted removal of circular references
+  - Added comprehensive error handling and fallback mechanisms
+  - Created type-safe extraction with detailed console logging
+  - Successfully displaying movies from API (Dune and others)
+  - Problem with circular references in the API response resolved
+- **Movie API Integration**:
+  - Updated movie data interface to handle multiple field naming conventions
+  - Implemented robust response normalization in movieService.ts
+  - Added recursive search functions to extract movie data from complex nested API responses
+  - Fixed template literal errors and missing closing tags in MovieDetails.tsx
+  - Added proper handling for string/array director field
+  - Updated MovieForm.tsx to convert between API and UI status values (SHOWING/ACTIVE)
+  - Created data normalization pattern for consistent handling of API data
+  - Implemented fallback logic for missing fields with sensible defaults
+  - Added comprehensive logging for API response troubleshooting
+  - Fixed TypeScript errors related to potentially undefined values
+- **CORS Configuration for Frontend-Backend Communication**:
+    - Created WebConfig.java with fully configured CorsConfigurationSource bean
+    - Set up allowed origins for development and production environments
+    - Configured comprehensive allowed methods, headers, and exposed headers
+    - Enabled credentials and set appropriate max age for preflight requests
+    - Applied configuration to all endpoints ensuring full backend access from frontend
+- **React Query Integration and TypeScript Fixes**:
+    - Updated useQuery implementation to use the object-based syntax required by @tanstack/react-query v5
+    - Fixed type issues with movie data structure in CinemaSelection.tsx
+    - Implemented proper error and loading states
+    - Added appropriate type definitions for API responses
+    - Used proper type assertions to handle complex data structures
+    - Corrected event handler types for Material-UI components like SelectChangeEvent
 - **User Authentication & Registration (Frontend & Backend)**:
     - Frontend forms for Login and Register (`Login.tsx`, `Register.tsx`).
     - Backend API endpoints for `/auth/login` and `/auth/register`.
@@ -24,6 +57,27 @@
     - UserLayout with integrated logout functionality in header
     - Proper cleanup of authentication tokens on logout
     - Debug logging for authentication flow troubleshooting
+- **Authentication Persistence Enhancements**:
+    - Fixed lost authentication state after page refresh that was forcing users to re-login
+    - Rewritten axios interceptors in App.tsx with proper token refresh logic to handle 401 errors correctly
+    - Optimized AuthCheck component to prevent redundant API calls when already authenticated
+    - Enhanced Redux authSlice to initialize authentication state directly from localStorage
+    - Implemented differentiated error handling for network issues vs. authentication errors
+    - Added proper TypeScript typing for axios interceptors and fixed TS2339 error with handlers property
+    - Improved token naming consistency between login response and localStorage
+    - Added fallback handling for different API response structures (result vs. data)
+    - Implemented request retry prevention with proper _retry flag to avoid infinite loops
+    - Added comprehensive logging for all authentication-related operations
+    - Enabled token refresh to automatically retry the original failed request after refresh
+- **Authentication in Booking Flow**:
+    - Enhanced BookingForm.tsx with token validation checks before initiating booking
+    - Implemented specific handling for 401 (Unauthorized) errors with user-friendly messages
+    - Added redirect to login with delay to allow users to read error messages
+    - Updated Login.tsx to detect and display when a session has expired
+    - Fixed TypeScript type errors with refreshToken and axios interceptors
+    - Improved user experience with clear feedback when authentication fails
+    - Added smooth transitions when redirecting due to authentication issues
+    - Implemented proper error handling for refresh token failures
 - Vietnamese Language Support
   - Translation configuration with i18next
   - Vietnamese translation file
@@ -153,6 +207,14 @@
     - Login Page: Removed unnecessary "auth.noAccount" text.
     - `Register.tsx`: Simplified by removing a `Typography` wrapper.
     - Translation Files: Added "logout" key for consistency.
+- **Movie List Display & Booking Flow Stability (LATEST FIX)**:
+    - **Backend Fixes**:
+        - Resolved JSON serialization issues caused by circular dependencies in JPA entities (`Movie`, `Category`, `Schedule`, `Review`, `Actor`) by strategically applying `@JsonIgnore` to back-references. This prevents infinite loops and ensures valid JSON output.
+        - Corrected the "concatenated JSON" / "double JSON" error by modifying `GlobalExceptionHandler` and `ExceptionHandlingFilter` to check `HttpServletResponse.isCommitted()` before attempting to write an error response body. This prevents appending a new JSON error to an already streaming/committed response.
+    - **Frontend Outcome**:
+        - `movieService.ts` now successfully parses the `/movie` API response.
+        - The movie list displays correctly in `MovieList.tsx`.
+        - The issue of being redirected to login when navigating to movie-related pages or attempting to book tickets has been resolved, leading to a more stable user experience.
 
 ## What's Left to Build
 1. Frontend Features
@@ -293,6 +355,10 @@
 
 ## Current Status
 - Admin interface basic structure is complete
+- **Frontend-Backend Communication successfully established**:
+    - CORS configuration implemented in WebConfig.java allows frontend to make API calls to the backend
+    - WebConfig bean properly configured with all required origins, methods, headers, and credentials
+    - Proxy configuration in package.json provides smooth local development experience
 - **Authentication and Registration flows are now fully functional and tested end-to-end.**
     - Issues related to frontend proxy, backend DTO mapping, API response parsing, and missing/me endpoint have been resolved.
     - Login redirection is now role-based (admin to admin dashboard, user to homepage).
@@ -546,4 +612,6 @@
 1. **Defensive Data Handling:** Always check data structures and provide default values to avoid runtime errors.
 2. **Data Normalization:** Create an adapter layer between API and UI to ensure consistent data.
 3. **Appropriate Logging:** Add API data logging for easier debugging.
+4. **Effective CORS Handling:** Using client-side proxy is a simple and effective solution.
+
 4. **Effective CORS Handling:** Using client-side proxy is a simple and effective solution. 

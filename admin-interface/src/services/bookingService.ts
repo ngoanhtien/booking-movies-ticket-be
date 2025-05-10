@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axiosInstance from '../utils/axios';
 
 // Sử dụng đường dẫn tương đối thay vì URL tuyệt đối để proxy hoạt động
 const API_URL = ''; // Tương đối với baseURL của axios
@@ -81,138 +81,186 @@ export interface BookingResponse {
   }[];
 }
 
+// Correct endpoints based on backend controller paths
+const BOOKING_ENDPOINTS = {
+  CREATE: '/payment/sepay-webhook',
+  CREATE_ALT: '/payment/bookings/create',
+  SIMULATE_PAYMENT: '/payment/simulate',
+  GET_DETAILS: '/payment',
+  TEST: '/payment/test-booking'
+};
+
 export const bookingService = {
   // Lấy danh sách suất chiếu theo phim
   getShowtimesByMovie: async (movieId: string) => {
+    const today = new Date().toISOString().split('T')[0];
     try {
-      // Sử dụng ngày hiện tại để lấy lịch chiếu phim
-      const today = new Date().toISOString().split('T')[0];
-      const response = await axios.get(`${API_URL}/showtime/${movieId}/by-date`, {
+      const response = await axiosInstance.get(`${API_URL}/showtime/${movieId}/by-date`, {
         params: { date: today }
       });
-      // Đảm bảo trả về đúng cấu trúc dữ liệu
-      return response.data;
+      
+      // Handle possible response structures
+      if (response.data?.result) {
+        return response.data.result;
+      } else if (Array.isArray(response.data)) {
+        return { data: response.data };
+      } else if (response.data?.data) {
+        return response.data;
+      }
+      
+      return { data: [] };
     } catch (error) {
-      console.error('Error fetching showtimes by movie:', error);
-      throw error;
+      console.error('Error fetching showtimes:', error);
+      return { data: [] };
     }
   },
 
   // Lấy danh sách suất chiếu theo phim VÀ RẠP
   getShowtimesByMovieAndCinema: async (movieId: string, cinemaId: string) => {
+    const today = new Date().toISOString().split('T')[0];
     try {
-      // Sử dụng endpoint filter với ngày hiện tại
-      const today = new Date().toISOString().split('T')[0];
-      const response = await axios.get(`${API_URL}/showtime/${movieId}/filter`, {
-        params: { 
+      const response = await axiosInstance.get(`${API_URL}/showtime/${movieId}/filter`, {
+        params: {
           date: today,
           cinemaId: cinemaId
         }
       });
-      // Đảm bảo trả về đúng cấu trúc dữ liệu
-      return response.data;
+      
+      // Handle possible response structures
+      if (response.data?.result) {
+        return response.data.result;
+      } else if (Array.isArray(response.data)) {
+        return { data: response.data };
+      } else if (response.data?.data) {
+        return response.data;
+      }
+      
+      return { data: [] };
     } catch (error) {
-      console.error('Error fetching showtimes by movie and cinema:', error);
-      throw error;
+      console.error('Error fetching filtered showtimes:', error);
+      return { data: [] };
     }
   },
 
   // Lấy danh sách tất cả suất chiếu có sẵn
   getAllShowtimes: async () => {
+    const today = new Date().toISOString().split('T')[0];
     try {
-      // Sử dụng ngày hiện tại để lấy lịch chiếu phim
-      const today = new Date().toISOString().split('T')[0];
-      // Vì không có endpoint /showtimes/available, nên sẽ sử dụng một phim và ngày cố định
-      // Đây là giải pháp tạm thời, cần thêm endpoint mới trong backend
-      const response = await axios.get(`${API_URL}/showtime/1/by-date`, {
+      const response = await axiosInstance.get(`${API_URL}/showtime/1/by-date`, {
         params: { date: today }
       });
-      return response.data;
+      
+      if (response.data?.result) {
+        return response.data.result;
+      } else if (Array.isArray(response.data)) {
+        return { data: response.data };
+      } else if (response.data?.data) {
+        return response.data;
+      }
+      return { data: [] };
     } catch (error) {
       console.error('Error fetching all showtimes:', error);
-      throw error;
+      return { data: [] };
     }
   },
 
   // Lấy sơ đồ ghế cho một suất chiếu
   getSeatLayout: async (scheduleId: number, roomId: number) => {
     try {
-      // Sửa API endpoint để phù hợp với controller
-      const response = await axios.get(`${API_URL}/showtime/${scheduleId}/${roomId}/detail`);
+      const response = await axiosInstance.get(`${API_URL}/showtime/${scheduleId}/${roomId}/detail`);
+      if (response.data?.result) {
+        return response.data.result;
+      } else if (response.data?.data) {
+        return response.data;
+      }
       return response.data;
     } catch (error) {
       console.error('Error fetching seat layout:', error);
-      throw error;
+      throw new Error('Could not fetch seat layout. Please try again.');
     }
   },
 
   // Lấy danh sách món ăn và đồ uống
   getFoodItems: async () => {
     try {
-      const response = await axios.get(`${API_URL}/foods`);
-      return response.data;
+      const response = await axiosInstance.get(`${API_URL}/foods`);
+      if (response.data?.result) {
+        return response.data.result;
+      } else if (Array.isArray(response.data)) {
+        return { data: response.data };
+      } else if (response.data?.data) {
+        return response.data;
+      }
+      return { data: [] };
     } catch (error) {
       console.error('Error fetching food items:', error);
-      throw error;
+      return { data: [] };
     }
   },
 
   // Đặt vé
   createBooking: async (bookingData: BookingRequest) => {
     try {
-      const response = await axios.post(`${API_URL}/bookings`, bookingData, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await axiosInstance.post(BOOKING_ENDPOINTS.CREATE, bookingData);
+      if (response.data?.result) {
+        return response.data.result;
+      }
       return response.data;
     } catch (error) {
-      console.error('Error creating booking:', error);
-      throw error;
+      try {
+        const response = await axiosInstance.post(BOOKING_ENDPOINTS.CREATE_ALT, bookingData);
+        if (response.data?.result) {
+          return response.data.result;
+        }
+        return response.data;
+      } catch (altError) {
+        console.error('All booking attempts failed:', altError);
+        throw new Error('Could not create booking. Please try again.');
+      }
     }
   },
 
   // Mô phỏng thanh toán (không cần tích hợp cổng thanh toán thật)
-  simulatePayment: async (bookingId: number, paymentMethod: string) => {
+  simulatePayment: async (paymentData: any) => {
     try {
-      // Đây là API giả lập thanh toán, không cần kết nối với cổng thanh toán thật
-      const response = await axios.post(`${API_URL}/payments/simulate`, {
-        bookingId,
-        paymentMethod,
-        amount: 0, // Số tiền sẽ được lấy từ booking
-        status: 'SUCCESS' // Luôn trả về thành công trong môi trường giả lập
-      });
+      const response = await axiosInstance.post(BOOKING_ENDPOINTS.SIMULATE_PAYMENT, paymentData);
+      if (response.data?.result) {
+        return response.data.result;
+      }
       return response.data;
     } catch (error) {
-      console.error('Error simulating payment:', error);
-      throw error;
+      console.error('Payment simulation failed:', error);
+      throw new Error('Payment simulation failed. Please try again.');
     }
   },
 
   // Lấy thông tin đặt vé
-  getBookingDetails: async (bookingId: number) => {
+  getBookingDetails: async (bookingId: string | number) => {
     try {
-      const response = await axios.get(`${API_URL}/bookings/${bookingId}`);
+      const response = await axiosInstance.get(`${BOOKING_ENDPOINTS.GET_DETAILS}/${bookingId}`);
       return response.data;
-    } catch (error) {
-      console.error('Error fetching booking details:', error);
-      throw error;
+    } catch (error: any) {
+      console.error(`Error fetching booking details for ID ${bookingId}:`, error.message);
+      throw new Error(`Could not fetch booking details: ${error.message}`);
     }
   },
 
   // Lấy lịch sử đặt vé của người dùng
   getUserBookings: async () => {
+    const response = await axiosInstance.get(`${API_URL}/user/bookings`);
+    return response.data;
+  },
+
+  // Test booking flow
+  testBookingFlow: async () => {
     try {
-      const response = await axios.get(`${API_URL}/user/bookings`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      console.log('Testing booking flow...');
+      const response = await axiosInstance.get(BOOKING_ENDPOINTS.TEST);
+      console.log('Test booking response:', response.data);
       return response.data;
-    } catch (error) {
-      console.error('Error fetching user booking history:', error);
-      throw error;
+    } catch (error: any) {
+      console.error('Error testing booking flow:', error.message);
+      throw new Error(`Booking test failed: ${error.message}`);
     }
   }
 };

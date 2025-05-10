@@ -71,6 +71,10 @@
    - Transaction management
    - Payment integration
    - Vietnamese localization
+   - Authentication validation in booking flow
+   - Token refresh during long booking sessions
+   - Session expiration handling with user feedback
+   - Graceful redirection to login when needed
 
 ## Design Patterns
 1. Frontend
@@ -95,6 +99,38 @@
      - Error handling
      - Loading states
      - Cache management
+   - API Data Normalization Pattern:
+     - Centralized response normalization in service files
+     - Data field mapping to handle different API naming conventions
+     - Recursive data search for complex nested response structures
+     - Fallback fields for handling missing or alternative data sources
+     - Type-safe conversion between incompatible data types (string vs string[])
+     - Component-level data adaptation with local variables
+     - Comprehensive logging for API response troubleshooting
+     - Default values for graceful handling of missing data
+   - **Circular Reference Resolution Pattern**:
+     - Multi-strategy extraction with progressively more aggressive approaches
+     - Disabled automatic JSON parsing using axios `transformResponse`
+     - Manual JSON parsing with error handling
+     - Object cloning to break circular references
+     - Targeted removal of specific circular paths (category.movies, schedule.movie)
+     - Depth-limited recursive search to prevent stack overflow
+     - RegEx-based data extraction as fallback strategy
+     - Static sample data as final fallback
+     - Detailed console logging of extraction process
+     - Set-based tracking of processed object IDs to prevent duplicates
+     - Direct extraction bypassing normalization when needed
+   - **Authentication Error Handling Pattern**:
+     - Pre-operation token validation to prevent unnecessary API calls
+     - Specific error handling for 401 (Unauthorized) status codes
+     - Differentiated handling of network vs. authentication errors
+     - Delayed redirection with user feedback for better UX
+     - Detection and display of expired session state
+     - Token refresh with automatic request retry
+     - Graceful degradation when refresh token fails
+     - Clear localStorage cleanup on authentication failure
+     - TypeScript-safe token handling with proper null/undefined checks
+     - Consistent messaging for authentication errors
 
 2. Backend
    - Repository pattern
@@ -129,6 +165,8 @@
    - BookingController → Frontend
    - Frontend → Booking Form
    - Frontend → Payment Integration
+   - Booking Form → Auth Check → Login (when session expires)
+   - Axios Interceptor → Token Refresh → Auth Service
 
 3. Branch Management
    - Branch → Cinema (Many-to-One)
@@ -151,6 +189,14 @@
    - Error boundaries → Components
    - Loading states → UI
    - Data → Charts
+
+4. Authentication Flow:
+   - Login Form → Auth Service → JWT Token
+   - JWT Token → LocalStorage + Redux Store
+   - API Requests → Axios Interceptor → Token Validation
+   - 401 Error → Token Refresh Attempt → Auth Service
+   - Token Refresh Success → Retry Original Request
+   - Token Refresh Failure → Redirect to Login
 
 ## Critical Implementation Paths
 1. Report Generation
@@ -177,7 +223,18 @@
    - Transaction handling
    - Validation rules
    - Error handling
-   - Vietnamese localization
+   - Authentication validation
+   - Session expiration handling
+   - Graceful redirection
+
+4. Authentication Path
+   - Login request → Token generation
+   - Token storage → Redux + localStorage
+   - API request → Axios interceptor
+   - Token validation → Auth check
+   - Token refresh → Access continuation
+   - Refresh failure → Login redirect
+   - User feedback → Clear messaging
 
 ## Security Patterns
 1. Authentication
@@ -193,6 +250,48 @@
    - XSS protection
    - CSRF protection
    - Vietnamese security messages
+
+3. CORS Configuration
+   - Configured CorsConfigurationSource bean in WebConfig
+   - Explicit allowed origins (development and production)
+   - Complete set of allowed methods (GET, POST, PUT, PATCH, DELETE, OPTIONS)
+   - Comprehensive allowed headers configuration
+   - Credentials enabled for cookie-based authentication
+   - Exposed Authorization header for token-based auth
+   - Appropriate max age for preflight requests
+   - Applied to all endpoints
+
+## Authentication Persistence Pattern
+1. Token Management
+   - JWT tokens stored in localStorage (`token` for access token, `refreshToken` for refresh token)
+   - Token-based authentication with Spring Security on backend
+   - Redux store synchronization with localStorage for application state persistence
+   - Initialized flag to track authentication state verification
+   - Token extraction and storage during login process
+   - Token cleanup during logout process
+
+2. Request Authorization
+   - Axios interceptors for automatic token inclusion in all API requests
+   - Consistent Authorization header format (`Bearer ${token}`)
+   - TypeScript typing for proper axios configuration
+   - Consolidated interceptor management in App.tsx for application-wide effect
+
+3. Token Refresh Flow
+   - Detection of 401 (Unauthorized) responses in interceptors
+   - Token refresh attempt using stored refresh token
+   - Request retry after successful token refresh
+   - Original request preservation during refresh process
+   - Request marking with _retry flag to prevent infinite refresh loops
+   - Fallback to login screen on refresh failure
+   - Error differentiation between auth issues and network problems
+
+4. Authentication Verification
+   - AuthCheck component for application-wide auth verification
+   - Conditional API calls based on existing Redux state
+   - Direct initialization from localStorage on application load
+   - Support for multiple API response formats (`result` or `data` fields)
+   - Role-based access control implemented with route protection
+   - Loading state displayed during authentication verification
 
 ## Performance Patterns
 1. Data Fetching
@@ -556,4 +655,4 @@ Layout
    - Form feedback
    - Status validation
    - Export validation
-   - API validation 
+   - API validation

@@ -48,7 +48,7 @@ const MovieForm: React.FC<MovieFormProps> = ({ movie, onSave, onCancel }) => {
       description: movie?.description || '',
       duration: movie?.duration || 0,
       releaseDate: movie?.releaseDate ? new Date(movie.releaseDate) : new Date(),
-      status: movie?.status || 'ACTIVE',
+      status: movie?.status === 'SHOWING' ? 'ACTIVE' : movie?.status === 'UPCOMING' ? 'INACTIVE' : (movie?.status || 'ACTIVE'),
       posterUrl: movie?.posterUrl || '',
       posterFile: null
     },

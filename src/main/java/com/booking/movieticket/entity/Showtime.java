@@ -2,6 +2,7 @@ package com.booking.movieticket.entity;
 
 import com.booking.movieticket.entity.base.BaseEntity;
 import com.booking.movieticket.entity.compositekey.ShowtimeId;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,11 +27,13 @@ public class Showtime extends BaseEntity {
     @MapsId("scheduleId")
     @ManyToOne
     @JoinColumn(name = "schedule_id", insertable = false, updatable = false)
+    @JsonIgnore
     private Schedule schedule;
 
     @MapsId("roomId")
     @ManyToOne
     @JoinColumn(name = "room_id", insertable = false, updatable = false)
+    @JsonIgnore
     private Room room;
 
     @Column

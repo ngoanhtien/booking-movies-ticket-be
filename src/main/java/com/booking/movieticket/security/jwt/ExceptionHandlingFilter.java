@@ -6,6 +6,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
@@ -15,6 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
+@Slf4j
 public class ExceptionHandlingFilter extends OncePerRequestFilter {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -27,15 +29,24 @@ public class ExceptionHandlingFilter extends OncePerRequestFilter {
         try {
             chain.doFilter(request, response);
         } catch (AuthenticationException ex) {
-            handleException(response, HttpStatus.UNAUTHORIZED, "Unauthorized: " + ex.getMessage());
+            log.warn("AuthenticationException caught in filter: {}", ex.getMessage());
+            handleException(response, HttpStatus.UNAUTHORIZED, "Unauthorized: " + ex.getMessage(), ex);
         } catch (AccessDeniedException ex) {
-            handleException(response, HttpStatus.FORBIDDEN, "Forbidden: " + ex.getMessage());
+            log.warn("AccessDeniedException caught in filter: {}", ex.getMessage());
+            handleException(response, HttpStatus.FORBIDDEN, "Forbidden: " + ex.getMessage(), ex);
         } catch (Exception ex) {
-            handleException(response, HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error: " + ex.getMessage());
+            log.error("Generic Exception caught in filter: {}", ex.getMessage(), ex);
+            handleException(response, HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error: " + ex.getMessage(), ex);
         }
     }
 
-    private void handleException(HttpServletResponse response, HttpStatus status, String message) throws IOException {
+    private void handleException(HttpServletResponse response, HttpStatus status, String message, Exception ex) throws IOException {
+        if (response.isCommitted()) {
+            log.warn("Response already committed in ExceptionHandlingFilter. Cannot write error JSON for: {}", ex.getMessage());
+            // If response is committed, we might not be able to set status/headers reliably,
+            // but we must not write to the body to avoid corruption.
+            return;
+        }
         response.setStatus(status.value());
         response.setContentType("application/json");
         ApiResponse<Object> apiResponse = new ApiResponse<>(status.value(), message);
