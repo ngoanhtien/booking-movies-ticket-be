@@ -108,29 +108,7 @@
      - Component-level data adaptation with local variables
      - Comprehensive logging for API response troubleshooting
      - Default values for graceful handling of missing data
-   - **Circular Reference Resolution Pattern**:
-     - Multi-strategy extraction with progressively more aggressive approaches
-     - Disabled automatic JSON parsing using axios `transformResponse`
-     - Manual JSON parsing with error handling
-     - Object cloning to break circular references
-     - Targeted removal of specific circular paths (category.movies, schedule.movie)
-     - Depth-limited recursive search to prevent stack overflow
-     - RegEx-based data extraction as fallback strategy
-     - Static sample data as final fallback
-     - Detailed console logging of extraction process
-     - Set-based tracking of processed object IDs to prevent duplicates
-     - Direct extraction bypassing normalization when needed
-   - **Authentication Error Handling Pattern**:
-     - Pre-operation token validation to prevent unnecessary API calls
-     - Specific error handling for 401 (Unauthorized) status codes
-     - Differentiated handling of network vs. authentication errors
-     - Delayed redirection with user feedback for better UX
-     - Detection and display of expired session state
-     - Token refresh with automatic request retry
-     - Graceful degradation when refresh token fails
-     - Clear localStorage cleanup on authentication failure
-     - TypeScript-safe token handling with proper null/undefined checks
-     - Consistent messaging for authentication errors
+     - **TypeScript Interface Synchronization**: Maintaining strict synchronization between frontend TypeScript interfaces (e.g., `Movie`, `Actor` in `types/movie.ts`) and the actual structure of backend API responses is crucial. This includes defining interfaces for nested objects and ensuring array types match the data (e.g., `Actor[]` vs `string[]`).
 
 2. Backend
    - Repository pattern
@@ -143,6 +121,12 @@
    - Excel export pattern
    - Entity relationship pattern
    - Status management pattern
+   - **JPA Entity Serialization Management Pattern (Jackson)**:
+     - To prevent circular dependencies and control JSON output from JPA entities:
+       - Use `@JsonIgnore` on one side of a bidirectional relationship if that data is not needed or to simply break a loop.
+       - Use `@JsonManagedReference` (typically on the "parent" or "owning" side, or the "one" side of a one-to-many) and `@JsonBackReference` (typically on the "child" or "referencing" side, or the "many" side) to allow serialization of both sides of a relationship while preventing infinite loops. Provide unique names to reference pairs (e.g., `@JsonManagedReference("bill-promotion")`) when multiple managed relationships exist from/to the same entities.
+     - This is critical for ensuring valid JSON is sent to the frontend and for controlling the payload size.
+   - **Resilient Exception Handling**: Ensure that global exception handlers (`@ControllerAdvice`) and filters (`OncePerRequestFilter`) check `HttpServletResponse.isCommitted()` before attempting to write a new error response body. This prevents errors like "Cannot call sendError() after the response has been committed" and avoids corrupting an already partially sent valid response with a subsequent JSON error object (leading to concatenated/invalid JSON).
 
 ## Component Relationships
 1. Reports and Analytics

@@ -1,58 +1,62 @@
 # Active Context
 
 ## Current Focus
-The primary focus has been on resolving critical issues preventing the movie list from displaying on the frontend and ensuring stable user authentication throughout the booking flow. With the movie list now successfully loading, the immediate next steps will involve thorough testing of the movie browsing and booking initiation paths.
+Với việc các lỗi nghiêm trọng liên quan đến hiển thị danh sách phim, chi tiết phim và các vấn đề JSON ở backend đã được giải quyết, trọng tâm hiện tại là đảm bảo tính ổn định toàn diện của các luồng duyệt phim và bắt đầu đặt vé. Đồng thời, việc tiếp tục cải thiện trải nghiệm người dùng theo MoMo Cinema UX và đảm bảo các chức năng admin hoạt động trơn tru cũng là ưu tiên.
 
-### Movie List Display & Booking Flow Stability (Resolved)
-
-- **Initial Problem**: Users were unable to see any movies in the movie list. Clicking on movie-related navigation often led to being redirected to the login page, even if authenticated.
+### Movie Details Display & Actor Info Fix (LATEST - Resolved)
+- **Problem**: Sau khi sửa lỗi JSON backend, trang chi tiết phim tuy tải được nhưng gặp lỗi `actor.charAt is not a function` ở frontend, ngăn cản việc hiển thị thông tin diễn viên.
 - **Investigation Path & Key Issues Addressed**:
-    1.  **Frontend Parsing Errors (`movieService.ts`)**:
-        - Initial logs indicated `movieService.ts` was failing to parse the API response for `/movie`, resulting in an empty movie list.
-        - This led to examining the `normalizeResponse` function and adding detailed logging to `fetchMovies`.
-    2.  **Malformed JSON from Backend (Root Cause)**:
-        - Further logs revealed `JSON.parse()` in `fetchMovies` was failing due to invalid JSON from the backend.
-        - **SyntaxError: Unexpected token '}', ...\",\"movie\":}]}}]}}]}}...**: This indicated a probable circular dependency issue during JSON serialization in the backend.
-        - **SyntaxError: Unexpected non-whitespace character after JSON at position X**: This indicated that a valid JSON object was being followed by another non-whitespace character (another JSON object), meaning two JSON objects were being concatenated.
-    3.  **Backend Circular Dependencies (JPA Entities)**:
-        - Identified bidirectional relationships in JPA entities (`Movie` <-> `Category`, `Movie` <-> `Schedule`, `Movie` <-> `Review`, `Movie` <-> `Actor`) as the cause for Jackson's serialization loops.
-        - **Fix**: Applied `@JsonIgnore` to the "back-reference" side of these relationships (e.g., on `Set<Movie> movies` in `Category.java`, and on `Movie movie` in `Schedule.java`, etc.) to break the serialization loops.
-    4.  **Backend Concatenated JSON Responses (Exception Handling)**:
-        - Discovered that `GlobalExceptionHandler` and `ExceptionHandlingFilter` were attempting to write a new JSON error response to the `HttpServletResponse` even if the original response (the movie list) had already started streaming.
-        - **Fix**: Modified both handlers to check `response.isCommitted()` before writing a new error body. If committed, they now log the error and return a response with the appropriate status code but no body (or simply return if in a filter context), preventing corruption of the output stream.
+    1.  **Frontend Type Mismatch**: Lỗi `actor.charAt` xảy ra do component `MovieDetails.tsx` xử lý `movie.actors` như một mảng các chuỗi (`string[]`), trong khi API (sau các thay đổi backend hoặc do cấu trúc gốc) có thể trả về một mảng các đối tượng diễn viên.
+    2.  **TypeScript Interface Inconsistency**: Interface `Movie` trong `admin-interface/src/types/movie.ts` định nghĩa `actors` là `string[]`, không khớp với dữ liệu thực tế có thể được trả về từ service.
+- **Solution Implemented**:
+    1.  **Define `Actor` Interface**: Tạo interface `Actor` mới trong `admin-interface/src/types/movie.ts` (ví dụ: `{ id: number | string; name: string; profilePath?: string; character?: string }`).
+    2.  **Update `Movie` Interface**: Thay đổi trường `actors` trong interface `Movie` từ `string[]` thành `Actor[]`.
+    3.  **Update `MovieDetails.tsx` Component**:
+        - Import interface `Actor`.
+        - Trong hàm `map` lặp qua `movie.actors`, cung cấp kiểu tường minh `(actor: Actor, index: number)`.
+        - Truy cập đúng thuộc tính của đối tượng `actor` (ví dụ: `actor.name`, `actor.profilePath`, `actor.character`) thay vì xử lý `actor` như một chuỗi.
+- **Outcome**: Lỗi `actor.charAt is not a function` đã được khắc phục. Thông tin diễn viên hiển thị chính xác trên trang chi tiết phim.
+
+### Movie List Display & Backend JSON Serialization (Previously Resolved)
+
+- **Initial Problem**: Users were unable to see any movies in the movie list. Clicking on movie-related navigation often led to being redirected to the login page, even if authenticated. API trả về JSON không hợp lệ.
+- **Investigation Path & Key Issues Addressed**:
+    1.  **Frontend Parsing Errors (`movieService.ts`)**: `JSON.parse()` thất bại.
+    2.  **Malformed JSON from Backend (Root Cause)**: Lỗi `Unexpected token ']', ... is not valid JSON` và `Unexpected non-whitespace character after JSON`.
+    3.  **Backend Circular Dependencies (JPA Entities)**: Mối quan hệ hai chiều trong JPA entities gây vòng lặp serialization.
+        - **Fix**: Áp dụng `@JsonManagedReference` và `@JsonBackReference` cho các mối quan hệ có vấn đề (ví dụ: `Bill` <-> `Promotion`, `User` <-> `Bill`, `User` <-> `Review`) để phá vỡ vòng lặp. Trước đó đã thử `@JsonIgnore` cho các mối quan hệ khác (`Movie` <-> `Category`, etc.).
+    4.  **Backend Concatenated JSON Responses (Exception Handling)**: `GlobalExceptionHandler` và `ExceptionHandlingFilter` ghi đè response đã commit.
+        - **Fix**: Kiểm tra `response.isCommitted()` trước khi ghi error body.
 - **Outcome**:
-    - The `/movie` endpoint now returns valid JSON.
-    - The frontend `movieService.ts` can successfully parse the movie list.
-    - Movies are correctly displayed in `MovieList.tsx`.
-    - The issue of being redirected to login when navigating to movie-related pages or trying to book has been resolved as a consequence of stable data loading and fixed authentication/JSON issues.
-
-### Enhancing the Booking Flow to Match MoMo Cinema UX (Previous Focus, partially addressed by above fixes)
-With the movie list and initial navigation stable, we can re-evaluate the MoMo Cinema UX enhancements.
-
-1.  **Movie List Page Enhancements** ✅ (Functionality restored, UI enhancements can proceed)
-    - Filtering, movie card displays, responsive views, visual transitions.
-2.  **Movie Details Page Enhancements** ✅ (Functionality restored)
-    - Cast/crew, embedded trailer, layout improvements.
-3.  **Cinema Selection Page Enhancements** (Blocked by movie list, now unblocked)
-    - City/region selection, date selection, cinema cards, showtime selection, dynamic pricing.
-4.  **Authentication in Booking Flow** ✅ (Significantly improved by recent JSON and exception handling fixes)
-    - Token validation, refresh mechanisms, 401 handling, session expiration.
+    - API endpoint `/movie` và `/movie/detail/{id}` trả về JSON hợp lệ.
+    - Frontend có thể parse và hiển thị danh sách phim và chi tiết phim.
 
 ### Next Steps:
-1.  **Thorough Testing**:
-    - Test movie listing, movie details, and initiation of booking flow extensively.
-    - Verify all authentication states and edge cases related to token refresh and session expiry.
-2.  **Continue MoMo Cinema UX Enhancements**:
-    - Resume work on Cinema Selection page.
-    - Enhance Seat Selection page with better visualization.
-    - Implement different seat types with varying prices.
-    - Improve Payment page with multiple payment options.
-    - Add booking confirmation with shareable/downloadable tickets.
-3.  **Backend Stability & Monitoring**:
-    - Monitor backend logs for any new exceptions that might have been masked by the previous aggressive error response writing. The improved exception handlers should now provide clearer logs if issues persist.
-4.  Address warnings from backend startup (MapStruct unmapped properties, Hibernate open-in-view) if they become relevant or cause issues.
+1.  **Thorough Testing & Validation**:
+    - Kiểm tra kỹ lưỡng tất cả các trang và chức năng liên quan đến phim (danh sách, chi tiết, các thành phần liên quan như review, lịch chiếu nếu có trên chi tiết phim).
+    - Đảm bảo không có lỗi console mới ở cả frontend và backend.
+2.  **Review Backend Entities & DTOs for API Consistency**:
+    - Đảm bảo cấu trúc dữ liệu `Actor` (và các entity khác như `Category`, `Schedule` nếu chúng được hiển thị trên trang chi tiết) trong `admin-interface/src/types/movie.ts` hoàn toàn khớp với những gì API thực sự trả về sau khi áp dụng các Jackson annotation.
+    - Nếu có sự không nhất quán, cập nhật frontend types hoặc DTOs/mapping ở backend.
+3.  **Continue MoMo Cinema UX Enhancements**:
+    - Tiếp tục làm việc trên trang Cinema Selection.
+4.  **Address any new findings or minor issues** that may have arisen from the recent fixes.
 
 ## Recent Changes (Detailed Chronologically in progress.md)
+
+- **Movie Details Actor Display Fix (LATEST)**:
+    - **Issue Addressed**: Lỗi `actor.charAt is not a function` trên trang chi tiết phim.
+    - **Frontend Fixes**:
+        - Định nghĩa interface `Actor` trong `types/movie.ts`.
+        - Cập nhật `Movie` interface để sử dụng `actors: Actor[]`.
+        - Sửa `MovieDetails.tsx` để import `Actor`, thêm kiểu tường minh `(actor: Actor)` trong `map`, và truy cập `actor.name`, `actor.profilePath`.
+    - **Impact**: Thông tin diễn viên hiển thị chính xác, trang chi tiết phim hoạt động ổn định.
+
+- **Backend JSON Serialization Fix (Bill, Promotion, User, Review)**:
+    - **Issue Addressed**: Lỗi `Unexpected token ']', ... is not valid JSON` khi API trả về dữ liệu có các entity này (ví dụ, có thể tiềm ẩn trong `fetchMovieDetails` nếu review chứa user, user chứa bill, bill chứa promotion).
+    - **Backend Fixes**:
+        - Áp dụng `@JsonManagedReference` và `@JsonBackReference` cho các mối quan hệ hai chiều giữa `Bill` & `Promotion`, `User` & `Bill`, `User` & `Review` để ngăn vòng lặp JSON.
+    - **Impact**: Cải thiện tính ổn định của các API endpoint có thể trả về các entity này, ngăn ngừa lỗi JSON không hợp lệ.
 
 - **Movie List Display and Booking Stability Fix (LATEST)**:
     - Addressed critical JSON parsing failures on the frontend by fixing root causes on the backend.

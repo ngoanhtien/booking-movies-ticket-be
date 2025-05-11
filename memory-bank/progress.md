@@ -207,14 +207,22 @@
     - Login Page: Removed unnecessary "auth.noAccount" text.
     - `Register.tsx`: Simplified by removing a `Typography` wrapper.
     - Translation Files: Added "logout" key for consistency.
-- **Movie List Display & Booking Flow Stability (LATEST FIX)**:
-    - **Backend Fixes**:
-        - Resolved JSON serialization issues caused by circular dependencies in JPA entities (`Movie`, `Category`, `Schedule`, `Review`, `Actor`) by strategically applying `@JsonIgnore` to back-references. This prevents infinite loops and ensures valid JSON output.
-        - Corrected the "concatenated JSON" / "double JSON" error by modifying `GlobalExceptionHandler` and `ExceptionHandlingFilter` to check `HttpServletResponse.isCommitted()` before attempting to write an error response body. This prevents appending a new JSON error to an already streaming/committed response.
-    - **Frontend Outcome**:
-        - `movieService.ts` now successfully parses the `/movie` API response.
+- **Movie List Display & Booking Flow Stability (LATEST FIXES)**:
+    - **Backend Fixes (JSON & Circular References)**:
+        - Resolved JSON serialization issues caused by circular dependencies in JPA entities.
+            - Strategically applied `@JsonIgnore` to back-references in entities like `Movie`, `Category`, `Schedule`, `Review`, `Actor` (initial approach for movie list).
+            - Applied `@JsonManagedReference` and `@JsonBackReference` to resolve circular dependencies involving `Bill`, `Promotion`, `User`, `Review` (secondary fix for broader stability, e.g., in movie details if reviews are deeply nested).
+        - Corrected the "concatenated JSON" / "double JSON" error by modifying `GlobalExceptionHandler` and `ExceptionHandlingFilter` to check `HttpServletResponse.isCommitted()` before attempting to write an error response body.
+    - **Frontend Fixes (Movie Details & Actor Display)**:
+        - Defined `Actor` interface in `types/movie.ts`.
+        - Updated `Movie` interface to use `actors: Actor[]`.
+        - Modified `MovieDetails.tsx` to import `Actor`, use type assertion `(actor: Actor)` in map function, and correctly access actor properties (`actor.name`, `actor.profilePath`, `actor.character`).
+    - **Outcome**:
+        - `movieService.ts` now successfully parses API responses for both movie list and movie details.
         - The movie list displays correctly in `MovieList.tsx`.
-        - The issue of being redirected to login when navigating to movie-related pages or attempting to book tickets has been resolved, leading to a more stable user experience.
+        - Movie details, including actor information, display correctly in `MovieDetails.tsx`.
+        - The issue of being redirected to login when navigating to movie-related pages or attempting to book tickets has been resolved.
+        - Overall stability of movie browsing and detail view significantly improved.
 
 ## What's Left to Build
 1. Frontend Features
@@ -493,19 +501,17 @@
 - **MoMo Cinema booking flow analysis completed.**
 - **Memory Bank updated to reflect new plans for booking flow enhancements.**
 
-## Known Issues
-- Some linter errors in TheaterLocations.tsx related to MenuItem imports
-- ~~MovieForm routes using placeholder props instead of actual data flow~~ (Resolved with MovieFormWrapper implementation)
-- ~~Backend startup failures due to Hibernate AnnotationException and QueryCreationException~~ (Resolved)
-- ~~Backend DDL errors due to NOT NULL constraint on `cinemas.address` with existing NULL data~~ (Resolved by making address nullable in Entity)
-- Booking form using mock data instead of API integration
-- Missing content for some placeholder components
-- Lack of proper error handling for offline mode
-- Limited mobile responsiveness for complex UIs like seat selection
-- Incomplete translations for some newer components
-- Missing confirmation dialogs for critical actions in some components
-- Limited filtering options in some DataGrid implementations
-- Lack of proper error handling for image upload failures in some components
+## Known Issues (And Resolutions)
+- **RESOLVED**: Malformed JSON / Concatenated JSON from backend API (`/movie`, `/movie/detail/{id}`).
+    - *Cause*: Circular dependencies in JPA entity serialization and improper exception handling.
+    - *Fix*: Applied `@JsonIgnore` / `@JsonManagedReference` / `@JsonBackReference` to entities. Modified exception handlers to check `response.isCommitted()`.
+- **RESOLVED**: `actor.charAt is not a function` error in `MovieDetails.tsx`.
+    - *Cause*: Frontend expecting `actors` to be `string[]` while it could be `Actor[]` (array of objects).
+    - *Fix*: Defined `Actor` interface, updated `Movie` interface, and refactored `MovieDetails.tsx` to handle `Actor` objects correctly.
+
+## Evolution of Project Decisions
+- **JSON Serialization Strategy**: Initially used `@JsonIgnore` broadly. Transitioned to a more fine-grained approach with `@JsonManagedReference` and `@JsonBackReference` for specific complex relationships (e.g., Bill-Promotion, User-Bill, User-Review) to ensure data needed by the frontend is available while still preventing cycles. This became necessary as more parts of the data model were exercised by API calls (like fetching movie details which might include reviews with user data).
+- **Frontend Type Definitions**: Reinforced the importance of keeping frontend TypeScript types (`types/movie.ts`) strictly in sync with the actual structure of API responses, especially after backend changes or when dealing with nested objects.
 
 ## Next Steps
 1.  **MoMo-Inspired Booking Flow Enhancements (User Interface - IMMEDIATE PRIORITY):**

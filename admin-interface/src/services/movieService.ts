@@ -215,7 +215,24 @@ export const fetchMovieDetails = async (id: string): Promise<Movie | null> => {
           status: movieData.status || '',
           categories: Array.isArray(movieData.categories) ? movieData.categories : [],
           schedules: Array.isArray(movieData.schedules) ? movieData.schedules : [],
-          actors: Array.isArray(movieData.actors) ? movieData.actors : []
+          actors: Array.isArray(movieData.actors) ? movieData.actors : [],
+          reviews: Array.isArray(movieData.reviews) ? movieData.reviews.map((apiReview: any) => ({
+            id: apiReview.id,
+            numberStar: apiReview.numberStar,
+            comment: apiReview.comment,
+            user: {
+                id: apiReview.user?.id,
+                username: apiReview.user?.username,
+                fullname: apiReview.user?.fullname,
+                avatarUrl: apiReview.user?.avatarUrl
+            },
+            numberLike: apiReview.numberLike,
+            createdBy: apiReview.createdBy,
+            createdAt: apiReview.createdAt,
+            lastModifiedBy: apiReview.lastModifiedBy,
+            lastModifiedAt: apiReview.lastModifiedAt,
+            isDeleted: apiReview.isDeleted
+          })) : []
         };
       }
       
@@ -239,7 +256,24 @@ export const fetchMovieDetails = async (id: string): Promise<Movie | null> => {
           status: responseData.status || '',
           categories: Array.isArray(responseData.categories) ? responseData.categories : [],
           schedules: Array.isArray(responseData.schedules) ? responseData.schedules : [],
-          actors: Array.isArray(responseData.actors) ? responseData.actors : []
+          actors: Array.isArray(responseData.actors) ? responseData.actors : [],
+          reviews: Array.isArray(responseData.reviews) ? responseData.reviews.map((apiReview: any) => ({
+            id: apiReview.id,
+            numberStar: apiReview.numberStar,
+            comment: apiReview.comment,
+            user: {
+                id: apiReview.user?.id,
+                username: apiReview.user?.username,
+                fullname: apiReview.user?.fullname,
+                avatarUrl: apiReview.user?.avatarUrl
+            },
+            numberLike: apiReview.numberLike,
+            createdBy: apiReview.createdBy,
+            createdAt: apiReview.createdAt,
+            lastModifiedBy: apiReview.lastModifiedBy,
+            lastModifiedAt: apiReview.lastModifiedAt,
+            isDeleted: apiReview.isDeleted
+          })) : []
         };
       }
     }

@@ -16,7 +16,7 @@ export interface Movie {
   ageRestriction?: string; // e.g., "13+", "18+", "P"
   ageLimit?: number; // API sử dụng ageLimit thay vì ageRestriction
   director?: string | string[]; // Có thể là string hoặc array từ API
-  actors?: string[];
+  actors?: Actor[];
   trailerUrl?: string;
   language?: string; // Ngôn ngữ phim
   schedules?: any[]; // Lịch chiếu
@@ -29,6 +29,39 @@ export interface Movie {
   isDeleted?: boolean;
   // Optional: Add other fields like genre, director, cast, etc. later if needed
   updatedAt?: string;
+  reviews?: Review[];
+}
+
+// Define Actor interface (assuming a basic structure)
+export interface Actor {
+  id: number | string; // Or just number/string depending on API
+  name: string;
+  profilePath?: string; // URL to actor's image
+  character?: string; // Character name in the movie
+  // Add other actor-specific fields if provided by API
+}
+
+// Define User for Review (simplified based on API log)
+export interface ReviewUser {
+  id: number;
+  username: string;
+  fullname?: string;
+  avatarUrl?: string;
+}
+
+// Define Review interface based on API log
+export interface Review {
+  id: number;
+  numberStar: number;
+  comment: string;
+  user: ReviewUser; // Simplified user type
+  numberLike?: number;
+  // Add other review fields if necessary (createdBy, createdAt, etc.)
+  createdBy?: string | null;
+  createdAt?: string;
+  lastModifiedBy?: string | null;
+  lastModifiedAt?: string;
+  isDeleted?: boolean;
 }
 
 export interface MovieFormData {

@@ -34,6 +34,7 @@
    - JWT 0.9.1
    - Apache POI 5.2.3
    - WebSocket 6.x
+   - **Jackson**: For JSON serialization/deserialization. Annotations like `@JsonManagedReference`, `@JsonBackReference`, `@JsonIgnore` are used to manage object relationships and prevent circular dependencies during serialization of JPA entities.
 
 ## Development Setup
 1. Frontend

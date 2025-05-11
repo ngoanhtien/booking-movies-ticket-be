@@ -2,6 +2,7 @@ package com.booking.movieticket.entity;
 
 import com.booking.movieticket.entity.base.BaseEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -38,6 +39,7 @@ public class Review extends BaseEntity {
     @JoinColumn(name = "movie_id", referencedColumnName = "movie_id")
     private Movie movie;
 
+    @JsonManagedReference("review-user")
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;

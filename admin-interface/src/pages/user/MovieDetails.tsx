@@ -36,6 +36,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import TheatersIcon from '@mui/icons-material/Theaters';
 import DirectBookingButton from '../../components/DirectBookingButton';
 import DebugPanel from '../../components/debug/DebugPanel';
+import { Actor } from '../../types';
 
 const MovieDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -353,15 +354,18 @@ const MovieDetails: React.FC = () => {
                   {t('movies.actors')}
                 </Typography>
                 <Grid container spacing={2}>
-                  {movie.actors.map((actor, index) => (
-                    <Grid item xs={12} sm={6} key={index}>
+                  {movie.actors.map((actor: Actor, index) => (
+                    <Grid item xs={12} sm={6} key={actor.id || index}>
                       <ListItem sx={{ px: 1, py: 0.5 }}>
                         <ListItemAvatar>
-                          <Avatar alt={actor}>
-                            {actor.charAt(0)}
+                          <Avatar alt={actor.name} src={actor.profilePath}>
+                            {!actor.profilePath && actor.name ? actor.name.charAt(0).toUpperCase() : null}
                           </Avatar>
                         </ListItemAvatar>
-                        <ListItemText primary={actor} />
+                        <ListItemText 
+                          primary={actor.name} 
+                          secondary={actor.character || null}
+                        />
                       </ListItem>
                     </Grid>
                   ))}
