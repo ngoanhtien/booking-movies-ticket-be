@@ -67,6 +67,9 @@ public class Room extends BaseEntity {
     private Branch branch;
 
     @OneToMany(mappedBy = "room")
+    private Set<Seat> seats = new HashSet<>();
+
+    @OneToMany(mappedBy = "room")
     private Set<Showtime> showtimes = new HashSet<>();
 
 }

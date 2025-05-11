@@ -25,12 +25,15 @@ public abstract class BranchMapper {
     @Autowired
     CinemaRepository cinemaRepository;
 
+    @Mapping(source = "cinemaId", target = "java(getCinemaFromId(cinemaId)")
     public abstract Branch convertRequestToBranch(BranchForCreateRequest request);
 
     public abstract void updateBranchFromRequest(BranchForUpdateRequest request, @MappingTarget Branch branch);
 
     public abstract BranchCreatedResponse convertEntityToBranchCreatedResponse(Branch branch);
 
+    @Mapping(source = "cinema.id", target = "cinemaId")
+    @Mapping(source = "cinema.name", target = "cinemaName")
     public abstract BranchResponse convertEntityToBranchResponse(Branch branch);
 
     public abstract BranchLocationDTO convertEntityToBranchLocationDTO(Branch branch);
