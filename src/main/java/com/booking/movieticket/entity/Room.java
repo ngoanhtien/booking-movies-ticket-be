@@ -59,9 +59,6 @@ public class Room extends BaseEntity {
     @Column(name = "aisle_height")
     private Integer aisleHeight;
 
-    @Column(name = "double_seat_rows")
-    private Integer doubleSeatRowNumbers;
-
     @ManyToOne
     @JoinColumn(name = "branch_id", referencedColumnName = "branch_id")
     private Branch branch;

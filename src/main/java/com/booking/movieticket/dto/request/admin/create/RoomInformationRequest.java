@@ -30,7 +30,6 @@ public class RoomInformationRequest {
     private Integer aislePosition;
     private Integer aisleWidth;
     private Integer aisleHeight;
-    private Integer doubleSeatRowNumbers;
     @NotBlank(message = "Branch ID must not be blank.")
     private Long branchId;
 }

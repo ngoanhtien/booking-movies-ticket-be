@@ -13,6 +13,4 @@ public class GenerateSeatsRequest {
     private Long roomId;
 
     private List<CustomSeatDTO> customSeats;
-
-    private Boolean overrideExistingSeats = true;
 }
