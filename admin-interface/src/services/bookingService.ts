@@ -95,19 +95,25 @@ export const bookingService = {
   getShowtimesByMovie: async (movieId: string) => {
     const today = new Date().toISOString().split('T')[0];
     try {
-      const response = await axiosInstance.get(`${API_URL}/showtime/${movieId}/by-date`, {
+      const response = await axiosInstance.get(`${API_URL}/api/v1/showtime/${movieId}/by-date`, {
         params: { date: today }
       });
       
+      console.log(`[bookingService.getShowtimesByMovie] Raw response for movie ${movieId}, date ${today}:`, response.data);
+
       // Handle possible response structures
       if (response.data?.result) {
+        console.log(`[bookingService.getShowtimesByMovie] Using response.data.result:`, response.data.result);
         return response.data.result;
       } else if (Array.isArray(response.data)) {
+        console.warn(`[bookingService.getShowtimesByMovie] Response data is an array, wrapping:`, response.data);
         return { data: response.data };
       } else if (response.data?.data) {
+        console.warn(`[bookingService.getShowtimesByMovie] Using response.data.data:`, response.data.data);
         return response.data;
       }
       
+      console.warn(`[bookingService.getShowtimesByMovie] Unexpected response structure, returning empty. Response:`, response.data);
       return { data: [] };
     } catch (error) {
       console.error('Error fetching showtimes:', error);
@@ -119,7 +125,7 @@ export const bookingService = {
   getShowtimesByMovieAndCinema: async (movieId: string, cinemaId: string) => {
     const today = new Date().toISOString().split('T')[0];
     try {
-      const response = await axiosInstance.get(`${API_URL}/showtime/${movieId}/filter`, {
+      const response = await axiosInstance.get(`${API_URL}/api/v1/showtime/${movieId}/filter`, {
         params: {
           date: today,
           cinemaId: cinemaId
@@ -146,7 +152,7 @@ export const bookingService = {
   getAllShowtimes: async () => {
     const today = new Date().toISOString().split('T')[0];
     try {
-      const response = await axiosInstance.get(`${API_URL}/showtime/1/by-date`, {
+      const response = await axiosInstance.get(`${API_URL}/api/v1/showtime/1/by-date`, {
         params: { date: today }
       });
       
@@ -167,7 +173,7 @@ export const bookingService = {
   // Lấy sơ đồ ghế cho một suất chiếu
   getSeatLayout: async (scheduleId: number, roomId: number) => {
     try {
-      const response = await axiosInstance.get(`${API_URL}/showtime/${scheduleId}/${roomId}/detail`);
+      const response = await axiosInstance.get(`${API_URL}/api/v1/showtime/${scheduleId}/${roomId}/detail`);
       if (response.data?.result) {
         return response.data.result;
       } else if (response.data?.data) {
@@ -183,7 +189,7 @@ export const bookingService = {
   // Lấy danh sách món ăn và đồ uống
   getFoodItems: async () => {
     try {
-      const response = await axiosInstance.get(`${API_URL}/foods`);
+      const response = await axiosInstance.get(`${API_URL}/api/v1/foods`);
       if (response.data?.result) {
         return response.data.result;
       } else if (Array.isArray(response.data)) {
@@ -247,7 +253,7 @@ export const bookingService = {
 
   // Lấy lịch sử đặt vé của người dùng
   getUserBookings: async () => {
-    const response = await axiosInstance.get(`${API_URL}/user/bookings`);
+    const response = await axiosInstance.get(`${API_URL}/api/v1/user/bookings`);
     return response.data;
   },
 

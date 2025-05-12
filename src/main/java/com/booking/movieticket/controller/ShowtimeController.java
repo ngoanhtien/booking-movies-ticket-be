@@ -33,7 +33,7 @@ import com.booking.movieticket.entity.enums.TypeSeat;
 
 @Slf4j
 @RestController
-@RequestMapping("/showtime")
+@RequestMapping("/api/v1/showtime")
 @CrossOrigin(origins = "*")
 public class ShowtimeController {
 
@@ -251,7 +251,7 @@ public class ShowtimeController {
     }
     
     // Public endpoint để thêm lịch chiếu cho tất cả phim đang hoạt động
-    @GetMapping("/public/add-showtimes-for-active-movies")
+    @PostMapping("/public/add-showtimes-for-active-movies")
     @Transactional
     public ResponseEntity<ApiResponse<?>> addShowtimesForActiveMoviesPublic() {
         log.info("Attempting to call /showtime/public/add-showtimes-for-active-movies - STEP 1: UNCOMMENTING MOVIE FETCH");

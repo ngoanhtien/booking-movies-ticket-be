@@ -234,6 +234,21 @@
         - The issue of being redirected to login when navigating to movie-related pages or attempting to book tickets has been resolved.
         - Overall stability of movie browsing and detail view significantly improved.
 
+- **Showtime Generation and Display Fully Functional (LATEST)**:
+    - **Issue Addressed**: Users unable to see showtimes on UI, despite backend indicating showtimes were generated/existed. This was due to a cascade of issues related to API path consistency and security configurations.
+    - **Backend API Path and Security Fixes**:
+        - **`AuthenticationFilter.java`**: Updated `publicPaths` to include the `/api/v1/` prefix for all relevant public endpoints (e.g., `/api/v1/showtime/public/**`, `/api/v1/auth/login`, etc.) to ensure correct identification of public paths and prevent premature token validation errors (401).
+        - **`SecurityConfiguration.java`**: Updated `requestMatchers` for `permitAll()` rules to include the `/api/v1/` prefix for all corresponding public endpoints (e.g., `/api/v1/showtime/public/**`, `/api/v1/showtime/*/by-date`, `/api/v1/movie/**`, `/api/v1/auth/**`, etc.). This resolved 403 errors caused by `AuthorizationFilter` when `permitAll()` paths didn't match the actual request URI.
+        - **`ShowtimeController.java`**:
+            - Changed class-level `@RequestMapping` from `"/showtime"` to `"/api/v1/showtime"` to align with the `/api/v1/` convention.
+            - Changed method-level mapping for `addShowtimesForActiveMoviesPublic` from `@GetMapping` to `@PostMapping` to match the intended HTTP method.
+            - These changes resolved `NoResourceFoundException` (which appeared as a 500 error) for the `POST /api/v1/showtime/public/add-showtimes-for-active-movies` endpoint.
+    - **Outcome**:
+        - The endpoint `POST /api/v1/showtime/public/add-showtimes-for-active-movies` is now correctly mapped, secured, and callable. It successfully executes its logic (and reports "SKIPPED" if showtimes already exist).
+        - The endpoint `GET /api/v1/showtime/{movieId}/by-date` is now correctly configured as `permitAll()` and returns showtime data successfully when called without authentication (e.g., from Postman or UI).
+        - Showtimes are now correctly displayed on the user interface.
+    - **Key Learnings**: Reinforced the critical importance of API path and HTTP method consistency across controller mappings, security filter configurations (`AuthenticationFilter`, `SecurityConfiguration`), and frontend API calls. Identified common error patterns (401, 403, `NoResourceFoundException`) related to security and mapping misconfigurations.
+
 - **Booking Redirection from Movie List (LATEST - Workaround Applied)**:
     - **Symptom**: Clicking "Book Ticket" on `MovieList.tsx` redirected to login, despite valid session. Issue did not occur from `MovieDetails.tsx`.
     - **Investigation**: Backend logs showed a 401 Unauthorized for `GET /api/v1/showtime/{movieId}/by-date` (a `permitAll()` endpoint) when a valid JWT was present. The `AuthenticationFilter` processed the token but failed to establish a valid `SecurityContext` for this specific `permitAll()` scenario with an existing token.

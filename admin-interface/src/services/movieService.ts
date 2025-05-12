@@ -416,7 +416,7 @@ export const fetchShowtimesByMovie = async (movieId: string, date?: string): Pro
     // The API endpoint from network logs was /showtime/{id}/by-date
     // It did not seem to take a date parameter in the query string in that specific log,
     // but it's common for such an endpoint to accept one. Adding it as optional.
-    const endpoint = date ? `${API_BASE_URL}/showtime/${movieId}/by-date?date=${date}` : `${API_BASE_URL}/showtime/${movieId}/by-date`;
+    const endpoint = date ? `${API_BASE_URL}/api/v1/showtime/${movieId}/by-date?date=${date}` : `${API_BASE_URL}/api/v1/showtime/${movieId}/by-date`;
     console.log(`[fetchShowtimesByMovie] Requesting ${endpoint}`);
     const response = await axios.get(endpoint);
     

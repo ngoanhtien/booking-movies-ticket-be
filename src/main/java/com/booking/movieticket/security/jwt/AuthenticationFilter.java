@@ -30,22 +30,22 @@ public class AuthenticationFilter extends OncePerRequestFilter {
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     private final List<String> publicPaths = Arrays.asList(
-            "/auth/login",
-            "/auth/register",
-            "/auth/refresh-token",
-            "/auth/refresh",
-            "/account/resetPassword",
-            "/payment/sepay-webhook",
-            "/payment/**",
-            "/bookings/**",
-            "/booking/**",
-            "/foods/**",
-            "/movie/**",
-            "/cinema/**",
-            "/showtime/*/by-date",
-            "/showtime/*/filter",
-            "/showtime/*/*/detail",
-            "/showtime/public/**"
+            "/api/v1/auth/login",
+            "/api/v1/auth/register",
+            "/api/v1/auth/refresh-token",
+            "/api/v1/auth/refresh",
+            "/api/v1/account/resetPassword",
+            "/api/v1/payment/sepay-webhook",
+            "/api/v1/payment/**",
+            "/api/v1/bookings/**",
+            "/api/v1/booking/**",
+            "/api/v1/foods/**",
+            "/api/v1/movie/**",
+            "/api/v1/cinema/**",
+            "/api/v1/showtime/*/by-date",
+            "/api/v1/showtime/*/filter",
+            "/api/v1/showtime/*/*/detail",
+            "/api/v1/showtime/public/**"
     );
 
     public AuthenticationFilter(TokenProvider tokenProvider) {

@@ -30,7 +30,6 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import {
   bookingService,
-  Showtime,
   Seat,
   SeatStatus,
   FoodItem,
@@ -38,6 +37,7 @@ import {
 } from '../../services/bookingService';
 import { useTheme } from '@mui/material/styles';
 import axiosInstance from '../../utils/axios';
+import { MovieShowtimesResponse, BranchWithShowtimes, ShowtimeDetail } from '../../types/showtime';
 
 interface ApiResponse<T> {
   result?: T;
@@ -110,9 +110,10 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [bookingCompleted, setBookingCompleted] = useState(false);
   const [bookingDetails, setBookingDetails] = useState<FinalBookingDetails | null>(null);
+  const [currentMovieInfo, setCurrentMovieInfo] = useState<{id: number | null, name: string | null}>({id: null, name: null});
 
   // State thay thế mock data với API data
-  const [showtimes, setShowtimes] = useState<Showtime[]>([]);
+  const [showtimeBranches, setShowtimeBranches] = useState<BranchWithShowtimes[]>([]);
   const [seatLayout, setSeatLayout] = useState<Seat[][]>([]); 
   const [availableFoodItems, setAvailableFoodItems] = useState<FoodItem[]>([]);
 
@@ -292,40 +293,39 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
   // Fetch movie details and showtimes if movieId is provided
   useEffect(() => {
     const fetchShowtimesData = async () => {
+      if (!movieId) { // Nếu không có movieId, không fetch và reset
+        setShowtimeBranches([]);
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
         setError(null); // Reset error state
-        let response;
         
-        if (movieId && cinemaId) {
-          // Nếu có movieId và cinemaId, gọi API lấy showtimes theo phim và rạp
-          response = await bookingService.getShowtimesByMovieAndCinema(movieId, cinemaId);
-        } else if (movieId) {
-          // Nếu chỉ có movieId, gọi API lấy showtimes theo phim
-          response = await bookingService.getShowtimesByMovie(movieId);
-        } else {
-          // Nếu không có cả hai, lấy tất cả showtimes có sẵn (hoặc có thể báo lỗi/yêu cầu chọn phim/rạp)
-          // Hiện tại, để đơn giản, vẫn gọi getAllShowtimes nếu không có movieId.
-          // Trong một flow hoàn chỉnh, bước này nên được xử lý trước khi vào BookingForm nếu không có đủ thông tin.
-          response = await bookingService.getAllShowtimes(); 
-        }
+        const apiResponse: MovieShowtimesResponse | null = await bookingService.getShowtimesByMovie(movieId);
         
-        if (response?.data) {
-          setShowtimes(response.data);
+        if (apiResponse && apiResponse.branches && Array.isArray(apiResponse.branches)) {
+          console.log('[BookingForm] Fetched showtime branches:', apiResponse.branches);
+          setShowtimeBranches(apiResponse.branches);
+          setCurrentMovieInfo({ id: apiResponse.movieId, name: apiResponse.movieName });
         } else {
-          setShowtimes([]); // Nếu không có data, set mảng rỗng
+          console.warn('[BookingForm] No branches found in API response or invalid structure:', apiResponse);
+          setShowtimeBranches([]); 
+          setCurrentMovieInfo({id: null, name: null});
         }
       } catch (err: any) {
-        console.error('Error fetching showtimes:', err);
+        console.error('Error fetching showtimes in BookingForm:', err);
         setError(err.message || 'Error fetching showtimes');
-        setShowtimes([]); // Set mảng rỗng khi có lỗi
+        setShowtimeBranches([]); // Set mảng rỗng khi có lỗi
+        setCurrentMovieInfo({id: null, name: null});
       } finally {
         setLoading(false);
       }
     };
     
     fetchShowtimesData();
-  }, [movieId, cinemaId]); // Thêm cinemaId vào dependencies
+  }, [movieId]); // Bỏ cinemaId khỏi dependencies nếu getShowtimesByMovie không dùng nó
+  // Nếu getShowtimesByMovieAndCinema được dùng dựa trên cinemaId, thì cinemaId cần ở lại dependencies.
 
   // Fetch seat layout when showtimeId changes and we are on the seat selection step
   useEffect(() => {
@@ -333,9 +333,30 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
       if (formik.values.showtimeId && activeStep === 1) {
         try {
           setLoading(true);
-          const selectedShowtime = showtimes.find(st => st.id === formik.values.showtimeId);
-          if (!selectedShowtime) {
-            throw new Error('Không tìm thấy thông tin suất chiếu');
+          // Cần tìm đúng ShowtimeDetail từ showtimeBranches
+          let selectedShowtimeDetail: ShowtimeDetail | null = null;
+          let selectedBranchName: string | null = null; // Để lấy thông tin giá nếu cần
+
+          for (const branch of showtimeBranches) {
+            const foundShowtime = branch.showtimes.find(
+              // Giả sử formik.values.showtimeId lưu trữ một ID duy nhất, ví dụ: `${scheduleId}-${roomId}`
+              // Hoặc nếu showtimeId chỉ là scheduleId, cần đảm bảo nó là duy nhất trong context này
+              // Hiện tại, API response không có 'id' trực tiếp trên ShowtimeDetail.
+              // Chúng ta cần quyết định formik.values.showtimeId sẽ lưu gì.
+              // Ví dụ, nếu nó lưu scheduleId (là number):
+              // st => st.scheduleId === parseInt(formik.values.showtimeId, 10) 
+              // Hoặc nếu nó là một string kết hợp:
+              st => `${st.scheduleId}-${st.roomId}` === formik.values.showtimeId
+            );
+            if (foundShowtime) {
+              selectedShowtimeDetail = foundShowtime;
+              selectedBranchName = branch.branchName; // Ví dụ
+              break;
+            }
+          }
+          
+          if (!selectedShowtimeDetail) {
+            throw new Error('Không tìm thấy thông tin suất chiếu đã chọn trong dữ liệu đã tải.');
           }
 
           // *** MOCK SEAT LAYOUT DATA WITH TYPES AND PRICES ***
@@ -349,7 +370,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
             for (let i = 1; i <= seatsPerRow; i++) {
               let status = SeatStatus.Available;
               let type: Seat['type'] = 'REGULAR';
-              let price = selectedShowtime.price || 70000; // Base price from showtime
+              let price = 70000; // Ví dụ giá cố định, vì ShowtimeDetail không có giá trực tiếp
 
               // Randomly assign some booked seats
               if (Math.random() < 0.2) status = SeatStatus.Booked;
@@ -425,7 +446,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
     };
 
     fetchSeatLayout();
-  }, [formik.values.showtimeId, activeStep, showtimes]); // Ensure all dependencies are listed
+  }, [formik.values.showtimeId, activeStep, showtimeBranches]); // Ensure all dependencies are listed
 
   // Effect to load food/drink items when entering step 2
   useEffect(() => {
@@ -454,8 +475,25 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
 
   // Helper function to find selected showtime details
   const getSelectedShowtimeDetails = () => {
-    if (!formik.values.showtimeId || showtimes.length === 0) return null;
-    return showtimes.find(st => st.id === formik.values.showtimeId);
+    if (!formik.values.showtimeId || showtimeBranches.length === 0) return null;
+    
+    for (const branch of showtimeBranches) {
+      const showtime = branch.showtimes.find(
+        st => `${st.scheduleId}-${st.roomId}` === formik.values.showtimeId
+      );
+      if (showtime) {
+        return {
+          scheduleId: showtime.scheduleId,
+          roomId: showtime.roomId,
+          roomName: showtime.roomName,
+          time: showtime.scheduleTime, 
+          movieName: currentMovieInfo.name,
+          movieId: currentMovieInfo.id,
+          branchName: branch.branchName,
+        };
+      }
+    }
+    return null;
   };
 
   // Helper function to get details of selected food items
@@ -504,7 +542,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
   // Calculate total price
   const calculateTotalPrice = () => {
     let total = 0;
-    const currentShowtime = showtimes.find(st => st.id === formik.values.showtimeId);
+    const currentShowtime = showtimeBranches.length > 0 ? 
+      showtimeBranches.find(b => b.showtimes.some(s => `${s.scheduleId}-${s.roomId}` === formik.values.showtimeId))
+      : null;
 
     // Calculate seat price
     formik.values.seatIds.forEach(seatId => {
@@ -849,10 +889,10 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
             {/* END DEBUG TOOLS */}
 
             <Typography variant="h6" gutterBottom>{t('booking.selectShowtime')}</Typography>
-            {showtimes.length === 0 && !loading && (
+            {showtimeBranches.length === 0 && !loading && (
               <Typography sx={{my: 2}}>{t('booking.noShowtimes', 'No showtimes available for this movie or selection.')}</Typography>
             )}
-            {showtimes.length > 0 && (
+            {showtimeBranches.length > 0 && (
               <FormControl component="fieldset" error={formik.touched.showtimeId && Boolean(formik.errors.showtimeId)} fullWidth>
                 <InputLabel id="showtime-select-label" shrink={!!formik.values.showtimeId} sx={{position: 'static', transform: 'none', mb:1}}>
                   {t('booking.availableShowtimes', 'Available Showtimes')}
@@ -866,30 +906,43 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
                   }}
                 >
                   <List>
-                    {showtimes.map((showtime) => (
-                      <React.Fragment key={showtime.id}>
-                        <ListItem 
-                          button 
-                          onClick={() => formik.setFieldValue('showtimeId', showtime.id)}
-                          selected={formik.values.showtimeId === showtime.id}
-                          sx={{ 
-                            borderRadius: 1, 
-                            mb: 1, 
-                            border: '1px solid', 
-                            borderColor: formik.values.showtimeId === showtime.id ? 'primary.main' : 'divider',
-                            '&:hover': {
-                              borderColor: 'primary.light',
-                            }
-                          }}
-                        >
-                          <Radio value={showtime.id} sx={{mr: 1}} checked={formik.values.showtimeId === showtime.id} />
-                          <ListItemText 
-                            primary={`${showtime.time} - ${showtime.roomName}`} 
-                            secondary={t('booking.seatsAvailable', '{{count}} seats available', { count: showtime.availableSeats })} 
-                          />
-                        </ListItem>
-                        <Divider sx={{mb: 1, display: showtimes.indexOf(showtime) === showtimes.length -1 ? 'none' : 'block' }}/>
-                      </React.Fragment>
+                    {showtimeBranches.map((branch) => (
+                      <Box key={branch.branchId} sx={{ mb: 2 }}>
+                        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
+                          {branch.branchName}
+                        </Typography>
+                        <List sx={{pt: 0}}>
+                          {branch.showtimes.map((showtime: ShowtimeDetail) => (
+                            <React.Fragment key={`${branch.branchId}-${showtime.scheduleId}-${showtime.roomId}`}>
+                              <ListItem 
+                                button 
+                                onClick={() => formik.setFieldValue('showtimeId', `${showtime.scheduleId}-${showtime.roomId}`)}
+                                selected={formik.values.showtimeId === `${showtime.scheduleId}-${showtime.roomId}`}
+                                sx={{ 
+                                  borderRadius: 1, 
+                                  mb: 1, 
+                                  border: '1px solid', 
+                                  borderColor: formik.values.showtimeId === `${showtime.scheduleId}-${showtime.roomId}` ? 'primary.main' : 'divider',
+                                  '&:hover': {
+                                    borderColor: 'primary.light',
+                                  }
+                                }}
+                              >
+                                <Radio 
+                                  value={`${showtime.scheduleId}-${showtime.roomId}`}
+                                  checked={formik.values.showtimeId === `${showtime.scheduleId}-${showtime.roomId}`} 
+                                  sx={{mr: 1}} 
+                                />
+                                <ListItemText 
+                                  primary={`${showtime.scheduleTime} - ${showtime.roomName} (${showtime.roomType})`} 
+                                  secondary={t('booking.roomTypeIs', `Type: ${showtime.roomType}`)}
+                                />
+                              </ListItem>
+                              {branch.showtimes.indexOf(showtime) < branch.showtimes.length - 1 && <Divider sx={{mb: 1}}/>}
+                            </React.Fragment>
+                          ))}
+                        </List>
+                      </Box>
                     ))}
                   </List>
                 </RadioGroup>
@@ -1129,7 +1182,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
               {getSelectedShowtimeDetails() ? (
                 <>
                   <ListItemText 
-                    primary={t('booking.summary.movie', 'Movie: TODO')} // TODO: Get Movie Name if available
+                    primary={t('booking.summary.movie', 'Movie: {{movieName}}', { movieName: currentMovieInfo.name || 'Selected Movie' })}
                     secondary={`${t('booking.summary.time', 'Time')}: ${getSelectedShowtimeDetails()?.time} | ${t('booking.summary.room', 'Room')}: ${getSelectedShowtimeDetails()?.roomName}`}
                   />
                 </>
@@ -1200,59 +1253,118 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
   };
 
   return (
-    <Paper sx={{ p: { xs: 2, sm: 3, md: 4 }, borderRadius: 3, boxShadow: '0 8px 30px 0 rgba(0,0,0,0.08)' }}>
-      <Typography variant="h4" fontWeight="700" color="text.primary" sx={{ mb: 4, textAlign: 'center' }}>
-        {t('booking.title', 'Book Your Tickets')}
-      </Typography>
-      
-      {!bookingCompleted && (
-        <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-          {steps.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
+    <Box sx={{ width: '100%', p: directBooking ? 0 : 3 }}>
+      {!directBooking && (
+        <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
+          {t('booking.title', 'Book Your Movie Ticket')}
+        </Typography>
       )}
-      
-      <form onSubmit={formik.handleSubmit}>
-        {loading && <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}><CircularProgress /></Box>}
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        {successMessage && !bookingCompleted && <Alert severity="success" sx={{ mb: 2 }}>{successMessage}</Alert>}
-        
-        {renderStepContent(activeStep)}
+      <Paper sx={{ p: directBooking ? 2 : 3, borderRadius: 2 }} elevation={directBooking ? 0 : 3}>
+        {!bookingCompleted ? (
+          <form onSubmit={formik.handleSubmit}>
+            {!directBooking && (
+              <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
+                {steps.map((label) => (
+                  <Step key={label}>
+                    <StepLabel>{t(label, label)}</StepLabel>
+                  </Step>
+                ))}
+              </Stepper>
+            )}
+            
+            {loading && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+                <CircularProgress />
+              </Box>
+            )}
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+            
+            {renderStepContent(activeStep)}
 
-        {!bookingCompleted && (
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-            <Button
-              disabled={activeStep === 0}
-              onClick={handleBack}
-              sx={{ borderRadius: 2, textTransform: 'none' }}
-            >
-              {t('common.back', 'Back')}
-            </Button>
-            {activeStep === steps.length - 1 ? (
+            {!directBooking && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+                <Button
+                  disabled={activeStep === 0}
+                  onClick={handleBack}
+                >
+                  {t('common.back', 'Back')}
+                </Button>
+                <Button 
+                  variant="contained" 
+                  type={activeStep === steps.length - 1 ? 'submit' : 'button'}
+                  onClick={activeStep === steps.length - 1 ? undefined : handleNext} // Use undefined for submit to let formik handle
+                  disabled={loading || (activeStep === 1 && formik.values.seatIds.length === 0)}
+                >
+                  {activeStep === steps.length - 1 
+                    ? t('common.confirmPay', 'Confirm & Pay') 
+                    : t('common.next', 'Next')}
+                </Button>
+              </Box>
+            )}
+             {/* Nút đặt vé đơn giản hóa cho directBooking */}
+            {directBooking && (
               <Button 
-                type="submit" 
                 variant="contained" 
-                disabled={loading}
-                sx={{ borderRadius: 2, textTransform: 'none' }}
+                type="submit"
+                disabled={loading || formik.values.seatIds.length === 0}
+                fullWidth
+                sx={{mt:2}}
               >
-                {t('booking.confirmAndPay', 'Confirm & Pay')}
-              </Button>
-            ) : (
-              <Button 
-                variant="contained" 
-                onClick={handleNext}
-                sx={{ borderRadius: 2, textTransform: 'none' }}
-              >
-                {t('common.next', 'Next')}
+                {t('booking.confirmAndProceed', 'Confirm and Proceed to Payment')}
               </Button>
             )}
+          </form>
+        ) : (
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="h5" color="success.main" gutterBottom>
+              {successMessage || t('booking.successTitle', 'Booking Successful!')}
+            </Typography>
+            {bookingDetails && (
+              <Paper sx={{ p: 2, mt: 2, textAlign: 'left', backgroundColor: theme.palette.grey[50] }} variant="outlined">
+                <Typography variant="h6" gutterBottom>{t('booking.summary.title', 'Booking Summary')}</Typography>
+                <Typography><strong>{t('booking.summary.bookingCode', 'Booking Code')}:</strong> {bookingDetails.bookingCode}</Typography>
+                <Divider sx={{my:1}}/>
+                <Typography><strong>{t('booking.summary.movie', 'Movie')}:</strong> {bookingDetails.movie.movieName}</Typography>
+                <Typography><strong>{t('booking.summary.cinema', 'Cinema')}:</strong> {bookingDetails.cinema.cinemaName} - {bookingDetails.cinema.roomName}</Typography>
+                <Typography><strong>{t('booking.summary.time', 'Time')}:</strong> {bookingDetails.movie.date} {bookingDetails.movie.startTime}</Typography>
+                <Typography><strong>{t('booking.summary.seats', 'Seats')}:</strong> {bookingDetails.seats.join(', ')}</Typography>
+                {bookingDetails.foodItems && bookingDetails.foodItems.length > 0 && (
+                  <Box mt={1}>
+                    <Typography><strong>{t('booking.summary.foodDrinks', 'Food & Drinks')}:</strong></Typography>
+                    <List dense disablePadding>
+                      {bookingDetails.foodItems.map(item => (
+                        <ListItem key={item.id} disableGutters sx={{pl:2}}>
+                          <ListItemText primary={`${item.name} (x${item.quantity})`} secondary={`${t('common.price', 'Price')}: ${item.subtotal.toLocaleString()} VND`} />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Box>
+                )}
+                <Divider sx={{my:1}}/>
+                <Typography variant="subtitle1" sx={{fontWeight: 'bold'}}><strong>{t('booking.summary.totalAmount', 'Total Amount')}:</strong> {bookingDetails.totalAmount.toLocaleString()} VND</Typography>
+                <Typography><strong>{t('booking.summary.paymentStatus', 'Payment Status')}:</strong> {bookingDetails.paymentStatus}</Typography>
+              </Paper>
+            )}
+            <Button variant="contained" onClick={() => { /* Reset or navigate away */ setActiveStep(0); setBookingCompleted(false); formik.resetForm(); }} sx={{ mt: 3 }}>
+              {t('booking.bookAnother', 'Book Another Ticket')}
+            </Button>
           </Box>
         )}
-      </form>
-    </Paper>
+      </Paper>
+      {/* Phần debug để hiển thị kết quả */} 
+      {debugResult && (
+        <Paper sx={{ p: 2, mt: 2, backgroundColor: theme.palette.grey[100] }}>
+          <Typography variant="h6">Debug Output:</Typography>
+          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+            {debugResult}
+          </pre>
+        </Paper>
+      )}
+    </Box>
   );
 };
 

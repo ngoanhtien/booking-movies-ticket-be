@@ -1,7 +1,35 @@
 # Active Context
 
 ## Current Focus
-Với việc các lỗi nghiêm trọng liên quan đến hiển thị danh sách phim, chi tiết phim và các vấn đề JSON ở backend đã được giải quyết, trọng tâm hiện tại là đảm bảo tính ổn định toàn diện của các luồng duyệt phim và bắt đầu đặt vé. Đồng thời, việc tiếp tục cải thiện trải nghiệm người dùng theo MoMo Cinema UX và đảm bảo các chức năng admin hoạt động trơn tru cũng là ưu tiên.
+**Với việc các API liên quan đến tạo và lấy lịch chiếu đã được sửa lỗi và hoạt động ổn định, trọng tâm hiện tại là đảm bảo các chức năng cốt lõi của người dùng (duyệt phim, xem chi tiết, đặt vé) hoạt động trơn tru và chính xác trên giao diện người dùng.** Đồng thời, tiếp tục rà soát và đảm bảo tính nhất quán của các đường dẫn API còn lại trong toàn bộ hệ thống.
+
+### Showtime Generation & Display Troubleshooting (LATEST - Resolved)
+- **Initial Problem**: Người dùng không thấy lịch chiếu trên UI, mặc dù có thông tin lịch chiếu đã được tạo ở backend.
+- **Investigation Path & Key Issues Addressed**:
+    1.  **API Call for Showtime Generation (`POST /api/v1/showtime/public/add-showtimes-for-active-movies`) Failures**:
+        -   **Initial 401 Unauthorized**: `AuthenticationFilter.java` không nhận diện đúng public path do thiếu tiền tố `/api/v1/` trong danh sách `publicPaths`.
+            -   **Fix**: Cập nhật `publicPaths` trong `AuthenticationFilter.java` để bao gồm `/api/v1/`.
+        -   **Subsequent 401 (then 500 via GlobalExceptionHandler from `AuthorizationDeniedException`)**: `SecurityConfiguration.java` thiếu tiền tố `/api/v1/` cho rule `permitAll()` của endpoint này, khiến `AuthorizationFilter` từ chối.
+            -   **Fix**: Cập nhật `requestMatchers` trong `SecurityConfiguration.java` để sử dụng `/api/v1/showtime/public/**`.permitAll().
+        -   **Subsequent 500 (from `NoResourceFoundException`)**: `ShowtimeController.java` có mapping sai:
+            -   Sử dụng `@GetMapping` thay vì `@PostMapping` cho phương thức `addShowtimesForActiveMoviesPublic`.
+            -   Annotation `@RequestMapping` ở cấp class là `"/showtime"` thay vì `"/api/v1/showtime"` trong `ShowtimeController.java`.
+            -   **Fix**: Sửa `@GetMapping` thành `@PostMapping` và `@RequestMapping` cấp class thành `"/api/v1/showtime"` trong `ShowtimeController.java`.
+        -   **Outcome**: API tạo lịch chiếu (`POST /api/v1/showtime/public/add-showtimes-for-active-movies`) hoạt động, báo cáo "SKIPPED" vì lịch chiếu đã tồn tại từ các lần gọi trước.
+    2.  **API Call for Fetching Showtimes for UI (`GET /api/v1/showtime/{movieId}/by-date`) Failures**:
+        -   **Initial 403 Forbidden from UI/Postman (No Auth)**: Endpoint lấy lịch chiếu không được phép truy cập công khai.
+            -   **Root Cause**: `SecurityConfiguration.java` thiếu tiền tố `/api/v1/` cho rule `permitAll()` của `"/showtime/*/by-date"`.
+            -   **Fix**: Cập nhật toàn diện các `requestMatchers` cho các đường dẫn `permitAll()` trong `SecurityConfiguration.java` (bao gồm `/api/v1/showtime/*/by-date`, `/api/v1/movie/**`, `/api/v1/auth/**`, etc.) để bao gồm tiền tố `/api/v1/`, đảm bảo tính nhất quán với `AuthenticationFilter.java` và `ShowtimeController.java`.
+        -   **Outcome**: API lấy lịch chiếu (`GET /api/v1/showtime/{movieId}/by-date`) hoạt động thành công với `permitAll()` và trả về dữ liệu. Lịch chiếu hiển thị trên UI.
+
+- **Key Learnings & Patterns**:
+    -   **API Path Consistency is CRITICAL**: Đảm bảo tính nhất quán tuyệt đối của đường dẫn API (bao gồm base path như `/api/v1/`) và phương thức HTTP (GET/POST) giữa:
+        -   Định nghĩa trong Controller (`@RequestMapping`, `@GetMapping`, `@PostMapping`).
+        -   Cấu hình public path trong `AuthenticationFilter` (`publicPaths`).
+        -   Cấu hình rule `permitAll()` trong `SecurityConfiguration` (`requestMatchers`).
+        -   Cách gọi API từ frontend.
+    -   `NoResourceFoundException` (thường được `GlobalExceptionHandler` bắt và trả về lỗi 500) là dấu hiệu mạnh mẽ của việc Spring MVC không tìm thấy handler cho request URI và HTTP method, thường do sai sót trong annotation mapping của controller.
+    -   Lỗi 403 (Forbidden) cho một endpoint đáng lẽ là public thường chỉ ra vấn đề với `requestMatchers` trong `SecurityConfiguration` không khớp với URI của request, khiến request rơi vào rule `anyRequest().authenticated()`.
 
 ### Movie Details Display & Actor Info Fix (LATEST - Resolved)
 - **Problem**: Sau khi sửa lỗi JSON backend, trang chi tiết phim tuy tải được nhưng gặp lỗi `actor.charAt is not a function` ở frontend, ngăn cản việc hiển thị thông tin diễn viên.
@@ -50,33 +78,7 @@ Với việc các lỗi nghiêm trọng liên quan đến hiển thị danh sác
     - API endpoint `/movie` và `/movie/detail/{id}` trả về JSON hợp lệ.
     - Frontend có thể parse và hiển thị danh sách phim và chi tiết phim.
 
-### Showtime Generation Endpoint Debugging & Fix (LATEST - Resolved)
-- **Problem**: The endpoint `/showtime/public/add-showtimes-for-active-movies` was initially inaccessible (401 errors despite being public) and then, after security fixes, threw an "Uncategorized error" (which was a `NoResourceFoundException` in server logs), preventing the automatic generation of showtimes for active movies.
-- **Investigation Path & Key Issues Addressed**:
-    1.  **Initial 401 Unauthorized**:
-        -   The `AuthenticationFilter.java` was not correctly processing wildcard public paths when a JWT token was present.
-        -   **Fix**: Modified `AuthenticationFilter.java` to use `AntPathMatcher` to correctly identify and allow requests to `/showtime/public/**` without requiring valid authentication even if a token is sent.
-    2.  **"Uncategorized error" / `NoResourceFoundException`**:
-        -   After fixing the 401, the endpoint returned a generic error. Server logs indicated `NoResourceFoundException` for the specific mapping `/showtime/public/add-showtimes-for-active-movies`.
-        -   **Debugging Steps**:
-            -   Added a simple `/public/ping` GET endpoint to `ShowtimeController.java` to confirm the controller itself was correctly mapped and reachable. This worked.
-            -   Temporarily commented out all logic within the `addShowtimesForActiveMoviesPublic` method in `ShowtimeController.java` and returned a simple success message. This confirmed the method mapping was now working after the ping test and likely some application restart/rebuild.
-            -   Incrementally uncommented sections of the original logic:
-                1.  Fetching movies with `StatusMovie.SHOWING` (initially, it was trying to use a non-existent "ACTIVE" status).
-                2.  Initialization of date, time, and room ID variables.
-                3.  Outer loops for movies, dates, and times.
-                4.  Persistence of `Schedule` entities.
-                5.  Persistence of `Showtime` and `ShowtimeSeat` entities.
-        -   **Fix**: The primary functional fix within the uncommented logic was changing the movie query to use `StatusMovie.SHOWING` instead of a string "ACTIVE". The step-by-step uncommenting helped verify each part of the logic and ensure no other hidden issues were causing the `NoResourceFoundException` once the basic mapping was confirmed.
-- **Outcome**:
-    -   The `/showtime/public/add-showtimes-for-active-movies` endpoint is now fully functional.
-    -   It correctly generates `Schedule`, `Showtime`, and `ShowtimeSeat` entities for all movies currently in the `SHOWING` state for the current and next day, across predefined time slots and rooms.
-    -   This unblocks the movie booking flow, as users can now see available showtimes.
-- **Lessons Learned**:
-    -   `AntPathMatcher` is essential in `AuthenticationFilter` for correctly handling wildcard public paths if tokens might be present.
-    -   Server logs are critical for identifying the true nature of generic errors (e.g., `NoResourceFoundException`).
-    -   Step-by-step uncommenting and testing of logic is a powerful debugging technique for complex controller methods.
-    -   Always use Enums (`StatusMovie.SHOWING`) for status checks in queries rather than potentially mismatched string literals.
+### Showtime Generation Endpoint Debugging & Fix (Consolidated into LATEST above)
 
 ### Showtimes Not Displaying Due to `Schedule.isDeleted = null` (LATEST - Resolved)
 - **Problem**: Lịch chiếu không hiển thị cho phim, mặc dù endpoint `/showtime/public/add-showtimes-for-active-movies` báo cáo đã tạo lịch chiếu thành công. API frontend (`GET /api/v1/showtime/{movieId}/by-date`) trả về `result.branches: []`.
@@ -105,20 +107,21 @@ Với việc các lỗi nghiêm trọng liên quan đến hiển thị danh sác
 
 ### Next Steps:
 1.  **Thorough Testing & Validation (PRIORITY)**:
-    -   **Focus on the end-to-end movie booking flow now that showtime generation is fixed.**
-    -   Test booking from both the movie list and movie details pages.
+    -   **Focus on the end-to-end movie booking flow now that showtime generation and display are fixed.**
+    -   Test booking from both the movie list (via the movie details workaround) and directly from movie details pages.
     -   Verify that created showtimes appear correctly in the UI.
     -   Ensure all steps of the booking process (seat selection, food, payment placeholder, confirmation) work smoothly.
     -   Check that bookings are correctly recorded in the database.
     -   Test edge cases (e.g., booking last seat, attempting to double-book).
-2.  **Review Backend Entities & DTOs for API Consistency**:
-    -   Đảm bảo cấu trúc dữ liệu `Actor` (và các entity khác như `Category`, `Schedule` nếu chúng được hiển thị trên trang chi tiết) trong `admin-interface/src/types/movie.ts` hoàn toàn khớp với những gì API thực sự trả về sau khi áp dụng các Jackson annotation.
-    -   Nếu có sự không nhất quán, cập nhật frontend types hoặc DTOs/mapping ở backend.
-3.  **Continue MoMo Cinema UX Enhancements**:
+2.  **Verify Frontend API Calls**:
+    -   Đảm bảo tất cả các API calls từ frontend đều sử dụng đúng đường dẫn đầy đủ (bao gồm `/api/v1/` nếu applicable) và đúng phương thức HTTP như đã định nghĩa ở backend và cấu hình trong security.
+3.  **Review Remaining API Path Consistency**:
+    -   Rà soát lại tất cả các controllers và cấu hình security (`AuthenticationFilter`, `SecurityConfiguration`) để đảm bảo tất cả các đường dẫn API (đặc biệt là các `permitAll` và các đường dẫn được bảo vệ khác) đều nhất quán với tiền tố `/api/v1/` (nếu đó là convention chung).
+4.  **Continue MoMo Cinema UX Enhancements**:
     -   Tiếp tục làm việc trên trang Cinema Selection.
-4.  **Address Root Cause of Booking Redirection (Lower Priority)**:
-    -   Investigate the backend's handling of `permitAll()` with existing (valid) tokens for `GET /api/v1/showtime/{movieId}/by-date` to understand why it initially caused a 401. While the current workaround (navigating to movie details first) is functional, a direct booking from the list should ideally work.
-5.  **Address any new findings or minor issues** that may have arisen from the recent fixes.
+5.  **Address Root Cause of Booking Redirection (Lower Priority)**:
+    -   Investigate the backend's handling of `permitAll()` with existing (valid) tokens for `GET /api/v1/showtime/{movieId}/by-date` to understand why it initially caused a 401 (trước khi các sửa lỗi về path consistency được áp dụng). While the current workaround (navigating to movie details first) is functional, a direct booking from the list should ideally work.
+6.  **Address any new findings or minor issues** that may have arisen from the recent fixes.
 
 ### Missing Showtimes Issue & Data Generation (Previously Resolved - Context for Showtime Generation Fix)
 - **Problem**: Khi người dùng cố gắng đặt vé cho bất kỳ bộ phim nào, họ luôn nhận được thông báo "Không có lịch chiếu nào cho phim này hoặc lựa chọn này" (No showtimes available for this movie or selection), khiến không thể tiếp tục luồng đặt vé.
