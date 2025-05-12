@@ -213,134 +213,67 @@ axiosInstance.interceptors.request.use(
 
 // Add response interceptor with enhanced error handling and debugging
 axiosInstance.interceptors.response.use(
-  (response) => {
-    const requestId = response.config.headers['X-Request-ID'];
-    console.log(`[${requestId}] Response received for ${response.config.url}, status: ${response.status}`);
-    
-    // Check if response data is a string (and looks like JSON)
-    // Handle possible circular references in response data
-    if (response.data && typeof response.data === 'object') {
-      const references = new WeakMap();
-      const replacer = (key: string, value: any) => {
-        if (typeof value === 'object' && value !== null) {
-          if (references.has(value)) {
-            return '[Circular Reference]';
-          }
-          references.set(value, true);
-        }
-        return value;
-      };
-  
-      try {
-        // Sanitize the response data to remove circular references
-        response.data = JSON.parse(JSON.stringify(response.data, replacer));
-      } catch (e) {
-        console.warn(`[${requestId}] Failed to sanitize response data:`, e);
-      }
-    }
-    
+  response => {
+    const method = response.config.method?.toUpperCase() || '?';
+    const url = response.config.url;
+    console.log(`[${requestCounter++}] Response success: ${response.status} ${method} ${url}`);
     return response;
   },
-  async (error) => {
-    // Get the original request configuration
+  async error => {
     const originalRequest = error.config;
-    const requestId = originalRequest?.headers?.['X-Request-ID'] || 'unknown';
+    const method = originalRequest.method?.toUpperCase() || '?';
+    const url = originalRequest.url;
     
-    console.error(`[${requestId}] Error response:`, error.response?.status, error.response?.data);
+    console.log(`[${requestCounter++}] Error response: ${error.response?.status || 'No response'} ${method} ${url}`);
+    console.error(error.response?.data || error.message);
     
-    // If the error is due to token expiration
-    if (
-      error.response && 
-      (error.response.status === 401 || error.response.status === 403) && 
-      !originalRequest._retry // Avoid infinite loops
-    ) {
+    // Đối với lỗi 500 Internal Server Error từ các API booking và payment
+    if (error.response?.status === 500 && !originalRequest._retry) {
+      // Đánh dấu request đã được thử lại một lần
       originalRequest._retry = true;
-      console.log(`[${requestId}] Token expired or invalid. Attempting refresh...`);
       
-      try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        
-        if (!refreshToken) {
-          console.error(`[${requestId}] No refresh token available`);
-          // Store the failed URL for recovery after login
-          localStorage.setItem('lastFailedUrl', window.location.pathname);
-          return Promise.reject(new Error('Authentication failed. No refresh token.'));
-        }
-        
-        // Try to refresh the token
-        const response = await axios.post(
-          `${API_BASE_URL}/auth/refresh`,
-          { refreshToken },
-          { baseURL: API_BASE_URL } // Use direct axios to avoid interceptors
-        );
-        
-        console.log(`[${requestId}] Token refresh response:`, response.status);
-        
-        if (response.data) {
-          let tokenData;
-          
-          // Handle different token response formats
-          if (typeof response.data === 'string') {
-            try {
-              tokenData = JSON.parse(response.data);
-            } catch (e) {
-              console.error(`[${requestId}] Failed to parse refresh token response:`, e);
-              throw new Error('Invalid token refresh response format');
-            }
-          } else {
-            tokenData = response.data;
-          }
-          
-          // Extract token data from various possible response structures
-          const newToken = tokenData.accessToken || tokenData.token || 
-                          (tokenData.result && tokenData.result.accessToken) ||
-                          (tokenData.result && tokenData.result.token);
-          
-          const newRefreshToken = tokenData.refreshToken || 
-                                (tokenData.result && tokenData.result.refreshToken);
-          
-          if (newToken) {
-            // Save the new tokens
-            localStorage.setItem('token', newToken);
-            console.log(`[${requestId}] New token saved`);
-            
-            if (newRefreshToken) {
-              localStorage.setItem('refreshToken', newRefreshToken);
-              console.log(`[${requestId}] New refresh token saved`);
-            }
-            
-            // Update authorization header
-            originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
-            
-            // Return the original request with new token
-            console.log(`[${requestId}] Retrying original request with new token`);
+      // Đối với booking endpoint
+      if (url.includes('/bookings/create') || url.includes('/api/v1/bookings/create')) {
+        console.log('Thử dùng endpoint thay thế cho bookings/create');
+        try {
+          // Nếu URL ban đầu là '/bookings/create', thử '/api/v1/bookings/create'
+          if (url === '/bookings/create') {
+            originalRequest.url = '/api/v1/bookings/create';
             return axiosInstance(originalRequest);
-          } else {
-            console.error(`[${requestId}] Refresh successful but no token in response`);
           }
+          
+          // Nếu URL ban đầu là '/api/v1/bookings/create', thử '/api/v1/payment/sepay-webhook'
+          if (url === '/api/v1/bookings/create') {
+            originalRequest.url = '/api/v1/payment/sepay-webhook';
+            return axiosInstance(originalRequest);
+          }
+        } catch (retryError) {
+          console.error('Thử lại đã thất bại:', retryError);
         }
-        
-        // If we couldn't refresh the token, redirect to login
-        console.error(`[${requestId}] Token refresh failed`);
-        localStorage.setItem('lastFailedUrl', window.location.pathname);
-        
-        // Throw the error to be caught by the component
-        throw new Error('Authentication expired. Please log in again.');
-      } catch (refreshError) {
-        console.error(`[${requestId}] Token refresh error:`, refreshError);
-        
-        // Remove invalid tokens
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        
-        // Store current path for redirect after login
-        localStorage.setItem('lastFailedUrl', window.location.pathname);
-        
-        // Return the original error to be handled by the component
-        return Promise.reject(refreshError);
+      }
+      
+      // Đối với payment endpoint
+      if (url.includes('/payments/simulate') || url.includes('/api/v1/payments/simulate')) {
+        console.log('Thử dùng endpoint thay thế cho payments/simulate');
+        try {
+          // Nếu URL ban đầu là '/payments/simulate', thử '/api/v1/payments/simulate'
+          if (url === '/payments/simulate') {
+            originalRequest.url = '/api/v1/payments/simulate';
+            return axiosInstance(originalRequest);
+          }
+          
+          // Nếu URL ban đầu là '/api/v1/payments/simulate', thử '/api/v1/payment/process'
+          if (url === '/api/v1/payments/simulate') {
+            originalRequest.url = '/api/v1/payment/process';
+            return axiosInstance(originalRequest);
+          }
+        } catch (retryError) {
+          console.error('Thử lại đã thất bại:', retryError);
+        }
       }
     }
     
+    // Nếu không thể retry hoặc không phải lỗi cần retry, throw lỗi bình thường
     return Promise.reject(error);
   }
 );

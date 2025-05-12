@@ -107,18 +107,28 @@
 
 ### Next Steps:
 1.  **Thorough Testing & Validation (PRIORITY)**:
-    -   **Focus on the end-to-end movie booking flow now that showtime generation and display are fixed.**
+    -   **Focus on the end-to-end movie booking flow now that showtime generation, display, and TypeScript issues are fixed.**
     -   Test booking from both the movie list (via the movie details workaround) and directly from movie details pages.
     -   Verify that created showtimes appear correctly in the UI.
     -   Ensure all steps of the booking process (seat selection, food, payment placeholder, confirmation) work smoothly.
     -   Check that bookings are correctly recorded in the database.
     -   Test edge cases (e.g., booking last seat, attempting to double-book).
-2.  **Verify Frontend API Calls**:
+2.  **Enhance Booking Form UI (NEW PRIORITY)**:
+    -   Improve the user experience of the booking form with a more visually appealing design.
+    -   Add clear visual indicators for seat types and pricing.
+    -   Implement smoother transitions between booking steps.
+    -   Ensure responsive design works correctly on all screen sizes.
+3.  **Continuing Code Quality Improvements**:
+    -   Continue reviewing for any remaining TypeScript issues in other components.
+    -   Apply consistent interface usage patterns as established in the recent fixes.
+    -   Consider adding more detailed JSDoc documentation to interfaces for better developer experience.
+4.  **Verify Frontend API Calls**:
     -   Đảm bảo tất cả các API calls từ frontend đều sử dụng đúng đường dẫn đầy đủ (bao gồm `/api/v1/` nếu applicable) và đúng phương thức HTTP như đã định nghĩa ở backend và cấu hình trong security.
-3.  **Review Remaining API Path Consistency**:
+5.  **Review Remaining API Path Consistency**:
     -   Rà soát lại tất cả các controllers và cấu hình security (`AuthenticationFilter`, `SecurityConfiguration`) để đảm bảo tất cả các đường dẫn API (đặc biệt là các `permitAll` và các đường dẫn được bảo vệ khác) đều nhất quán với tiền tố `/api/v1/` (nếu đó là convention chung).
-4.  **Continue MoMo Cinema UX Enhancements**:
+6.  **Continue MoMo Cinema UX Enhancements**:
     -   Tiếp tục làm việc trên trang Cinema Selection.
+7.  **Address Root Cause of Booking Redirection (Lower Priority)**:
 5.  **Address Root Cause of Booking Redirection (Lower Priority)**:
     -   Investigate the backend's handling of `permitAll()` with existing (valid) tokens for `GET /api/v1/showtime/{movieId}/by-date` to understand why it initially caused a 401 (trước khi các sửa lỗi về path consistency được áp dụng). While the current workaround (navigating to movie details first) is functional, a direct booking from the list should ideally work.
 6.  **Address any new findings or minor issues** that may have arisen from the recent fixes.
@@ -790,3 +800,79 @@ Fixed the "Cannot read properties of undefined (reading 'length')" error in the 
    - Ensured consistent data structure is returned to the frontend
 
 This error occurred due to inconsistency between the data structure expected by the frontend (movie array in .content) and the actual data structure from the API. 
+
+### Showtime Display in UI (BookingForm) - Resolution (LATEST)
+- **Initial Problem**: Mặc dù API backend (`GET /api/v1/showtime/{movieId}/by-date`) trả về dữ liệu lịch chiếu chính xác (đã xác nhận qua Postman và logs của `bookingService.ts`), lịch chiếu vẫn không hiển thị trên giao diện người dùng trong `BookingForm.tsx`.
+- **Investigation Path & Key Issues Addressed**:
+    1.  **Data Structure Mismatch in `BookingForm.tsx`**:
+        -   State `showtimes` trong `BookingForm.tsx` đang sử dụng kiểu `Showtime[]` (import từ `bookingService.ts`), kiểu này không khớp với cấu trúc dữ liệu thực tế mà API trả về (`MovieShowtimesResponse` chứa `branches: BranchWithShowtimes[]`, mỗi `BranchWithShowtimes` chứa `showtimes: ShowtimeDetail[]`).
+        -   Hàm `fetchShowtimesData` trong `BookingForm.tsx` đã cố gắng gán `response.data` (từ `bookingService.getShowtimesByMovie`) cho state `showtimes`. Tuy nhiên, `bookingService.getShowtimesByMovie` trả về `response.data.result` (chính là `MovieShowtimesResponse`). Do đó, `response.data` trong `BookingForm` (khi `response` là `MovieShowtimesResponse`) sẽ là `undefined`, dẫn đến state `showtimes` luôn rỗng.
+    2.  **Inconsistent Type Usage**: Kiểu `Showtime` cũ không phản ánh đúng cấu trúc của một suất chiếu chi tiết (`ShowtimeDetail`) từ API response mới.
+- **Solution Implemented in `BookingForm.tsx`**:
+    1.  **Import Correct Types**: Import `MovieShowtimesResponse`, `BranchWithShowtimes`, `ShowtimeDetail` từ `../../types/showtime.ts`.
+    2.  **Update State**:
+        -   Thay thế state `showtimes: Showtime[]` bằng `showtimeBranches: BranchWithShowtimes[]`.
+        -   Thêm state `currentMovieInfo: {id: number | null, name: string | null}` để lưu trữ thông tin phim (`movieId`, `movieName`) từ `MovieShowtimesResponse`.
+    3.  **Modify `fetchShowtimesData`**:
+        -   Hàm này giờ đây nhận `MovieShowtimesResponse` từ `bookingService.getShowtimesByMovie(movieId)`.
+        -   Gán `apiResponse.branches` cho `setShowtimeBranches`.
+        -   Gán `apiResponse.movieId` và `apiResponse.movieName` cho `setCurrentMovieInfo`.
+    4.  **Update `getSelectedShowtimeDetails()`**:
+        -   Điều chỉnh để duyệt qua `showtimeBranches` và tìm `ShowtimeDetail` dựa trên `formik.values.showtimeId` (kết hợp `scheduleId` và `roomId`).
+        -   Lấy `movieName` và `movieId` từ state `currentMovieInfo`.
+    5.  **Adjust UI Rendering (Step 0 - Select Showtime)**:
+        -   Phần render lặp qua `showtimeBranches`.
+        -   Với mỗi `branch`, lặp qua `branch.showtimes` (mảng các `ShowtimeDetail`).
+        -   Hiển thị `showtime.scheduleTime`, `showtime.roomName`, `showtime.roomType`.
+        -   Sử dụng `formik.setFieldValue('showtimeId', \`\${showtime.scheduleId}-\${showtime.roomId}\`)`.
+    6.  **Handle Missing Properties**: Tạm thời xử lý các thuộc tính không có trong `ShowtimeDetail` (như `price`, `availableSeats`) bằng cách sử dụng giá trị mặc định hoặc hiển thị thông tin thay thế.
+- **Outcome**: Lịch chiếu phim hiện đã hiển thị chính xác trên `BookingForm.tsx`, nhóm theo từng cụm rạp. Người dùng có thể chọn suất chiếu để tiếp tục quá trình đặt vé.
+- **Key Learnings & Patterns Reinforced**:
+    -   **Frontend Data Handling**: Tầm quan trọng của việc đồng bộ hóa cấu trúc state và kiểu dữ liệu của component với cấu trúc dữ liệu thực tế từ API response.
+    -   **Type Definition**: Sử dụng các interface/type rõ ràng (như trong `types/showtime.ts`) giúp phát hiện và sửa lỗi không nhất quán về dữ liệu.
+    -   **Component Logic**: Cần kiểm tra kỹ logic fetch dữ liệu, gán state, và cách component con sử dụng dữ liệu đó, đặc biệt khi cấu trúc API thay đổi hoặc phức tạp.
+    -   **Iterative Debugging**: Quá trình sửa lỗi bao gồm việc xem xét logs, kiểm tra kiểu dữ liệu, và điều chỉnh logic từng bước một.
+
+### Next Steps (Re-prioritized):
+1.  **Thorough Testing & Validation (CONTINUED PRIORITY)**:
+    -   **End-to-end movie booking flow is the primary focus.**
+    -   Test selecting showtimes from different branches in `BookingForm.tsx`.
+    -   Verify all subsequent steps (seat selection, food, payment, confirmation) work as expected with the selected showtime.
+    -   Ensure bookings are correctly recorded with the correct showtime, room, and branch information.
+2.  **Address Price and Seat Availability in `BookingForm`**:
+    -   Làm rõ cách xác định giá vé cho từng suất chiếu (vì API hiện tại không trả về trong `ShowtimeDetail`).
+    -   Làm rõ cách xác định số ghế trống (`availableSeats`) cho từng suất chiếu.
+    -   Cập nhật `BookingForm.tsx` để hiển thị và sử dụng các thông tin này một cách chính xác.
+3.  **Review `cinemaId` prop usage in `BookingForm.tsx`**:
+    -   Hiện tại, `fetchShowtimesData` trong `BookingForm.tsx` chỉ sử dụng `movieId`. Nếu `cinemaId` được truyền vào (ví dụ, từ một trang chọn rạp trước đó), logic có thể cần gọi `bookingService.getShowtimesByMovieAndCinema(movieId, cinemaId)` để lọc lịch chiếu theo rạp cụ thể.
+4.  **Verify Frontend API Calls & Path Consistency (Ongoing)**.
+5.  **Continue MoMo Cinema UX Enhancements**.
+6.  **Address Root Cause of Booking Redirection (Lower Priority)**.
+
+### Missing Showtimes Issue & Data Generation (Previously Resolved - Context for Showtime Generation Fix)
+// ... existing code ...
+
+### TypeScript Interface Errors Fixed (LATEST)
+- **Problem**: Project had several TypeScript errors due to mismatches between interface definitions and actual usage in the code, particularly in files related to showtime data structures used in MovieDetails.tsx.
+- **Investigation Path & Key Issues Addressed**:
+    1.  **Missing Properties in `BranchWithShowtimes` Interface**: The interface didn't include properties `address`, `hotline`, and `imageUrl` that were being accessed in `MovieDetails.tsx`, causing TypeScript errors.
+    2.  **Missing Property in `ShowtimeDetail` Interface**: The interface was missing a `scheduleDate` property used in the URL construction for booking, leading to TypeScript errors.
+    3.  **Missing Interface for `ApiResponse`**: Multiple files defined their own version of `ApiResponse<T>` interface, causing inconsistency and errors.
+    4.  **Type Safety Issues with `error`**: Variables of type `unknown` were being accessed without proper type checking.
+- **Solution Implemented**:
+    1.  **Interface Updates in `types/showtime.ts`**:
+        - Added optional properties `address`, `hotline`, and `imageUrl` to `BranchWithShowtimes` interface
+        - Added optional properties `scheduleDate` and `scheduleEndTime` to `ShowtimeDetail` interface
+        - Added optional properties to `MovieShowtimesResponse` like `imageUrl`, `duration`, `summary`, etc.
+        - Ensured `ApiResponse<T>` is properly defined once and imported where needed
+    2.  **Type Assertion for Error Handling**:
+        - Updated error handling in service methods using type assertion `const err = error as any;` before accessing `error.response?.status`
+        - Fixed all instances where variables of type `unknown` were accessed without proper type checking
+- **Outcome**: All TypeScript errors have been resolved, enabling successful compilation of the project. This improves code quality, prevents runtime errors due to missing properties, and makes the development experience smoother.
+- **Key Learnings**:
+    - TypeScript interfaces must accurately reflect the actual data structure used in the application
+    - Consistent interfaces shared across components is critical for maintainability
+    - Type safety with proper checking of `unknown` types helps prevent runtime errors
+    - When working with external APIs, interfaces should account for all properties that might be used, even if they're optional
+
+// ... remaining of the file

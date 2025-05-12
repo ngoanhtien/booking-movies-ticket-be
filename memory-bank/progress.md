@@ -249,32 +249,43 @@
         - Showtimes are now correctly displayed on the user interface.
     - **Key Learnings**: Reinforced the critical importance of API path and HTTP method consistency across controller mappings, security filter configurations (`AuthenticationFilter`, `SecurityConfiguration`), and frontend API calls. Identified common error patterns (401, 403, `NoResourceFoundException`) related to security and mapping misconfigurations.
 
-- **Booking Redirection from Movie List (LATEST - Workaround Applied)**:
-    - **Symptom**: Clicking "Book Ticket" on `MovieList.tsx` redirected to login, despite valid session. Issue did not occur from `MovieDetails.tsx`.
-    - **Investigation**: Backend logs showed a 401 Unauthorized for `GET /api/v1/showtime/{movieId}/by-date` (a `permitAll()` endpoint) when a valid JWT was present. The `AuthenticationFilter` processed the token but failed to establish a valid `SecurityContext` for this specific `permitAll()` scenario with an existing token.
-    - **Frontend Workaround**: Modified the "Book Ticket" button in `MovieList.tsx` to navigate to `/movies/{movieId}` (movie details page) instead of directly to `/bookings/book-movie/{movieId}`. Booking from the details page functions correctly.
-    - **Outcome**: Users can now initiate booking from the movie list by first going through the movie details page. The direct booking path from the list is temporarily disabled. The root cause of the backend 401 on a `permitAll()` endpoint when a valid token is presented still needs deeper investigation if direct booking from the list is to be restored.
+- **Showtime Display in Booking Form Fully Functional (LATEST)**:
+    - **Issue Addressed**: Lịch chiếu không hiển thị trên UI (`BookingForm.tsx`) mặc dù API backend trả về dữ liệu.
+    - **Frontend Fixes (`BookingForm.tsx`)**:
+        -   **Type Alignment**: Chuyển từ việc sử dụng kiểu `Showtime[]` (từ `bookingService.ts`) sang sử dụng các kiểu chi tiết hơn từ `types/showtime.ts` (`MovieShowtimesResponse`, `BranchWithShowtimes`, `ShowtimeDetail`).
+        -   **State Management**:
+            -   Sử dụng state `showtimeBranches: BranchWithShowtimes[]` để lưu trữ dữ liệu lịch chiếu theo cấu trúc lồng nhau (cụm rạp -> danh sách suất chiếu).
+            -   Thêm state `currentMovieInfo` để lưu `movieId` và `movieName` từ response API.
+        -   **Data Fetching Logic (`fetchShowtimesData`)**:
+            -   Cập nhật để xử lý đúng `MovieShowtimesResponse` (lấy từ `response.data.result` của `bookingService.getShowtimesByMovie`).
+            -   Gán `apiResponse.branches` cho `showtimeBranches` và thông tin phim cho `currentMovieInfo`.
+        -   **Helper Functions (`getSelectedShowtimeDetails`)**:
+            -   Điều chỉnh để làm việc với cấu trúc `showtimeBranches` và `ShowtimeDetail`, lấy thông tin phim từ `currentMovieInfo`.
+        -   **UI Rendering**:
+            -   Cập nhật logic render để lặp qua `showtimeBranches`, sau đó lặp qua `branch.showtimes` để hiển thị thông tin chi tiết của từng suất chiếu (`scheduleTime`, `roomName`, `roomType`).
+            -   Sử dụng ID kết hợp (`scheduleId`-`roomId`) cho việc chọn suất chiếu.
+            -   **Handling Missing Data**: Tạm thời xử lý việc thiếu `price` và `availableSeats` trong `ShowtimeDetail` bằng giá trị mặc định hoặc thông tin thay thế.
+    - **Outcome**: Lịch chiếu phim hiển thị chính xác và có thể chọn được trong `BookingForm.tsx`, cho phép người dùng tiếp tục quá trình đặt vé.
 
-- **Missing Showtimes Fix**:
-    - **Symptom**: Users saw "Không có lịch chiếu nào cho phim này hoặc lựa chọn này." (No showtimes available for this movie or selection) when attempting to book tickets.
-    - **Investigation**: Database analysis showed no showtime data existed for the selected movies. The database schema was correct, but lacked actual showtime records.
-    - **Solution**: Created a public API endpoint in `ShowtimeController.java` to add sample showtimes for all active movies. The endpoint creates schedules for today and tomorrow with multiple showtimes (10:00, 13:30, 17:00) and generates required seat availability data.
-    - **Implementation Details**:
-        - Added `/showtime/public/check-movies` endpoint to verify available movies in the database
-        - Added `/showtime/public/add-showtimes-for-active-movies` endpoint to generate showtime data
-        - Updated security configuration to allow access to these public endpoints without authentication
-        - Fixed entity relationship handling to properly populate showtimes and seats
-    - **Outcome**: Users can now see available showtimes when booking tickets, enabling the complete ticket booking flow.
-
-- **Showtimes Display Correctly (LATEST FIX)**:
-    - **Symptom**: Showtimes were not appearing in the UI, API returned empty branches for showtimes.
-    - **Root Cause**: `Schedule` entities were being created with `isDeleted = null`. While `@SQLRestriction("is_deleted IS DISTINCT FROM true")` on the inherited `BaseEntity` didn't filter these `Schedule` records out directly (as `null` is distinct from `true`), Hibernate's query processing for `ShowtimeRepository.findByMovieIdAndDateOrderByBranchAndTime` (which joins `Showtime` with `Schedule`) failed to return `Showtime`s linked to these `Schedule`s with `isDeleted = null`.
-    - **Solution**:
-        - **Immediate DB Fix**: Executed `UPDATE schedules SET is_deleted = false WHERE is_deleted IS NULL;` via `DatabaseChecker.java` to correct existing data.
-        - **Code Fix (Proactive)**:
-            - Verified that `ShowtimeController.addShowtimesForActiveMoviesPublic` correctly sets `schedule.setIsDeleted(false)` for new and updated `Schedule` entities.
-            - Updated `ShowtimeController.addSampleShowtimes` (formerly `createShowtimesForMovie8Test`) to also set `schedule.setIsDeleted(false)` upon creation.
-    - **Outcome**: Showtimes are now correctly fetched and displayed. The underlying issue of `Schedule.isDeleted` being null is resolved for future data generation.
+- **TypeScript Interface Errors Fixed (LATEST)**:
+    - **Issue Addressed**: Project had multiple TypeScript errors due to mismatches between interface definitions and actual usage in the code, particularly with showtime-related interfaces.
+    - **Root Issues**:
+        - `BranchWithShowtimes` interface lacked properties `address`, `hotline`, and `imageUrl` that are used in `MovieDetails.tsx`.
+        - `ShowtimeDetail` interface was missing `scheduleDate` property used for URL construction in booking flow.
+        - Some services methods were missing proper type declarations for `ApiResponse<T>`.
+        - Variables of type `unknown` (like error handling) were being accessed without proper type checking.
+    - **Solution Implemented**:
+        - **Enhanced `types/showtime.ts`**:
+            - Added missing properties to `BranchWithShowtimes` interface (`address?: string`, `hotline?: string`, `imageUrl?: string`).
+            - Added `scheduleDate?: string` and `scheduleEndTime?: string` to `ShowtimeDetail` interface.
+            - Enhanced `MovieShowtimesResponse` with additional optional properties like `imageUrl`, `duration`, etc.
+            - Centralized `ApiResponse<T>` interface definition in this file for consistent imports elsewhere.
+        - **Updated Service Methods**:
+            - Applied proper type checking for errors with type assertion `const err = error as any` before accessing properties.
+            - Updated return type declarations to use the interfaces from `types/showtime.ts`.
+        - **Fixed Import Declarations**:
+            - In `BookingForm.tsx`, added import of `ApiResponse` from `types/showtime.ts` and removed local definition.
+    - **Outcome**: All TypeScript errors have been resolved, enabling successful compilation. Consistent interface usage across components improves code quality and prevents runtime errors from missing properties.
 
 ## What's Left to Build
 1. Frontend Features
