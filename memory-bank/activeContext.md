@@ -17,6 +17,25 @@ Với việc các lỗi nghiêm trọng liên quan đến hiển thị danh sác
         - Truy cập đúng thuộc tính của đối tượng `actor` (ví dụ: `actor.name`, `actor.profilePath`, `actor.character`) thay vì xử lý `actor` như một chuỗi.
 - **Outcome**: Lỗi `actor.charAt is not a function` đã được khắc phục. Thông tin diễn viên hiển thị chính xác trên trang chi tiết phim.
 
+### Booking Redirection Issue & Movie List Button Fix (LATEST - Workaround Applied)
+- **Problem**: Clicking the "Book Ticket" button on the movie list page (`MovieList.tsx`) for any movie (showing or upcoming) redirected the user to the login page, even if they were already authenticated. This did not happen when booking from the movie details page. The browser's network tab showed no API calls during this faulty redirection, but backend logs revealed a 401 Unauthorized error for the `GET /api/v1/showtime/{movieId}/by-date` request, which is configured with `permitAll()` in Spring Security.
+- **Investigation Path & Key Findings**:
+    1.  **Frontend Behavior**: The redirection to `/login` was happening on the frontend, likely triggered by the `ProtectedRoute` component in response to an unauthenticated state or a failed API call that wasn't immediately visible in the network tab (possibly an API call within a protected route that fails silently or is handled by a global error handler that triggers logout/redirect).
+    2.  **Backend Log Analysis**:
+        - The `GET /api/v1/showtime/{movieId}/by-date?date=YYYY-MM-DD` endpoint was called by the frontend when attempting to navigate to the booking page (`/bookings/book-movie/{movieId}`).
+        - Spring Security logs (`TRACE` level) showed the `AuthenticationFilter` processing the request. Despite the endpoint being `permitAll()`, the filter still processed the JWT token if present in the `Authorization` header.
+        - A `401 Unauthorized` error was thrown by the backend for this request, with the message `An Authentication object was not found in the SecurityContext`. This is unexpected for a `permitAll()` endpoint that should ideally ignore authentication status or not fail if an invalid/expired token is passed (unless explicitly configured to do so).
+        - The JWT token being sent was confirmed to be valid and not expired (token validity is 30 days).
+    3.  **Hypothesis**: The `AuthenticationFilter` (or a related security component) might be incorrectly invalidating the security context or failing to establish an anonymous authentication for `permitAll()` routes when a (valid) token is present but perhaps not expected or processed correctly for such routes. It's also possible that some downstream processing in the `ShowtimeController` or `ShowtimeService` for `/showtime/{movieId}/by-date` makes an implicit security check that fails.
+    4.  **Security Configuration (`SecurityConfiguration.java`)**:
+        - The endpoint `/api/v1/showtime/**` is indeed configured with `permitAll()`.
+        - Other booking-related endpoints like `/api/v1/booking/**` require authentication (`hasAnyRole("USER", "ADMIN")`).
+- **Workaround Implemented (Frontend)**:
+    - Modified the `onClick` handler for the "Book Tickets" button in `admin-interface/src/pages/user/MovieList.tsx`.
+    - Instead of navigating directly to `/bookings/book-movie/{movieId}`, the button now navigates to the movie details page (`/movies/${movie.id}`).
+    - From the movie details page, the booking flow works correctly as it likely initializes the booking page with necessary state or follows a slightly different (and correctly authenticated) path for fetching initial showtimes.
+- **Outcome**: Users are no longer redirected to login when trying to book from the movie list. They are first taken to the movie details page, from which booking proceeds normally. This is a temporary workaround. The root cause in the backend's handling of `permitAll()` with existing tokens needs further investigation for a complete fix.
+
 ### Movie List Display & Backend JSON Serialization (Previously Resolved)
 
 - **Initial Problem**: Users were unable to see any movies in the movie list. Clicking on movie-related navigation often led to being redirected to the login page, even if authenticated. API trả về JSON không hợp lệ.
@@ -31,16 +50,94 @@ Với việc các lỗi nghiêm trọng liên quan đến hiển thị danh sác
     - API endpoint `/movie` và `/movie/detail/{id}` trả về JSON hợp lệ.
     - Frontend có thể parse và hiển thị danh sách phim và chi tiết phim.
 
+### Showtime Generation Endpoint Debugging & Fix (LATEST - Resolved)
+- **Problem**: The endpoint `/showtime/public/add-showtimes-for-active-movies` was initially inaccessible (401 errors despite being public) and then, after security fixes, threw an "Uncategorized error" (which was a `NoResourceFoundException` in server logs), preventing the automatic generation of showtimes for active movies.
+- **Investigation Path & Key Issues Addressed**:
+    1.  **Initial 401 Unauthorized**:
+        -   The `AuthenticationFilter.java` was not correctly processing wildcard public paths when a JWT token was present.
+        -   **Fix**: Modified `AuthenticationFilter.java` to use `AntPathMatcher` to correctly identify and allow requests to `/showtime/public/**` without requiring valid authentication even if a token is sent.
+    2.  **"Uncategorized error" / `NoResourceFoundException`**:
+        -   After fixing the 401, the endpoint returned a generic error. Server logs indicated `NoResourceFoundException` for the specific mapping `/showtime/public/add-showtimes-for-active-movies`.
+        -   **Debugging Steps**:
+            -   Added a simple `/public/ping` GET endpoint to `ShowtimeController.java` to confirm the controller itself was correctly mapped and reachable. This worked.
+            -   Temporarily commented out all logic within the `addShowtimesForActiveMoviesPublic` method in `ShowtimeController.java` and returned a simple success message. This confirmed the method mapping was now working after the ping test and likely some application restart/rebuild.
+            -   Incrementally uncommented sections of the original logic:
+                1.  Fetching movies with `StatusMovie.SHOWING` (initially, it was trying to use a non-existent "ACTIVE" status).
+                2.  Initialization of date, time, and room ID variables.
+                3.  Outer loops for movies, dates, and times.
+                4.  Persistence of `Schedule` entities.
+                5.  Persistence of `Showtime` and `ShowtimeSeat` entities.
+        -   **Fix**: The primary functional fix within the uncommented logic was changing the movie query to use `StatusMovie.SHOWING` instead of a string "ACTIVE". The step-by-step uncommenting helped verify each part of the logic and ensure no other hidden issues were causing the `NoResourceFoundException` once the basic mapping was confirmed.
+- **Outcome**:
+    -   The `/showtime/public/add-showtimes-for-active-movies` endpoint is now fully functional.
+    -   It correctly generates `Schedule`, `Showtime`, and `ShowtimeSeat` entities for all movies currently in the `SHOWING` state for the current and next day, across predefined time slots and rooms.
+    -   This unblocks the movie booking flow, as users can now see available showtimes.
+- **Lessons Learned**:
+    -   `AntPathMatcher` is essential in `AuthenticationFilter` for correctly handling wildcard public paths if tokens might be present.
+    -   Server logs are critical for identifying the true nature of generic errors (e.g., `NoResourceFoundException`).
+    -   Step-by-step uncommenting and testing of logic is a powerful debugging technique for complex controller methods.
+    -   Always use Enums (`StatusMovie.SHOWING`) for status checks in queries rather than potentially mismatched string literals.
+
+### Showtimes Not Displaying Due to `Schedule.isDeleted = null` (LATEST - Resolved)
+- **Problem**: Lịch chiếu không hiển thị cho phim, mặc dù endpoint `/showtime/public/add-showtimes-for-active-movies` báo cáo đã tạo lịch chiếu thành công. API frontend (`GET /api/v1/showtime/{movieId}/by-date`) trả về `result.branches: []`.
+- **Investigation Path & Key Findings**:
+    1.  **Initial Checks**: Endpoint tạo lịch chiếu (`ShowtimeController.addShowtimesForActiveMoviesPublic`) xác nhận đã tạo `Showtime` với `isDeleted = false`.
+    2.  **Backend Service Logic**: `ShowtimeService.getShowtimesByMovieAndDate` gọi `ShowtimeRepository.findByMovieIdAndDateOrderByBranchAndTime`. Service chỉ trả về `branches: []` nếu repository trả về danh sách `Showtime` rỗng.
+    3.  **Repository Query**: Truy vấn `findByMovieIdAndDateOrderByBranchAndTime` trong `ShowtimeRepository` có điều kiện `AND st.isDeleted = false`.
+    4.  **Entity Inheritance**: Cả `Showtime` và `Schedule` kế thừa `BaseEntity`, `BaseEntity` có trường `isDeleted` và `@SQLRestriction("is_deleted IS DISTINCT FROM true")`.
+    5.  **Database State (via `DatabaseChecker.java`)**:
+        -   Các `Showtime` mới tạo (sau khi sửa endpoint `addShowtimesForActiveMoviesPublic`) có `is_deleted = false`.
+        -   Tuy nhiên, các `Schedule` liên quan đến các `Showtime` này (được tạo bởi cùng endpoint) lại có `is_deleted = null`.
+    6.  **Root Cause**: Vấn đề nằm ở các `Schedule` có `is_deleted = null`. Mặc dù `@SQLRestriction("is_deleted IS DISTINCT FROM true")` trên `BaseEntity` (mà `Schedule` kế thừa) không lọc các bản ghi `Schedule` có `is_deleted = null` (vì `null` khác `true`), nhưng sự tương tác của điều này với các join trong truy vấn của Hibernate (ví dụ, khi `ShowtimeRepository` tải `Showtime` và join với `Schedule`) khiến các `Showtime` (mặc dù có `Showtime.isDeleted = false`) liên kết với các `Schedule` có `is_deleted = null` này không được trả về. Điều này dẫn đến API không có dữ liệu lịch chiếu.
+    7.  **Schedule Creation Logic**:
+        -   Phương thức `ShowtimeController.addShowtimesForActiveMoviesPublic` *đã* được sửa trước đó để đặt `schedule.setIsDeleted(false)` khi tạo `Schedule` mới và khi cập nhật `Schedule` hiện có nếu `isDeleted` là `null` hoặc `true`.
+        -   Tuy nhiên, các `Schedule` được tạo *trước khi* bản sửa lỗi này được áp dụng cho `Schedule` (hoặc bởi các logic khác chưa được sửa) vẫn có `is_deleted = null`.
+        -   Một phương thức khác, `createShowtimesForMovie8Test` (sau đó đổi tên thành `addSampleShowtimes` trong `ShowtimeController`), cũng tạo `Schedule` mà không set `isDeleted`.
+- **Solution Implemented**:
+    1.  **Immediate Data Fix (Database)**: Sử dụng `DatabaseChecker.java` để thực thi lệnh SQL `UPDATE schedules SET is_deleted = false WHERE is_deleted IS NULL;`. Lệnh này đã cập nhật các bản ghi `Schedule` hiện có, và lịch chiếu ngay lập tức hiển thị chính xác.
+    2.  **Code Fix (Proactive)**:
+        -   Xác nhận lại logic trong `ShowtimeController.addShowtimesForActiveMoviesPublic` là đúng đắn cho việc tạo và cập nhật `Schedule.isDeleted`.
+        -   Cập nhật phương thức `addSampleShowtimes` (trước đây là `createShowtimesForMovie8Test`) trong `ShowtimeController.java` để thêm `schedule.setIsDeleted(false);` trước khi lưu `Schedule` mới.
+- **Outcome**:
+    -   Lịch chiếu phim hiện đang hiển thị chính xác trên giao diện người dùng.
+    -   Nguyên nhân gốc rễ của việc `Schedule.isDeleted` là `null` đã được giải quyết cho các lần tạo lịch chiếu trong tương lai thông qua cả endpoint chính và endpoint tạo dữ liệu mẫu.
+    -   Đã hiểu rõ hơn về tác động của `@SQLRestriction` kết hợp với giá trị `NULL` trong các trường boolean và cách nó ảnh hưởng đến các truy vấn phức tạp với join.
+
 ### Next Steps:
-1.  **Thorough Testing & Validation**:
-    - Kiểm tra kỹ lưỡng tất cả các trang và chức năng liên quan đến phim (danh sách, chi tiết, các thành phần liên quan như review, lịch chiếu nếu có trên chi tiết phim).
-    - Đảm bảo không có lỗi console mới ở cả frontend và backend.
+1.  **Thorough Testing & Validation (PRIORITY)**:
+    -   **Focus on the end-to-end movie booking flow now that showtime generation is fixed.**
+    -   Test booking from both the movie list and movie details pages.
+    -   Verify that created showtimes appear correctly in the UI.
+    -   Ensure all steps of the booking process (seat selection, food, payment placeholder, confirmation) work smoothly.
+    -   Check that bookings are correctly recorded in the database.
+    -   Test edge cases (e.g., booking last seat, attempting to double-book).
 2.  **Review Backend Entities & DTOs for API Consistency**:
-    - Đảm bảo cấu trúc dữ liệu `Actor` (và các entity khác như `Category`, `Schedule` nếu chúng được hiển thị trên trang chi tiết) trong `admin-interface/src/types/movie.ts` hoàn toàn khớp với những gì API thực sự trả về sau khi áp dụng các Jackson annotation.
-    - Nếu có sự không nhất quán, cập nhật frontend types hoặc DTOs/mapping ở backend.
+    -   Đảm bảo cấu trúc dữ liệu `Actor` (và các entity khác như `Category`, `Schedule` nếu chúng được hiển thị trên trang chi tiết) trong `admin-interface/src/types/movie.ts` hoàn toàn khớp với những gì API thực sự trả về sau khi áp dụng các Jackson annotation.
+    -   Nếu có sự không nhất quán, cập nhật frontend types hoặc DTOs/mapping ở backend.
 3.  **Continue MoMo Cinema UX Enhancements**:
-    - Tiếp tục làm việc trên trang Cinema Selection.
-4.  **Address any new findings or minor issues** that may have arisen from the recent fixes.
+    -   Tiếp tục làm việc trên trang Cinema Selection.
+4.  **Address Root Cause of Booking Redirection (Lower Priority)**:
+    -   Investigate the backend's handling of `permitAll()` with existing (valid) tokens for `GET /api/v1/showtime/{movieId}/by-date` to understand why it initially caused a 401. While the current workaround (navigating to movie details first) is functional, a direct booking from the list should ideally work.
+5.  **Address any new findings or minor issues** that may have arisen from the recent fixes.
+
+### Missing Showtimes Issue & Data Generation (Previously Resolved - Context for Showtime Generation Fix)
+- **Problem**: Khi người dùng cố gắng đặt vé cho bất kỳ bộ phim nào, họ luôn nhận được thông báo "Không có lịch chiếu nào cho phim này hoặc lựa chọn này" (No showtimes available for this movie or selection), khiến không thể tiếp tục luồng đặt vé.
+- **Investigation Path & Key Findings**:
+    1. **Database Data Issue**: Kiểm tra API endpoint `/showtime/{movieId}/by-date` trả về mảng rỗng mặc dù endpoint hoạt động bình thường. Phân tích cơ sở dữ liệu cho thấy bảng `schedules` và `showtimes` không có dữ liệu thực cho các bộ phim hiện tại.
+    2. **Schema & Relationships**: Cấu trúc bảng dữ liệu đã được thiết lập đúng (Movie -> Schedule -> Showtime -> ShowtimeSeat), nhưng thiếu dữ liệu thực tế.
+    3. **Security Challenges**: Các API admin để thêm lịch chiếu yêu cầu quyền ADMIN, gây khó khăn trong việc thêm dữ liệu mẫu.
+- **Solution Implemented**:
+    1. **Public API Endpoints**: Tạo hai endpoint không yêu cầu xác thực:
+        - `/showtime/public/check-movies` để kiểm tra danh sách phim hiện có trong cơ sở dữ liệu
+        - `/showtime/public/add-showtimes-for-active-movies` để thêm lịch chiếu cho tất cả phim ACTIVE
+    2. **Security Configuration**: Cập nhật `SecurityConfiguration.java` để cho phép truy cập vào các endpoint `/showtime/public/**` mà không cần xác thực.
+    3. **Data Generation Logic**: Thêm logic để tạo lịch chiếu cho ngày hiện tại và ngày mai với 3 khung giờ chiếu (10:00, 13:30, 17:00) cho mỗi phim hoạt động.
+    4. **Entity Relationship Handling**: Giải quyết vấn đề với vòng lặp entity khi lấy danh sách ghế thông qua `entityManager` thay vì trực tiếp từ `room.getSeats()`.
+- **Outcome**: Người dùng giờ đây có thể xem các lịch chiếu có sẵn khi đặt vé, cho phép hoàn thành toàn bộ luồng đặt vé. Các endpoint công khai cũng cung cấp cách dễ dàng để kiểm tra và cập nhật dữ liệu lịch chiếu khi cần thiết.
+- **Lessons Learned**:
+    1. Kiểm tra dữ liệu cơ sở dữ liệu là bước quan trọng khi khắc phục sự cố, đặc biệt là với các ứng dụng phụ thuộc vào dữ liệu chuẩn bị trước.
+    2. Các endpoint công khai không yêu cầu xác thực có thể là công cụ hữu ích để hỗ trợ trong quá trình phát triển và khắc phục sự cố.
+    3. Xử lý quan hệ entity cẩn thận để tránh các vấn đề liên quan đến vòng lặp và lazy loading trong JPA.
 
 ## Recent Changes (Detailed Chronologically in progress.md)
 

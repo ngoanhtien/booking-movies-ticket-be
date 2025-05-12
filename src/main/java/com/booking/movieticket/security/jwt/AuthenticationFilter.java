@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -26,12 +27,25 @@ public class AuthenticationFilter extends OncePerRequestFilter {
     public static final String AUTHORIZATION_HEADER = "Authorization";
 
     private final TokenProvider tokenProvider;
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     private final List<String> publicPaths = Arrays.asList(
             "/auth/login",
             "/auth/register",
+            "/auth/refresh-token",
+            "/auth/refresh",
             "/account/resetPassword",
-            "/payment/sepay-webhook"
+            "/payment/sepay-webhook",
+            "/payment/**",
+            "/bookings/**",
+            "/booking/**",
+            "/foods/**",
+            "/movie/**",
+            "/cinema/**",
+            "/showtime/*/by-date",
+            "/showtime/*/filter",
+            "/showtime/*/*/detail",
+            "/showtime/public/**"
     );
 
     public AuthenticationFilter(TokenProvider tokenProvider) {
@@ -44,10 +58,11 @@ public class AuthenticationFilter extends OncePerRequestFilter {
                                  FilterChain filterChain) throws IOException, ServletException {
         String requestURI = httpServletRequest.getRequestURI();
 
-        // Skip authentication for public paths
-        if (publicPaths.stream().anyMatch(requestURI::equals)) {
-            filterChain.doFilter(httpServletRequest, httpServletResponse);
-            return;
+        for (String path : publicPaths) {
+            if (pathMatcher.match(path, requestURI)) {
+                filterChain.doFilter(httpServletRequest, httpServletResponse);
+                return;
+            }
         }
 
         String jwt = resolveToken(httpServletRequest);

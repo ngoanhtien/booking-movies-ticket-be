@@ -26,7 +26,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ directBooking = false }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<string>('');
-  const [showDebugging, setShowDebugging] = useState<boolean>(true);
+  const [showDebugging, setShowDebugging] = useState<boolean>(false);
 
   useEffect(() => {
     // Check if direct booking was requested via localStorage

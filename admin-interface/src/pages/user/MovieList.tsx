@@ -407,7 +407,7 @@ const MovieList: React.FC = () => {
                 startIcon={<LocalActivityIcon />}
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/booking/${movie.id}`);
+                  navigate(`/movies/${movie.id}`);
                 }}
                 sx={{ 
                   borderRadius: '12px',

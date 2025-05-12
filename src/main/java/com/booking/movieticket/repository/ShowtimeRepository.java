@@ -15,27 +15,33 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, ShowtimeId> 
 
     /**
      * Find showtimes for a specific movie on a specific date, ordered by branch and time
+     * This query uses JOIN FETCH to eagerly load related entities to prevent N+1 issues.
      */
     @Query("SELECT st FROM Showtime st " +
-            "JOIN st.schedule s " +
-            "JOIN st.room r " +
-            "JOIN r.branch b " +
-            "WHERE s.movie.id = :movieId " +
-            "AND s.date = :date " +
-            "AND st.isDeleted = false " +
-            "ORDER BY b.id, s.timeStart")
+           "JOIN FETCH st.schedule s " +
+           "JOIN FETCH s.movie m " + // Eagerly fetch the movie associated with the schedule
+           "JOIN FETCH st.room r " +
+           "JOIN FETCH r.branch b " + // Eagerly fetch the branch associated with the room
+           "LEFT JOIN FETCH b.cinema c " + // Optionally fetch cinema if needed for details like hotline/image
+           "WHERE m.id = :movieId " +
+           "AND s.date = :date " +
+           "AND st.isDeleted = false " +
+           "ORDER BY b.id, s.timeStart") // Keep original ordering
     List<Showtime> findByMovieIdAndDateOrderByBranchAndTime(
             @Param("movieId") Long movieId,
             @Param("date") LocalDate date);
 
     /**
      * Find showtimes for a specific movie on a specific date, optionally filtered by cinema, ordered by branch and time
+     * Updated to use JOIN FETCH for better performance and to avoid N+1 issues.
      */
     @Query("SELECT st FROM Showtime st " +
-            "JOIN st.schedule s " +
-            "JOIN st.room r " +
-            "JOIN r.branch b " +
-            "WHERE s.movie.id = :movieId " +
+            "JOIN FETCH st.schedule s " +
+            "JOIN FETCH s.movie m " +
+            "JOIN FETCH st.room r " +
+            "JOIN FETCH r.branch b " +
+            "LEFT JOIN FETCH b.cinema c " +
+            "WHERE m.id = :movieId " +
             "AND s.date = :date " +
             "AND st.isDeleted = false " +
             "AND (:cinemaId IS NULL OR b.cinema.id = :cinemaId) " +

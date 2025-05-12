@@ -22,7 +22,7 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
-import { fetchMovieDetails } from '../../services/movieService';
+import { fetchMovieDetails, fetchShowtimesByMovie } from '../../services/movieService';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LocalMoviesIcon from '@mui/icons-material/LocalMovies';
@@ -36,7 +36,16 @@ import GroupIcon from '@mui/icons-material/Group';
 import TheatersIcon from '@mui/icons-material/Theaters';
 import DirectBookingButton from '../../components/DirectBookingButton';
 import DebugPanel from '../../components/debug/DebugPanel';
+import { MovieShowtimesResponse, BranchWithShowtimes, ShowtimeDetail } from '../../types/showtime';
 import { Actor } from '../../types';
+
+// Helper function to format date as YYYY-MM-DD
+const formatDate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const MovieDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -46,6 +55,9 @@ const MovieDetails: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isMediumScreen = useMediaQuery(theme.breakpoints.down('md'));
   
+  const [selectedDate, setSelectedDate] = React.useState<string>(formatDate(new Date()));
+  console.log("Selected Date for API call:", selectedDate); // Log selectedDate
+
   const { 
     data: movie, 
     isLoading,
@@ -55,6 +67,18 @@ const MovieDetails: React.FC = () => {
     queryKey: ['movieDetails', id],
     queryFn: () => fetchMovieDetails(id as string),
     enabled: !!id
+  });
+  
+  // Query for showtimes
+  const { 
+    data: showtimesData, 
+    isLoading: isLoadingShowtimes, 
+    isError: isErrorShowtimes, 
+    error: errorShowtimes 
+  } = useQuery<MovieShowtimesResponse, Error>({
+    queryKey: ['movieShowtimes', id, selectedDate], // Add selectedDate to queryKey
+    queryFn: () => fetchShowtimesByMovie(id as string, selectedDate), // Pass selectedDate
+    enabled: !!id && !!movie && !!selectedDate, // Ensure selectedDate is also present
   });
   
   // Helper function to get color for age restriction
@@ -122,7 +146,7 @@ const MovieDetails: React.FC = () => {
   
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 4, md: 8 } }}>
-      <DebugPanel />
+      {/* <DebugPanel /> */}
       
       <Button 
         variant="text" 
@@ -545,6 +569,78 @@ const MovieDetails: React.FC = () => {
             />
           </Box>
         </Paper>
+      )}
+      
+      {/* Showtimes Section - NEW */}
+      {movie && movie.status === 'SHOWING' && (
+        <>
+          {isLoadingShowtimes && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4, mt: 4 }}>
+              <CircularProgress />
+              <Typography sx={{ml: 2}}>{t('loading.showtimes', 'Loading showtimes...')}</Typography>
+            </Box>
+          )}
+          {isErrorShowtimes && (
+            <Paper elevation={0} sx={{ mt: 4, p: 3, borderRadius: 3, border: `1px solid ${theme.palette.error.main}`, bgcolor: alpha(theme.palette.error.light, 0.1) }}>
+              <Typography color="error" sx={{ textAlign: 'center' }}>
+                {t('errors.fetchFailedDetailed', { entity: t('movies.showtimes', 'Showtimes'), message: (errorShowtimes as Error)?.message || t('errors.unknown', 'Unknown error') })}
+              </Typography>
+            </Paper>
+          )}
+          {showtimesData && showtimesData.branches && showtimesData.branches.length > 0 && (
+            <Paper elevation={0} sx={{ mt: 4, p: { xs: 2, md: 3 }, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+              <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center' }}>
+                <TheatersIcon color="primary" sx={{ mr: 1 }} />
+                {t('movies.availableShowtimes', 'Available Showtimes')}
+              </Typography>
+              {showtimesData.branches.map((branch: BranchWithShowtimes, branchIndex: number) => (
+                <Box key={branch.branchId} sx={{ mb: 3 }}>
+                  <Typography variant="h6" sx={{ color: theme.palette.primary.main, fontWeight: 'medium' }}>{branch.branchName}</Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>{branch.address}</Typography>
+                  {branch.hotline && <Typography variant="caption" color="text.secondary" sx={{mb:1, display: 'block'}}>{t('common.hotline', 'Hotline')}: {branch.hotline}</Typography>}
+                  
+                  {branch.showtimes && branch.showtimes.length > 0 ? (
+                    <Grid container spacing={1} sx={{ mt: 1 }}>
+                      {branch.showtimes.map((st: ShowtimeDetail) => (
+                        <Grid item key={`${st.scheduleId}-${st.roomId}-${st.scheduleTime}`}>
+                          <Chip 
+                            label={`${st.scheduleTime} (${st.roomName})`} 
+                            variant="outlined"
+                            clickable
+                            onClick={() => navigate(`/book-tickets/${movie.id}?scheduleId=${st.scheduleId}&roomId=${st.roomId}&branchId=${branch.branchId}&date=${st.scheduleDate}&time=${st.scheduleTime}`)}
+                            sx={{
+                              borderColor: theme.palette.primary.light,
+                              color: theme.palette.primary.dark,
+                              fontWeight: 'medium',
+                              '&:hover': {
+                                backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                borderColor: theme.palette.primary.main,
+                              }
+                            }}
+                          />
+                        </Grid>
+                      ))}
+                    </Grid>
+                  ) : (
+                    <Typography variant="body2" sx={{ fontStyle: 'italic', mt: 1 }}>
+                      {t('movies.noShowtimesForBranchDay', 'No showtimes available for this branch today.')}
+                    </Typography>
+                  )}
+                  {branchIndex < showtimesData.branches.length - 1 && (
+                      <Divider sx={{ my: 3 }}/>
+                  )}
+                </Box>
+              ))}
+            </Paper>
+          )}
+          {showtimesData && (!showtimesData.branches || showtimesData.branches.length === 0) && !isLoadingShowtimes && !isErrorShowtimes && (
+            <Paper elevation={0} sx={{ mt: 4, p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+              <Typography variant="h6" sx={{ fontStyle: 'italic', textAlign: 'center' }}>
+                {t('movies.noShowtimesCurrently', 'No showtimes are currently available for this movie.')}
+              </Typography>
+            </Paper>
+          )}
+        </>
       )}
       
       {/* Book Ticket Button (Bottom) - MoMo Style */}

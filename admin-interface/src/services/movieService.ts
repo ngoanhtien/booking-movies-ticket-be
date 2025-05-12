@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { Movie } from '../types';
+import { Movie, Actor as MovieActor, Review as MovieReview } from '../types';
+import { MovieShowtimesResponse } from '../types/showtime';
 
 // Sử dụng đường dẫn tương đối thay vì URL tuyệt đối để proxy hoạt động
 const API_BASE_URL = '';
@@ -407,5 +408,38 @@ export const fetchUpcomingMovies = async (): Promise<Movie[]> => {
   } catch (error) {
     console.error('[fetchUpcomingMovies] Error fetching upcoming movies:', error);
     return [];
+  }
+};
+
+export const fetchShowtimesByMovie = async (movieId: string, date?: string): Promise<MovieShowtimesResponse> => {
+  try {
+    // The API endpoint from network logs was /showtime/{id}/by-date
+    // It did not seem to take a date parameter in the query string in that specific log,
+    // but it's common for such an endpoint to accept one. Adding it as optional.
+    const endpoint = date ? `${API_BASE_URL}/showtime/${movieId}/by-date?date=${date}` : `${API_BASE_URL}/showtime/${movieId}/by-date`;
+    console.log(`[fetchShowtimesByMovie] Requesting ${endpoint}`);
+    const response = await axios.get(endpoint);
+    
+    console.log(`[fetchShowtimesByMovie] Raw API response for movie ID ${movieId}:`, response.data);
+
+    if (response.data && response.data.result && typeof response.data.result === 'object') {
+      // Assuming the actual showtimes data is in response.data.result as per network log structure
+      return response.data.result as MovieShowtimesResponse;
+    }
+    // Fallback if result is directly the data (less likely based on logs but good for robustness)
+    if (response.data && typeof response.data === 'object' && response.data.branches) {
+        return response.data as MovieShowtimesResponse;
+    }
+
+    console.error('[fetchShowtimesByMovie] Unexpected response structure:', response.data);
+    throw new Error('Failed to fetch showtimes or data format is incorrect');
+
+  } catch (error: any) {
+    console.error(`[fetchShowtimesByMovie] Error fetching showtimes for movie ID ${movieId}:`, error.message);
+    if (axios.isAxiosError(error) && error.response) {
+      console.error('[fetchShowtimesByMovie] Axios error response:', error.response.data);
+    }
+    // Propagate a more specific error or a generic one
+    throw new Error(error.response?.data?.message || `Failed to fetch showtimes for movie ${movieId}`);
   }
 }; 

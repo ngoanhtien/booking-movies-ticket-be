@@ -203,6 +203,16 @@
     - Addressed `MovieForm` prop type errors in `routes.tsx` by passing `null` for `movie` and empty functions for callbacks (temporary measure).
     - Fixed TypeScript errors in form validation by properly handling field error checks.
     - Fixed TypeScript errors in UserHeader component related to property access.
+    - **Showtime Generation Endpoint Functional (`/showtime/public/add-showtimes-for-active-movies`) (LATEST)**:
+        - Successfully debugged and fixed the endpoint for generating showtimes for movies with "SHOWING" status.
+        - **AuthenticationFilter Fix**: Modified `AuthenticationFilter.java` using `AntPathMatcher` to correctly allow public access to `/showtime/public/**` even when a JWT token is present, resolving initial 401 errors.
+        - **ShowtimeController Fixes & Debugging**:
+            - Changed movie status query from a hardcoded "ACTIVE" string to `StatusMovie.SHOWING` enum.
+            - Resolved `NoResourceFoundException` (initially reported as "Uncategorized error") by:
+                - Adding a `/public/ping` test endpoint to confirm controller reachability.
+                - Systematically uncommenting logic in `addShowtimesForActiveMoviesPublic` method, which helped isolate the issue to the status query and confirm overall method mapping and logic flow.
+        - **Outcome**: Endpoint now successfully creates `Schedule`, `Showtime`, and `ShowtimeSeat` entities, unblocking the movie booking flow.
+        - **Learnings**: Reinforced the importance of `AntPathMatcher` for wildcard public paths with JWT, checking detailed server logs, step-by-step code isolation for debugging, and using Enums for status queries.
 - Minor UI Fixes:
     - Login Page: Removed unnecessary "auth.noAccount" text.
     - `Register.tsx`: Simplified by removing a `Typography` wrapper.
@@ -223,6 +233,33 @@
         - Movie details, including actor information, display correctly in `MovieDetails.tsx`.
         - The issue of being redirected to login when navigating to movie-related pages or attempting to book tickets has been resolved.
         - Overall stability of movie browsing and detail view significantly improved.
+
+- **Booking Redirection from Movie List (LATEST - Workaround Applied)**:
+    - **Symptom**: Clicking "Book Ticket" on `MovieList.tsx` redirected to login, despite valid session. Issue did not occur from `MovieDetails.tsx`.
+    - **Investigation**: Backend logs showed a 401 Unauthorized for `GET /api/v1/showtime/{movieId}/by-date` (a `permitAll()` endpoint) when a valid JWT was present. The `AuthenticationFilter` processed the token but failed to establish a valid `SecurityContext` for this specific `permitAll()` scenario with an existing token.
+    - **Frontend Workaround**: Modified the "Book Ticket" button in `MovieList.tsx` to navigate to `/movies/{movieId}` (movie details page) instead of directly to `/bookings/book-movie/{movieId}`. Booking from the details page functions correctly.
+    - **Outcome**: Users can now initiate booking from the movie list by first going through the movie details page. The direct booking path from the list is temporarily disabled. The root cause of the backend 401 on a `permitAll()` endpoint when a valid token is presented still needs deeper investigation if direct booking from the list is to be restored.
+
+- **Missing Showtimes Fix**:
+    - **Symptom**: Users saw "Không có lịch chiếu nào cho phim này hoặc lựa chọn này." (No showtimes available for this movie or selection) when attempting to book tickets.
+    - **Investigation**: Database analysis showed no showtime data existed for the selected movies. The database schema was correct, but lacked actual showtime records.
+    - **Solution**: Created a public API endpoint in `ShowtimeController.java` to add sample showtimes for all active movies. The endpoint creates schedules for today and tomorrow with multiple showtimes (10:00, 13:30, 17:00) and generates required seat availability data.
+    - **Implementation Details**:
+        - Added `/showtime/public/check-movies` endpoint to verify available movies in the database
+        - Added `/showtime/public/add-showtimes-for-active-movies` endpoint to generate showtime data
+        - Updated security configuration to allow access to these public endpoints without authentication
+        - Fixed entity relationship handling to properly populate showtimes and seats
+    - **Outcome**: Users can now see available showtimes when booking tickets, enabling the complete ticket booking flow.
+
+- **Showtimes Display Correctly (LATEST FIX)**:
+    - **Symptom**: Showtimes were not appearing in the UI, API returned empty branches for showtimes.
+    - **Root Cause**: `Schedule` entities were being created with `isDeleted = null`. While `@SQLRestriction("is_deleted IS DISTINCT FROM true")` on the inherited `BaseEntity` didn't filter these `Schedule` records out directly (as `null` is distinct from `true`), Hibernate's query processing for `ShowtimeRepository.findByMovieIdAndDateOrderByBranchAndTime` (which joins `Showtime` with `Schedule`) failed to return `Showtime`s linked to these `Schedule`s with `isDeleted = null`.
+    - **Solution**:
+        - **Immediate DB Fix**: Executed `UPDATE schedules SET is_deleted = false WHERE is_deleted IS NULL;` via `DatabaseChecker.java` to correct existing data.
+        - **Code Fix (Proactive)**:
+            - Verified that `ShowtimeController.addShowtimesForActiveMoviesPublic` correctly sets `schedule.setIsDeleted(false)` for new and updated `Schedule` entities.
+            - Updated `ShowtimeController.addSampleShowtimes` (formerly `createShowtimesForMovie8Test`) to also set `schedule.setIsDeleted(false)` upon creation.
+    - **Outcome**: Showtimes are now correctly fetched and displayed. The underlying issue of `Schedule.isDeleted` being null is resolved for future data generation.
 
 ## What's Left to Build
 1. Frontend Features

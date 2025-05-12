@@ -833,7 +833,22 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
       case 0:
         return (
           <Box>
-            <Typography variant="h6" sx={{ mb: 2 }}>{t('booking.selectShowtime', 'Select Showtime')}</Typography>
+            {/* DEBUG TOOLS - ONLY IF directBooking IS TRUE */}
+            {/* {directBooking && (
+              <Paper sx={{ p: 2, mb: 3, bgcolor: 'warning.lighter' }}>
+                <Typography variant="subtitle2" gutterBottom>Debug Tools</Typography>
+                <Button variant="outlined" onClick={checkToken} sx={{ mr: 1 }}>Check Token</Button>
+                <Button variant="contained" onClick={simplifiedBooking} color="secondary">Book Simply</Button>
+                {debugResult && (
+                  <Box sx={{ mt: 2, p: 1, bgcolor: 'grey.200', borderRadius: 1, whiteSpace: 'pre-wrap', maxHeight: '100px', overflowY: 'auto' }}>
+                    <Typography variant="caption">{debugResult}</Typography>
+                  </Box>
+                )}
+              </Paper>
+            )} */}
+            {/* END DEBUG TOOLS */}
+
+            <Typography variant="h6" gutterBottom>{t('booking.selectShowtime')}</Typography>
             {showtimes.length === 0 && !loading && (
               <Typography sx={{my: 2}}>{t('booking.noShowtimes', 'No showtimes available for this movie or selection.')}</Typography>
             )}
@@ -1189,22 +1204,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
       <Typography variant="h4" fontWeight="700" color="text.primary" sx={{ mb: 4, textAlign: 'center' }}>
         {t('booking.title', 'Book Your Tickets')}
       </Typography>
-      
-      {/* Debug Tools */}
-      <Box sx={{ mb: 3, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
-        <Typography variant="subtitle1" fontWeight="bold">Debug Tools</Typography>
-        <Button variant="outlined" color="info" onClick={checkToken} sx={{ mr: 1, mt: 1 }}>
-          Check Token
-        </Button>
-        <Button variant="outlined" color="warning" onClick={simplifiedBooking} sx={{ mt: 1 }}>
-          Book Simply
-        </Button>
-        {debugResult && (
-          <Box sx={{ mt: 2, p: 2, backgroundColor: '#000', color: '#fff', borderRadius: 1, maxHeight: '200px', overflow: 'auto' }}>
-            <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{debugResult}</pre>
-          </Box>
-        )}
-      </Box>
       
       {!bookingCompleted && (
         <Stepper activeStep={activeStep} sx={{ mb: 4 }}>

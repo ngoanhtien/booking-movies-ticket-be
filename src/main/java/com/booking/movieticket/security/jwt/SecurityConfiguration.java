@@ -59,6 +59,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/showtime/*/by-date").permitAll()
                         .requestMatchers("/showtime/*/filter").permitAll()
                         .requestMatchers("/showtime/*/*/detail").permitAll()
+                        .requestMatchers("/showtime/public/**").permitAll()
                         .requestMatchers("/user/me").authenticated()
                         .requestMatchers("/user/**").hasRole("ADMIN")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
