@@ -7,7 +7,6 @@ import com.booking.movieticket.dto.request.admin.create.RoomInformationRequest;
 import com.booking.movieticket.dto.request.admin.update.RoomForUpdateRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.dto.response.admin.create.RoomDetailResponse;
-import com.booking.movieticket.dto.response.admin.create.RoomInformationCreatedResponse;
 import com.booking.movieticket.dto.response.admin.create.RoomNotCompletedCreatedResponse;
 import com.booking.movieticket.service.RoomService;
 import jakarta.validation.Valid;
