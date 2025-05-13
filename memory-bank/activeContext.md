@@ -524,6 +524,29 @@ Details of specific changes and resolutions are logged chronologically in `progr
 
 - **DatePicker Fixes (MovieForm & MovieDetails)**: Resolved. DatePicker components in `MovieForm.tsx` (MUI v5 `slotProps`) and `MovieDetails.tsx` (simplified to `input type="date"`) are functional. Caused by MUI API changes and date-fns compatibility issues.
 
-- **Showtime Generation & Display**: Resolved. Issues related to API path consistency (controller mappings, security filters) and `Schedule.isDeleted = null` (JPA `@SQLRestriction` interaction with NULLs) were fixed. Showtimes now generate and display correctly. *Learnings*: API path consistency is critical; understand `@SQLRestriction` behavior.
+- **Showtime Generation & Display**: Resolved. Issues related to API path consistency (controller mappings, security filters), date/time handling (TimeZone, `LocalDateTime` vs `Date`), and frontend display logic in `ShowtimeAccordion.tsx` and `ShowtimeMatrix.tsx` have been addressed. Data is now fetched and displayed correctly.
 
 - **Movie Content Display (Actors & JSON)**: Resolved. Issues with `actor.charAt` (due to `Actor[]` vs `string[]` mismatch) and malformed JSON from backend (circular dependencies, exception handler overwriting committed responses) were fixed. *Learnings*: Sync frontend types with API; manage JPA serialization with `@JsonManagedReference`/`@JsonBackReference` and ensure exception handlers check `response.isCommitted()`.
+
+- **Git Workflow: Merge `feature/showtime-management` to `main` & Push to Fork**:
+  - Successfully merged the `feature/showtime-management` branch into the local `main` branch.
+  - Resolved merge conflicts in `CinemaResponse.java`, `MovieSpecificationBuilder.java`, and `AuthServiceImpl.java`.
+  - Added `memory-bank/` directory to `.gitignore` to exclude it from version control.
+  - Pushed the updated local `main` branch to the personal fork (`myfork` - `hiepau1231/booking-movies-ticket-be`).
+
+## Next Steps
+
+- **Admin Panel API Integration (CONTINUED PRIORITY)**:
+  - Tiếp tục hoàn thiện việc tích hợp API cho các chức năng còn lại của Admin Panel.
+  - Đảm bảo tất cả các form CRUD (Create, Read, Update, Delete) hoạt động chính xác với dữ liệu từ backend.
+  - Kiểm tra kỹ lưỡng quyền truy cập và luồng dữ liệu cho vai trò ADMIN.
+
+- **Create Pull Request to Upstream Repository**:
+  - Create a Pull Request from the `main` branch of the personal fork (`hiepau1231/booking-movies-ticket-be`) to the `main` branch of the upstream repository (`ngoanhtien/booking-movies-ticket-be`).
+  - Clearly describe the changes, including the Showtime Management feature, bug fixes, and merge conflict resolutions.
+  - Coordinate with the upstream repository owner for review and merging.
+
+- **Refine Showtime Management UI/UX**:
+  - Continue working on the Cinema Selection page.
+  - Address the root cause of booking redirection (lower priority).
+  - Investigate and address any new findings or minor issues from recent fixes.

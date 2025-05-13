@@ -105,7 +105,7 @@ public class MovieController {
             String imageUrl = imageUploadService.uploadImage(file);
             log.info("Image uploaded successfully. URL: {}", imageUrl);
             
-            Movie movie = movieService.getMovieById(movieId);
+            Movie movie = movieService.findMovie(movieId);
             if ("small".equalsIgnoreCase(imageType)) {
                 movie.setImageSmallUrl(imageUrl);
             } else if ("large".equalsIgnoreCase(imageType)) {

@@ -109,18 +109,24 @@ public class UserController {
             DomainUserDetails userDetails = (DomainUserDetails) principal;
             Long userId = userDetails.getUserId();
             log.info("Authenticated user ID for /user/me: {}", userId);
-            User userEntity = userService.getUserById(userId);
+            User userEntity = userService.findUserById(userId);
 
             UserDetailResponse userDetailResponse = new UserDetailResponse();
-            userDetailResponse.setId(userEntity.getId());
-            userDetailResponse.setUsername(userEntity.getUsername());
-            userDetailResponse.setFullName(userEntity.getFullname()); // User entity uses 'fullname'
-            userDetailResponse.setEmail(userEntity.getEmail());
-            if (userEntity.getRole() != null) {
-                userDetailResponse.setRole(userEntity.getRole().getName());
+            if (userEntity != null) {
+                userDetailResponse.setId(userEntity.getId());
+                userDetailResponse.setUsername(userEntity.getUsername());
+                userDetailResponse.setFullName(userEntity.getFullName());
+                userDetailResponse.setEmail(userEntity.getEmail());
+                if (userEntity.getRole() != null) {
+                    userDetailResponse.setRole(userEntity.getRole().getName());
+                }
+                // Set other fields as needed
+                // userDetailResponse.setAvatarUrl(userEntity.getAvatarUrl());
+            } else {
+                log.error("User not found in database with ID: {}", userId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                               .body(new ApiResponse<>("User details not found in database.", null));
             }
-            // Set other fields as needed
-            // userDetailResponse.setAvatarUrl(userEntity.getAvatarUrl());
 
             return ResponseEntity.ok(new ApiResponse<>("Current user details fetched successfully.", userDetailResponse));
         } else {

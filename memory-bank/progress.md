@@ -466,3 +466,64 @@
 - **Diagnosis**: The issue was traced to the use of the `href` attribute on Material UI `Button` components in `Dashboard.tsx`. In the context of React Router, `href` causes standard browser navigation, bypassing client-side routing.
 - **Fix**: Refactored the buttons in `Dashboard.tsx` to use `useNavigate()` hook and `onClick` handlers instead of `href`.
 - **Outcome**: Admin dashboard buttons now correctly navigate within the SPA without unwanted redirects. Core admin navigation is now stable. 
+
+### Key Technical Decisions & Learnings (Consolidated)
+- **Error Handling & Logging**: Consistent use of `AppException` with `ErrorCode` for backend errors. Centralized logging via Slf4j. Frontend error display via `toast` notifications and form error messages.
+- **API Design**: Adherence to RESTful principles where possible. Clear DTOs for requests and responses. Versioning not yet formally implemented but considered for future.
+- **State Management (Frontend)**: Primarily React Query for server state, Zustand for global client state. Context API for highly localized state where appropriate.
+
+### Git Workflow & Version Control
+- **Feature Branch Merged to Main**: Successfully merged the `feature/showtime-management` branch into the local `main` branch after resolving merge conflicts in `CinemaResponse.java`, `MovieSpecificationBuilder.java`, and `AuthServiceImpl.java`.
+- **`.gitignore` Update**: Added `memory-bank/` directory to `.gitignore` to exclude it from version control.
+- **Pushed to Personal Fork**: The updated local `main` branch (including the merge and subsequent commits) has been pushed to the personal fork `myfork` (repository `hiepau1231/booking-movies-ticket-be`). The next step is to create a Pull Request to the upstream repository `ngoanhtien/booking-movies-ticket-be`.
+
+## What's Left To Build / Key Areas for Improvement
+- **API Integration for Admin Panel**: Replace mock data with real API data in movieService.ts first
+- **MoMo-Inspired Booking Flow Enhancements**: Improve `MovieList.tsx` (User-Facing Movie List)
+- **Thorough Testing & Validation**: Test the date selection functionality in MovieDetails
+- **Backend Warning Resolution**: Address MapStruct "Unmapped target properties" warnings in various mappers
+- **Data Integrity for `Cinema.address`**: Review `NULL` values in `cinemas.address` and decide on a data update strategy or confirm if optionality is permanent
+
+## Notes
+- Core booking system structure is in place
+- **Backend is now stable and starting correctly.**
+- Focus on completing booking workflow
+- Plan payment integration
+- Consider performance optimization
+- Plan for real-time updates
+- Monitor system performance
+- Admin panel UI development decoupled from backend
+- Authentication flow is properly implemented with JWT tokens
+- Protected routes are in place
+- Token refresh mechanism is implemented
+- **Component simplification strategy successful for date picker, consider for other complex UI elements with dependency issues.**
+
+## Update (11/29/2023)
+
+### Issues Fixed:
+
+1. **API Connection Issues Between Frontend and Backend:**
+   - Resolved CORS issues by using relative paths instead of absolute URLs.
+   - Modified `API_URL`, `API_BASE_URL`, and `baseURL` in axiosInstance to empty strings to leverage proxy functionality.
+
+2. **API Response Data Handling Issues:**
+   - Fixed "Cannot read properties of undefined (reading 'length')" error in MovieList component.
+   - Improved handling of various API response formats through normalizeResponse() function.
+   - Added robust array type checking in UI before accessing properties.
+   - Ensured data returned to the frontend is normalized regardless of the backend JSON structure.
+
+### Lessons Learned:
+
+1. **Defensive Data Handling:** Always check data structures and provide default values to avoid runtime errors.
+2. **Data Normalization:** Create an adapter layer between API and UI to ensure consistent data.
+3. **Appropriate Logging:** Add API data logging for easier debugging.
+4. **Effective CORS Handling:** Using client-side proxy is a simple and effective solution.
+
+4. **Effective CORS Handling:** Using client-side proxy is a simple and effective solution.
+
+**Date**: `2024-07-30`
+**Activity**: Admin Panel Debugging & Fix
+- **Problem**: Clicking buttons (e.g., "Add Movie") on the admin dashboard `/admin/dashboard` caused a full page reload and redirect to `/movies`, despite correct initial authentication and sidebar navigation working.
+- **Diagnosis**: The issue was traced to the use of the `href` attribute on Material UI `Button` components in `Dashboard.tsx`. In the context of React Router, `href` causes standard browser navigation, bypassing client-side routing.
+- **Fix**: Refactored the buttons in `Dashboard.tsx` to use `useNavigate()` hook and `onClick` handlers instead of `href`.
+- **Outcome**: Admin dashboard buttons now correctly navigate within the SPA without unwanted redirects. Core admin navigation is now stable. 
