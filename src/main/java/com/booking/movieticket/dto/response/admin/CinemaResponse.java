@@ -8,9 +8,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CinemaResponse {
-
     private Long id;
     private String name;
     private String hotline;
     private String description;
+    private String logoUrl;
+    private String address;
+    private Boolean isDeleted;
+    private String createdAt;
+    private String updatedAt;
 }

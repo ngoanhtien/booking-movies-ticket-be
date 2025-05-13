@@ -131,6 +131,14 @@ public class MovieServiceImpl implements MovieService {
         return movieRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
     }
 
+    @Override
+    public Movie saveMovie(Movie movie) {
+        if (movie == null) {
+            throw new AppException(ErrorCode.MOVIE_NOT_FOUND);
+        }
+        return movieRepository.save(movie);
+    }
+
     private void validateImages(MultipartFile smallImgUrl, MultipartFile largeImgUrl, BindingResult bindingResult) {
         if (smallImgUrl == null || smallImgUrl.isEmpty()) {
             bindingResult.rejectValue("smallImgUrl", "movie.smallImage.required", "Small image is required");

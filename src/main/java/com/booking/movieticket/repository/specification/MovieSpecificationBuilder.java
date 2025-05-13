@@ -2,15 +2,25 @@ package com.booking.movieticket.repository.specification;
 
 import com.booking.movieticket.dto.criteria.MovieCriteria;
 import com.booking.movieticket.entity.Movie;
+import com.booking.movieticket.entity.enums.StatusMovie;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
 
 public class MovieSpecificationBuilder {
     public static Specification<Movie> findByCriteria(MovieCriteria criteria) {
         Specification<Movie> spec = Specification.where(notDeleted());
-        if (criteria != null && StringUtils.hasText(criteria.getName())) {
+        if (criteria == null) {
+            return spec;
+        }
+
+        if (StringUtils.hasText(criteria.getName())) {
             spec = spec.and(hasName(criteria.getName()));
         }
+
+        if (criteria.getStatus() != null) {
+            spec = spec.and(hasStatus(criteria.getStatus()));
+        }
+        
         return spec;
     }
 
@@ -26,5 +36,9 @@ public class MovieSpecificationBuilder {
                 criteriaBuilder.isNull(root.get("isDeleted")),
                 criteriaBuilder.notEqual(root.get("isDeleted"), true)
         );
+    }
+
+    private static Specification<Movie> hasStatus(StatusMovie status) {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("status"), status);
     }
 }

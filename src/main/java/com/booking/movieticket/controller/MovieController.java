@@ -8,6 +8,7 @@ import com.booking.movieticket.dto.response.admin.MovieResponse;
 import com.booking.movieticket.dto.response.admin.create.MovieCreatedResponse;
 import com.booking.movieticket.entity.Movie;
 import com.booking.movieticket.service.MovieService;
+import com.booking.movieticket.service.ImageUploadService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
@@ -26,7 +27,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/movie")
@@ -38,6 +42,7 @@ import java.util.List;
 public class MovieController {
 
     MovieService movieService;
+    ImageUploadService imageUploadService;
 
     @GetMapping("")
     public ResponseEntity<ApiResponse<Page<MovieResponse>>> getAllMovies(MovieCriteria movieCriteria,
@@ -82,6 +87,47 @@ public class MovieController {
         movieService.deactivateMovie(id);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ApiResponse<>("Movie deactivated successfully."));
+    }
+
+    @PostMapping("/upload-image")
+    public ResponseEntity<ApiResponse<Map<String, String>>> uploadMovieImage(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("movieId") Long movieId,
+            @RequestParam("imageType") String imageType) {
+        try {
+            log.info("Uploading {} image for movie ID: {}", imageType, movieId);
+            
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse<>("No file uploaded", null));
+            }
+            
+            String imageUrl = imageUploadService.uploadImage(file);
+            log.info("Image uploaded successfully. URL: {}", imageUrl);
+            
+            Movie movie = movieService.getMovieById(movieId);
+            if ("small".equalsIgnoreCase(imageType)) {
+                movie.setImageSmallUrl(imageUrl);
+            } else if ("large".equalsIgnoreCase(imageType)) {
+                movie.setImageLargeUrl(imageUrl);
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse<>("Invalid image type. Must be 'small' or 'large'", null));
+            }
+            
+            movieService.saveMovie(movie);
+            
+            Map<String, String> result = new HashMap<>();
+            result.put("imageUrl", imageUrl);
+            
+            return ResponseEntity.ok()
+                    .body(new ApiResponse<>("Image uploaded successfully", result));
+            
+        } catch (IOException e) {
+            log.error("Error uploading image: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Failed to upload image: " + e.getMessage(), null));
+        }
     }
 
     @GetMapping("/showing")
