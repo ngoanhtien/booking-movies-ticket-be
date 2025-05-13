@@ -1201,29 +1201,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
               ))}
             </Box>
             
-            {/* Thêm nút "Proceed to Payment" nổi bật */}
-            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center', width: '100%' }}>
-              <Button
-                variant="contained"
-                color="primary"
-                size="large"
-                disabled={formik.values.seatIds.length === 0}
-                onClick={handleNext}
-                sx={{ 
-                  py: 1.5, 
-                  px: 4, 
-                  fontSize: '1.1rem',
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
-                  '&:hover': {
-                    boxShadow: '0 6px 15px rgba(0,0,0,0.3)',
-                  }
-                }}
-                startIcon={<i className="fas fa-arrow-right" />}
-              >
-                {t('booking.proceedToPayment', 'Tiếp tục thanh toán')}
-              </Button>
-            </Box>
-            
             {formik.touched.seatIds && formik.errors.seatIds && (
               <Alert severity="error" sx={{ mt: 2, width: '100%', justifyContent: 'center' }}>
                 {formik.errors.seatIds}
@@ -1456,38 +1433,24 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
             
             {renderStepContent(activeStep)}
 
-            {!directBooking && (
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-                <Button
-                  disabled={activeStep === 0}
-                  onClick={handleBack}
-                >
-                  {t('common.back', 'Back')}
-                </Button>
-                <Button 
-                  variant="contained" 
-                  type={activeStep === steps.length - 1 ? 'submit' : 'button'}
-                  onClick={activeStep === steps.length - 1 ? undefined : handleNext} // Use undefined for submit to let formik handle
-                  disabled={loading || (activeStep === 1 && formik.values.seatIds.length === 0)}
-                >
-                  {activeStep === steps.length - 1 
-                    ? t('common.confirmPay', 'Confirm & Pay') 
-                    : t('common.next', 'Next')}
-                </Button>
-              </Box>
-            )}
-             {/* Nút đặt vé đơn giản hóa cho directBooking */}
-            {directBooking && (
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+              <Button
+                disabled={activeStep === 0}
+                onClick={handleBack}
+              >
+                {t('common.back', 'Quay lại')}
+              </Button>
               <Button 
                 variant="contained" 
-                type="submit"
-                disabled={loading || formik.values.seatIds.length === 0}
-                fullWidth
-                sx={{mt:2}}
+                type={activeStep === steps.length - 1 ? 'submit' : 'button'}
+                onClick={activeStep === steps.length - 1 ? undefined : handleNext} // Use undefined for submit to let formik handle
+                disabled={loading || (activeStep === 1 && formik.values.seatIds.length === 0)}
               >
-                {t('booking.confirmAndProceed', 'Confirm and Proceed to Payment')}
+                {activeStep === steps.length - 1 
+                  ? t('common.confirmPay', 'Tiếp tục') 
+                  : t('common.next', 'Tiếp tục')}
               </Button>
-            )}
+            </Box>
           </form>
         ) : (
           <Box sx={{ textAlign: 'center' }}>

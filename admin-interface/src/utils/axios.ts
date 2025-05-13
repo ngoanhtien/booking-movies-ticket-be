@@ -195,7 +195,12 @@ axiosInstance.interceptors.request.use(
     
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
-      console.log(`[${currentRequestId}] Token added to axios request: ${config.url}`, config.method?.toUpperCase());
+      console.log(`[${currentRequestId}] Token added to axios request: ${config.url} ${config.method?.toUpperCase()}`, {
+        url: config.url,
+        method: config.method,
+        isAdmin: config.url?.includes('/admin'),
+        token: token.substring(0, 15) + '...' // Chỉ log một phần của token để bảo mật
+      });
     } else {
       console.warn(`[${currentRequestId}] No token available for request: ${config.url}`);
     }
@@ -216,7 +221,13 @@ axiosInstance.interceptors.response.use(
   response => {
     const method = response.config.method?.toUpperCase() || '?';
     const url = response.config.url;
-    console.log(`[${requestCounter++}] Response success: ${response.status} ${method} ${url}`);
+    console.log(`[${requestCounter++}] Response success: ${response.status} ${method} ${url}`, {
+      url,
+      status: response.status,
+      isAdmin: url?.includes('/admin'),
+      responseType: response.headers?.['content-type'],
+      dataType: typeof response.data
+    });
     return response;
   },
   async error => {
@@ -301,6 +312,12 @@ const axiosRequestInterceptor = axios.interceptors.request.use(
   }
 );
 
+// Hàm kiểm tra xem URL có thuộc về admin không
+const isAdminUrl = (url: string | undefined): boolean => {
+  if (!url) return false;
+  return url.includes('/admin/') || url.startsWith('/admin');
+};
+
 const axiosResponseInterceptor = axios.interceptors.response.use(
   (response) => {
     return response;
@@ -317,6 +334,9 @@ const axiosResponseInterceptor = axios.interceptors.response.use(
     // Xử lý 401 hoặc token hết hạn
     if ((error.response?.status === 401 && !originalRequest?._retry) || 
         (!originalRequest?._retry && isTokenExpired())) {
+      
+      const currentUrl = originalRequest?.url;
+      console.log('Intercepting 401 error for URL:', currentUrl, 'Is admin URL:', isAdminUrl(currentUrl));
       
       if (!originalRequest) {
         // Nếu không có request gốc, đăng xuất luôn
@@ -360,12 +380,20 @@ const axiosResponseInterceptor = axios.interceptors.response.use(
       } catch (refreshError) {
         if (DEBUG) console.error('Refresh token error (axios):', refreshError);
         processQueue(refreshError, null);
-        store.dispatch(logout());
         
-        // Chuyển hướng đến trang đăng nhập
-        setTimeout(() => {
-          window.location.href = '/login?expired=true';
-        }, 100);
+        // Chỉ logout và chuyển hướng nếu không phải là request từ admin panel
+        if (!isAdminUrl(originalRequest.url)) {
+          console.log('Logging out and redirecting non-admin URL after refresh failure:', originalRequest.url);
+          store.dispatch(logout());
+          console.log('Redirecting to login page after refresh token failure...');
+          setTimeout(() => {
+            window.location.href = '/login?expired=true';
+          }, 100);
+        } else {
+          console.warn('Token refresh failed for admin URL. User remains logged in, but subsequent API calls may fail:', originalRequest.url);
+          // Không dispatch(logout()) để user vẫn ở lại admin panel
+          // UI trong admin panel nên hiển thị lỗi API thay vì redirect
+        }
         
         return Promise.reject(refreshError);
       } finally {

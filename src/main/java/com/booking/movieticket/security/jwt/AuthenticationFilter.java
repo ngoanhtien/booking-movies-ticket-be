@@ -30,6 +30,10 @@ public class AuthenticationFilter extends OncePerRequestFilter {
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     private final List<String> publicPaths = Arrays.asList(
+            "/auth/login",
+            "/auth/register",
+            "/auth/refresh-token",
+            "/auth/refresh",
             "/api/v1/auth/login",
             "/api/v1/auth/register",
             "/api/v1/auth/refresh-token",

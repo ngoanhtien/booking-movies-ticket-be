@@ -7,6 +7,9 @@ import {
   Typography,
   IconButton,
   Dialog,
+  CircularProgress,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { useTranslation } from 'react-i18next';
@@ -14,50 +17,82 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShowtimeForm from './ShowtimeForm';
-
-interface Showtime {
-  id: number;
-  movieId: number;
-  movieTitle: string;
-  cinemaId: number;
-  cinemaName: string;
-  roomId: number;
-  roomName: string;
-  date: string;
-  time: string;
-  price: number;
-  status: 'ACTIVE' | 'INACTIVE';
-}
+import { showtimeService, Showtime, ShowtimeFilter } from '../../services/showtimeService';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const ShowtimeManagement: React.FC = () => {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [selectedShowtime, setSelectedShowtime] = useState<Showtime | null>(null);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [filter, setFilter] = useState<ShowtimeFilter>({});
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info';
+  }>({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
 
-  // Mock data - will be replaced with API calls
-  const showtimes: Showtime[] = [
-    {
-      id: 1,
-      movieId: 1,
-      movieTitle: 'Sample Movie',
-      cinemaId: 1,
-      cinemaName: 'Sample Cinema',
-      roomId: 1,
-      roomName: 'Room 1',
-      date: '2024-03-20',
-      time: '19:00',
-      price: 100000,
-      status: 'ACTIVE',
-    },
-  ];
+  // Fetch showtimes using React Query
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['showtimes', page, pageSize, filter],
+    queryFn: () => showtimeService.getAllShowtimes(page, pageSize, filter)
+  }) as any;
+
+  const showtimes = data?.content || [];
+  const totalRows = data?.totalElements || 0;
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: t('showtimes.id'), width: 70 },
-    { field: 'movieTitle', headerName: t('showtimes.movie'), width: 200 },
-    { field: 'cinemaName', headerName: t('showtimes.cinema'), width: 150 },
-    { field: 'roomName', headerName: t('showtimes.room'), width: 100 },
-    { field: 'date', headerName: t('showtimes.date'), width: 130 },
-    { field: 'time', headerName: t('showtimes.time'), width: 100 },
+    { 
+      field: 'movie', 
+      headerName: t('showtimes.movie'), 
+      width: 200,
+      valueGetter: (params) => {
+        return params.row.schedule?.movie?.title || '';
+      }
+    },
+    { 
+      field: 'branch', 
+      headerName: t('showtimes.branch'), 
+      width: 150,
+      valueGetter: (params) => {
+        return params.row.room?.branch?.name || '';
+      }
+    },
+    { 
+      field: 'room', 
+      headerName: t('showtimes.room'), 
+      width: 100,
+      valueGetter: (params) => {
+        return params.row.room?.name || '';
+      }
+    },
+    { 
+      field: 'startTime', 
+      headerName: t('showtimes.startTime'), 
+      width: 180,
+      valueGetter: (params) => {
+        if (!params.row.startTime) return '';
+        const date = new Date(params.row.startTime);
+        return date.toLocaleString();
+      }
+    },
+    { 
+      field: 'endTime', 
+      headerName: t('showtimes.endTime'), 
+      width: 180,
+      valueGetter: (params) => {
+        if (!params.row.endTime) return '';
+        const date = new Date(params.row.endTime);
+        return date.toLocaleString();
+      }
+    },
     {
       field: 'price',
       headerName: t('showtimes.price'),
@@ -75,9 +110,9 @@ const ShowtimeManagement: React.FC = () => {
       width: 130,
       renderCell: (params) => (
         <Typography
-          color={params.value === 'ACTIVE' ? 'success.main' : 'error.main'}
+          color={params.row.status === 'ACTIVE' ? 'success.main' : 'error.main'}
         >
-          {params.value === 'ACTIVE' ? t('common.active') : t('common.inactive')}
+          {params.row.status === 'ACTIVE' ? t('common.active') : t('common.inactive')}
         </Typography>
       ),
     },
@@ -116,9 +151,27 @@ const ShowtimeManagement: React.FC = () => {
     setOpen(true);
   };
 
-  const handleDelete = (id: number) => {
-    // TODO: Implement delete functionality
-    console.log('Delete showtime:', id);
+  const handleDelete = async (id: number) => {
+    try {
+      await showtimeService.deleteShowtime(id);
+      
+      // Hiển thị thông báo thành công
+      setSnackbar({
+        open: true,
+        message: t('showtimes.deleteSuccess', 'Showtime deleted successfully'),
+        severity: 'success'
+      });
+      
+      // Refresh danh sách lịch chiếu
+      refetch();
+    } catch (error) {
+      console.error('Error deleting showtime:', error);
+      setSnackbar({
+        open: true,
+        message: t('showtimes.deleteError', 'Error deleting showtime'),
+        severity: 'error'
+      });
+    }
   };
 
   const handleClose = () => {
@@ -126,38 +179,111 @@ const ShowtimeManagement: React.FC = () => {
     setSelectedShowtime(null);
   };
 
-  const handleSave = (showtime: Omit<Showtime, 'id'>) => {
-    // TODO: Implement save functionality
-    console.log('Save showtime:', showtime);
-    handleClose();
+  const handleSave = async (showtimeData: Partial<Showtime>) => {
+    try {
+      if (selectedShowtime?.id) {
+        // Cập nhật lịch chiếu
+        await showtimeService.updateShowtime(selectedShowtime.id, showtimeData);
+        setSnackbar({
+          open: true,
+          message: t('showtimes.updateSuccess', 'Showtime updated successfully'),
+          severity: 'success'
+        });
+      } else {
+        // Tạo lịch chiếu mới
+        await showtimeService.createShowtime(showtimeData);
+        setSnackbar({
+          open: true,
+          message: t('showtimes.addSuccess', 'Showtime added successfully'),
+          severity: 'success'
+        });
+      }
+
+      // Đóng dialog và refresh dữ liệu
+      handleClose();
+      refetch();
+    } catch (error) {
+      console.error('Error saving showtime:', error);
+      setSnackbar({
+        open: true,
+        message: t('showtimes.saveError', 'Error saving showtime'),
+        severity: 'error'
+      });
+    }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const handleGenerateShowtimes = async () => {
+    try {
+      const result = await showtimeService.generateShowtimesForActiveMovies();
+      
+      setSnackbar({
+        open: true,
+        message: result || t('showtimes.generateSuccess', 'Showtimes generated successfully'),
+        severity: 'success'
+      });
+      
+      // Refresh danh sách lịch chiếu
+      refetch();
+    } catch (error) {
+      console.error('Error generating showtimes:', error);
+      setSnackbar({
+        open: true,
+        message: t('showtimes.generateError', 'Error generating showtimes'),
+        severity: 'error'
+      });
+    }
   };
 
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h4">{t('showtimes.title')}</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAdd}
-        >
-          {t('common.add')}
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            onClick={handleGenerateShowtimes}
+          >
+            {t('showtimes.generateShowtimes')}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleAdd}
+          >
+            {t('common.add')}
+          </Button>
+        </Box>
       </Box>
       <Card>
-        <CardContent>
-          <DataGrid
-            rows={showtimes}
-            columns={columns}
-            initialState={{
-              pagination: {
-                paginationModel: { page: 0, pageSize: 5 },
-              },
-            }}
-            pageSizeOptions={[5, 10]}
-            checkboxSelection
-            disableRowSelectionOnClick
-          />
+        <CardContent sx={{ height: 600 }}>
+          {isLoading ? (
+            <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+              <CircularProgress />
+            </Box>
+          ) : isError ? (
+            <Alert severity="error">
+              {error instanceof Error ? error.message : t('common.errorOccurred', 'An error occurred')}
+            </Alert>
+          ) : (
+            <DataGrid
+              rows={showtimes}
+              columns={columns}
+              paginationMode="server"
+              rowCount={totalRows}
+              pageSizeOptions={[5, 10, 20]}
+              paginationModel={{ page, pageSize }}
+              onPaginationModelChange={(model) => {
+                setPage(model.page);
+                setPageSize(model.pageSize);
+              }}
+              disableRowSelectionOnClick
+              loading={isLoading}
+            />
+          )}
         </CardContent>
       </Card>
       <Dialog
@@ -172,6 +298,16 @@ const ShowtimeManagement: React.FC = () => {
           onCancel={handleClose}
         />
       </Dialog>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

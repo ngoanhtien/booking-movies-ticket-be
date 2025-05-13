@@ -4,6 +4,21 @@
 - Project initialization with React and TypeScript
 - Material-UI theme configuration
 - Basic routing structure
+- **User Role Upgrade to ADMIN**:
+  - Xác định được thông tin kết nối database trong file application.yml
+  - Nâng cấp tài khoản người dùng mrrdavidd1 từ USER lên ADMIN thông qua SQL query
+  - Cấp quyền truy cập vào admin panel cho phát triển các chức năng quản lý
+- **Authentication Fix for Login API**:
+  - Cập nhật SecurityConfiguration.java và AuthenticationFilter.java để thêm /auth/login vào publicPaths
+  - Sửa lỗi 401 "Token is not valid" khi đăng nhập
+  - Cho phép người dùng đăng nhập và truy cập admin panel
+- **DatePicker Component Fixes**:
+  - Updated DatePicker implementation in MovieForm.tsx to use current MUI v5 API
+  - Replaced deprecated renderInput prop with modern slotProps pattern
+  - Fixed TypeScript errors related to DatePicker parameter types
+  - Added proper type conversion for form validation error messages
+  - Wrapped DatePicker in LocalizationProvider with AdapterDateFns
+  - Ensured proper form validation and error display
 - **API Circular Reference Resolution**:
   - Successfully implemented multiple-level extraction strategy in movieService.ts
   - Added standard, direct, deep search, and regex extraction methods as fallbacks
@@ -287,6 +302,19 @@
             - In `BookingForm.tsx`, added import of `ApiResponse` from `types/showtime.ts` and removed local definition.
     - **Outcome**: All TypeScript errors have been resolved, enabling successful compilation. Consistent interface usage across components improves code quality and prevents runtime errors from missing properties.
 
+- **Date Picker Implementation and Simplification (LATEST)**:
+    - **Issue Addressed**: Implementation of DatePicker from Material UI in MovieDetails.tsx led to numerous dependency and compatibility errors with date-fns library.
+    - **Root Issues**:
+        - Incompatibility between @mui/x-date-pickers (with AdapterDateFnsV3) and existing date-fns version
+        - Vietnamese locale import issues in date-fns
+        - Persistent module errors even after updating packages and clearing cache
+    - **Solution Implemented**:
+        - Replaced complex DatePicker component from @mui/x-date-pickers with standard TextField input of type "date"
+        - Maintained useState implementation for setting default date (today)
+        - Updated change handlers to work with standard date input
+        - Preserved usage of selected date in React Query for fetching showtime data
+    - **Outcome**: Simplified solution that maintains the date selection functionality while eliminating dependency issues. Users can now select dates to view showtimes without encountering errors, and the application is more stable with fewer complex dependencies.
+
 ## What's Left to Build
 1. Frontend Features
    Admin Interface (Priority)
@@ -302,6 +330,15 @@
      - [x] Image upload
      - [x] Status management
      - [x] Vietnamese translations
+   - [ ] **API Integration for Admin Panel**
+     - [ ] Replace mock data with real API data in movieService.ts
+     - [ ] Replace mock data with real API data in userService.ts
+     - [ ] Replace mock data with real API data in showtimeService.ts
+     - [ ] Replace mock data with real API data in bookingService.ts
+     - [ ] Replace mock data with real API data in reportService.ts
+     - [ ] Ensure proper error handling and loading states
+     - [ ] Update TypeScript interfaces to match API responses
+     - [ ] Implement React Query for improved data fetching
    - [x] Showtime management interface
      - [x] Showtime list view
      - [x] Add/Edit showtime form
@@ -426,6 +463,10 @@
 
 ## Current Status
 - Admin interface basic structure is complete
+- **Authentication & Authorization issues resolved**:
+  - Login API endpoint (/auth/login) fixed to allow public access
+  - SecurityConfiguration.java and AuthenticationFilter.java updated with correct public paths
+  - User mrrdavidd1 upgraded to ADMIN role for testing admin features
 - **Frontend-Backend Communication successfully established**:
     - CORS configuration implemented in WebConfig.java allows frontend to make API calls to the backend
     - WebConfig bean properly configured with all required origins, methods, headers, and credentials
@@ -571,13 +612,23 @@
 - **RESOLVED**: `actor.charAt is not a function` error in `MovieDetails.tsx`.
     - *Cause*: Frontend expecting `actors` to be `string[]` while it could be `Actor[]` (array of objects).
     - *Fix*: Defined `Actor` interface, updated `Movie` interface, and refactored `MovieDetails.tsx` to handle `Actor` objects correctly.
+- **RESOLVED**: Date picker library compatibility issues in `MovieDetails.tsx`.
+    - *Cause*: @mui/x-date-pickers with AdapterDateFnsV3 required date-fns v3, causing compatibility issues with other dependencies.
+    - *Fix*: Replaced complex DatePicker component with standard TextField input type="date", removing dependency on date-fns adapters.
 
 ## Evolution of Project Decisions
 - **JSON Serialization Strategy**: Initially used `@JsonIgnore` broadly. Transitioned to a more fine-grained approach with `@JsonManagedReference` and `@JsonBackReference` for specific complex relationships (e.g., Bill-Promotion, User-Bill, User-Review) to ensure data needed by the frontend is available while still preventing cycles. This became necessary as more parts of the data model were exercised by API calls (like fetching movie details which might include reviews with user data).
 - **Frontend Type Definitions**: Reinforced the importance of keeping frontend TypeScript types (`types/movie.ts`) strictly in sync with the actual structure of API responses, especially after backend changes or when dealing with nested objects.
+- **UI Component Simplification**: Opted for simpler standard HTML/Material UI components over more complex components when facing dependency or compatibility issues, as seen with the Date picker implementation. This approach reduces risk while maintaining core functionality.
+- **API Integration Strategy**: Initially focused on getting UI components working with mock data. Now transitioning to integrating with real API endpoints as authentication and security issues have been resolved, ensuring proper data flow between frontend and backend.
 
 ## Next Steps
-1.  **MoMo-Inspired Booking Flow Enhancements (User Interface - IMMEDIATE PRIORITY):**
+1. **API Integration for Admin Panel (NEW TOP PRIORITY)**:
+   * Replace mock data with real API data in movieService.ts first
+   * Update all admin panel components to work with real data
+   * Implement loading states and error handling for API calls
+   * Use React Query for improved data fetching and caching
+2.  **MoMo-Inspired Booking Flow Enhancements (User Interface - HIGH PRIORITY):**
     *   **Improve `MovieList.tsx` (User-Facing Movie List) - CURRENT TASK:**
         *   Implement clearer "Now Showing" vs. "Coming Soon" sections.
         *   Display movie ratings (e.g., 4.5/5 stars) and age restrictions (e.g., P, C13, C16, C18).
@@ -603,37 +654,16 @@
     *   **Improve Booking History Page:**
         *   Display a QR code or barcode for each ticket.
         *   Add options to print or email tickets.
-2. **Frontend Testing & Verification (Post-Backend Fixes)**:
-    *   Thoroughly test Movie Browsing UI and other frontend features to ensure correct data fetching and display now that the backend is operational.
-    *   Verify API integrations across all user-facing features.
-2. **Backend Warning Resolution**:
+2. **Thorough Testing & Validation (POST DATE PICKER SIMPLIFICATION)**:
+    *   Test the date selection functionality in MovieDetails to ensure it works correctly with the simplified implementation.
+    *   Verify that showtimes are properly displayed for selected dates.
+    *   Ensure the end-to-end booking flow works correctly with the selected date.
+    *   Test edge cases with date selection (e.g., past dates, future dates).
+3. **Backend Warning Resolution**:
     *   Address MapStruct "Unmapped target properties" warnings in various mappers.
     *   Evaluate and explicitly configure `spring.jpa.open-in-view`.
-3. **Data Integrity for `Cinema.address`**:
+4. **Data Integrity for `Cinema.address`**:
     *   Review `NULL` values in `cinemas.address` and decide on a data update strategy or confirm if optionality is permanent.
-4. Complete Booking System:
-   - Implement booking service layer
-   - Add booking controller
-   - Create booking DTOs
-   - Add validation
-   - Implement booking workflow
-2. Implement Payment Integration:
-   - Implement simplified payment flow (symbolic only, no actual payment gateway integration required)
-   - Add basic payment status tracking
-   - Add payment simulation for user experience
-   - Add Vietnamese translations for payment UI
-3. Add Real-time Updates:
-   - Implement WebSocket
-   - Add real-time notifications
-   - Add live booking updates
-4. Admin Panel Development:
-   - Add mock data for UI preview
-   - Enhance error handling for offline mode
-   - Add loading states for data-dependent components
-5. New Modules:
-   - Complete Cinema (Theater) management module
-   - Complete Branch management module (backend integration, enhancements)
-   - Complete Invoice (Bill) management module (backend integration, enhancements)
 
 ## Technical Debt
 - Implement data caching
@@ -661,6 +691,7 @@
 - Authentication flow is properly implemented with JWT tokens
 - Protected routes are in place
 - Token refresh mechanism is implemented
+- **Component simplification strategy successful for date picker, consider for other complex UI elements with dependency issues.**
 
 ## Update (11/29/2023)
 
@@ -683,4 +714,11 @@
 3. **Appropriate Logging:** Add API data logging for easier debugging.
 4. **Effective CORS Handling:** Using client-side proxy is a simple and effective solution.
 
-4. **Effective CORS Handling:** Using client-side proxy is a simple and effective solution. 
+4. **Effective CORS Handling:** Using client-side proxy is a simple and effective solution.
+
+**Date**: `2024-07-30`
+**Activity**: Admin Panel Debugging & Fix
+- **Problem**: Clicking buttons (e.g., "Add Movie") on the admin dashboard `/admin/dashboard` caused a full page reload and redirect to `/movies`, despite correct initial authentication and sidebar navigation working.
+- **Diagnosis**: The issue was traced to the use of the `href` attribute on Material UI `Button` components in `Dashboard.tsx`. In the context of React Router, `href` causes standard browser navigation, bypassing client-side routing.
+- **Fix**: Refactored the buttons in `Dashboard.tsx` to use `useNavigate()` hook and `onClick` handlers instead of `href`.
+- **Outcome**: Admin dashboard buttons now correctly navigate within the SPA without unwanted redirects. Core admin navigation is now stable. 

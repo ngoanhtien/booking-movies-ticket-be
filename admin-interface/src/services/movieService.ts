@@ -442,4 +442,33 @@ export const fetchShowtimesByMovie = async (movieId: string, date?: string): Pro
     // Propagate a more specific error or a generic one
     throw new Error(error.response?.data?.message || `Failed to fetch showtimes for movie ${movieId}`);
   }
+};
+
+// Thêm hàm upload ảnh phim đến Cloudinary thông qua backend API
+export const uploadMovieImage = async (movieId: number, imageFile: File, imageType: 'small' | 'large'): Promise<string> => {
+  try {
+    const formData = new FormData();
+    formData.append('file', imageFile);
+    formData.append('movieId', movieId.toString());
+    formData.append('imageType', imageType);
+
+    const response = await axios.post(`${API_BASE_URL}/movie/upload-image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    if (response.data?.result?.imageUrl) {
+      return response.data.result.imageUrl;
+    } else if (response.data?.data?.imageUrl) {
+      return response.data.data.imageUrl;
+    } else if (typeof response.data === 'string') {
+      return response.data;
+    }
+    
+    throw new Error('No image URL returned from server');
+  } catch (error: any) {
+    console.error(`Error uploading movie ${imageType} image:`, error.message);
+    throw new Error(`Failed to upload movie image: ${error.message}`);
+  }
 }; 

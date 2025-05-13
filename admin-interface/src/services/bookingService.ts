@@ -108,30 +108,188 @@ export const bookingService = {
         return {
           movieId: parseInt(movieId),
           movieName: "Movie " + movieId,
-          branches: [{
-            branchId: 1,
-            branchName: "CGV Landmark 81",
-            showtimes: [
-              {
-                scheduleId: 101,
-                scheduleTime: "10:00",
-                roomId: 1,
-                roomName: "Room 1",
-                roomType: "2D",
-                status: "AVAILABLE",
-                date: new Date().toISOString().split('T')[0]
-              },
-              {
-                scheduleId: 102,
-                scheduleTime: "13:30",
-                roomId: 2,
-                roomName: "Room 2",
-                roomType: "3D",
-                status: "AVAILABLE",
-                date: new Date().toISOString().split('T')[0]
-              }
-            ]
-          }]
+          branches: [
+            {
+              branchId: 1,
+              branchName: "CGV Landmark 81",
+              address: "Landmark 81, Vinhomes Central Park, Quận Bình Thạnh, TP HCM",
+              hotline: "1900 6017",
+              imageUrl: "https://www.cgv.vn/media/site/cache/3/980x415/top_banner/2023/11/cgv-imax-with-laser.jpg",
+              showtimes: [
+                {
+                  scheduleId: 101,
+                  scheduleTime: "10:00",
+                  roomId: 1,
+                  roomName: "Room 1",
+                  roomType: "2D",
+                  status: "AVAILABLE",
+                  date: new Date().toISOString().split('T')[0]
+                },
+                {
+                  scheduleId: 102,
+                  scheduleTime: "13:30",
+                  roomId: 2,
+                  roomName: "Room 2",
+                  roomType: "3D",
+                  status: "AVAILABLE",
+                  date: new Date().toISOString().split('T')[0]
+                }
+              ]
+            },
+            {
+              branchId: 2,
+              branchName: "CGV Aeon Mall Tân Phú",
+              address: "30 Bờ Bao Tân Thắng, Sơn Kỳ, Quận Tân Phú, TP HCM",
+              hotline: "1900 6017",
+              imageUrl: "https://www.cgv.vn/media/site/cache/3/980x415/top_banner/2023/11/cgv-screenx.jpg",
+              showtimes: [
+                {
+                  scheduleId: 201,
+                  scheduleTime: "09:30",
+                  roomId: 3,
+                  roomName: "Room 3",
+                  roomType: "2D",
+                  status: "AVAILABLE",
+                  date: new Date().toISOString().split('T')[0]
+                },
+                {
+                  scheduleId: 202,
+                  scheduleTime: "12:45",
+                  roomId: 4,
+                  roomName: "Room IMAX",
+                  roomType: "IMAX",
+                  status: "AVAILABLE",
+                  date: new Date().toISOString().split('T')[0]
+                },
+                {
+                  scheduleId: 203,
+                  scheduleTime: "15:30",
+                  roomId: 5,
+                  roomName: "Room 5",
+                  roomType: "2D",
+                  status: "AVAILABLE",
+                  date: new Date().toISOString().split('T')[0]
+                }
+              ]
+            },
+            {
+              branchId: 3,
+              branchName: "CGV Sư Vạn Hạnh",
+              address: "19 Nguyễn Văn Cừ, phường 4, Quận 5, TP HCM", 
+              hotline: "1900 6017",
+              imageUrl: "https://www.cgv.vn/media/site/cache/3/980x415/top_banner/2023/12/4dx-banner-cgv.jpg",
+              showtimes: [
+                {
+                  scheduleId: 301,
+                  scheduleTime: "11:15",
+                  roomId: 6,
+                  roomName: "Room 6",
+                  roomType: "2D",
+                  status: "AVAILABLE",
+                  date: new Date().toISOString().split('T')[0]
+                },
+                {
+                  scheduleId: 302,
+                  scheduleTime: "14:30",
+                  roomId: 7,
+                  roomName: "Room 7 (4DX)",
+                  roomType: "4DX",
+                  status: "AVAILABLE",
+                  date: new Date().toISOString().split('T')[0]
+                },
+                {
+                  scheduleId: 303,
+                  scheduleTime: "17:30",
+                  roomId: 8,
+                  roomName: "Room 8",
+                  roomType: "2D",
+                  status: "AVAILABLE",
+                  date: new Date().toISOString().split('T')[0]
+                }
+              ]
+            },
+            {
+              branchId: 4,
+              branchName: "Beta Cinemas Thủ Đức",
+              address: "216 Võ Văn Ngân, Phường Bình Thọ, Quận Thủ Đức, TP HCM",
+              hotline: "1900 2099",
+              imageUrl: "https://betacinemas.vn/Assets/Images/beta-thu-duc.png",
+              showtimes: [
+                {
+                  scheduleId: 401,
+                  scheduleTime: "10:30",
+                  roomId: 9,
+                  roomName: "Room A",
+                  roomType: "2D",
+                  status: "AVAILABLE",
+                  date: new Date().toISOString().split('T')[0]
+                },
+                {
+                  scheduleId: 402,
+                  scheduleTime: "13:45",
+                  roomId: 10,
+                  roomName: "Room B",
+                  roomType: "2D",
+                  status: "AVAILABLE",
+                  date: new Date().toISOString().split('T')[0]
+                },
+                {
+                  scheduleId: 403,
+                  scheduleTime: "16:50",
+                  roomId: 11,
+                  roomName: "Room C (Sweet Box)",
+                  roomType: "SWEETBOX",
+                  status: "AVAILABLE",
+                  date: new Date().toISOString().split('T')[0]
+                }
+              ]
+            },
+            {
+              branchId: 5,
+              branchName: "Lotte Cinema Cantavil",
+              address: "Lotte Cinema Cantavil, Tầng 7 Cantavil Premier, Quận 2, TP HCM",
+              hotline: "028 3620 9830",
+              imageUrl: "https://lottecinemavn.com/LCHS/Image/Thumnail/th00000000.png",
+              showtimes: [
+                {
+                  scheduleId: 501,
+                  scheduleTime: "09:15",
+                  roomId: 12,
+                  roomName: "Cinema 1",
+                  roomType: "2D",
+                  status: "AVAILABLE",
+                  date: new Date().toISOString().split('T')[0]
+                },
+                {
+                  scheduleId: 502,
+                  scheduleTime: "12:00",
+                  roomId: 13,
+                  roomName: "Cinema 2",
+                  roomType: "2D",
+                  status: "AVAILABLE",
+                  date: new Date().toISOString().split('T')[0]
+                },
+                {
+                  scheduleId: 503,
+                  scheduleTime: "15:15",
+                  roomId: 14,
+                  roomName: "Cinema 3 (Lotte Smartbox)",
+                  roomType: "SMARTBOX",
+                  status: "AVAILABLE",
+                  date: new Date().toISOString().split('T')[0]
+                },
+                {
+                  scheduleId: 504,
+                  scheduleTime: "18:30",
+                  roomId: 15,
+                  roomName: "Cinema 4",
+                  roomType: "2D",
+                  status: "AVAILABLE",
+                  date: new Date().toISOString().split('T')[0]
+                }
+              ]
+            }
+          ]
         };
       }
       

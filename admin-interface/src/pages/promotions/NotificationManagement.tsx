@@ -21,7 +21,8 @@ import {
   Switch,
   FormControlLabel,
   TextareaAutosize,
-  InputAdornment
+  InputAdornment,
+  SvgIconProps
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import {
@@ -151,7 +152,7 @@ const channelOptions = [
 ];
 
 // Status options
-const statusMapping: Record<Notification['status'], { label: string; color: 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'; icon: React.ReactElement }> = {
+const statusMapping: Record<Notification['status'], { label: string; color: 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'; icon: React.ReactElement<SvgIconProps> }> = {
   DRAFT: { label: 'Bản nháp', color: 'default', icon: <PendingIcon /> },
   SCHEDULED: { label: 'Đã lên lịch', color: 'info', icon: <ScheduleIcon /> },
   SENT: { label: 'Đã gửi', color: 'success', icon: <CheckCircleIcon /> },
@@ -364,7 +365,7 @@ const NotificationManagement: React.FC = () => {
         const statusInfo = statusMapping[params.row.status];
         return (
           <Chip 
-            icon={React.cloneElement(statusInfo.icon, {fontSize: 'small'})}
+            icon={React.cloneElement(statusInfo.icon, {fontSize: 'small'} as SvgIconProps)}
             label={statusInfo.label}
             color={statusInfo.color}
             size="small"
@@ -477,11 +478,11 @@ const NotificationManagement: React.FC = () => {
             <Box><Typography variant="body2" color="text.secondary">{t('notification.stats.total','Tổng số thông báo')}</Typography><Typography variant="h6">{notifications.length}</Typography></Box>
           </Paper>
           <Paper elevation={1} sx={{ p: 2, display: 'flex', alignItems: 'center', width: { xs: '100%', sm: 'auto' }, flexGrow: 1 }}>
-            <Box sx={{ mr: 1.5, backgroundColor: statusMapping.SCHEDULED.color + '.light', borderRadius: '50%', p: 1, display: 'flex'}}>{React.cloneElement(statusMapping.SCHEDULED.icon, {sx: {color: statusMapping.SCHEDULED.color + '.main'}})}</Box>
+            <Box sx={{ mr: 1.5, backgroundColor: statusMapping.SCHEDULED.color + '.light', borderRadius: '50%', p: 1, display: 'flex'}}>{React.cloneElement(statusMapping.SCHEDULED.icon, {sx: {color: statusMapping.SCHEDULED.color + '.main'}} as SvgIconProps)}</Box>
             <Box><Typography variant="body2" color="text.secondary">{t('notification.stats.scheduled','Đã lên lịch')}</Typography><Typography variant="h6">{notifications.filter(n=>n.status === 'SCHEDULED').length}</Typography></Box>
           </Paper>
           <Paper elevation={1} sx={{ p: 2, display: 'flex', alignItems: 'center', width: { xs: '100%', sm: 'auto' }, flexGrow: 1 }}>
-            <Box sx={{ mr: 1.5, backgroundColor: statusMapping.SENT.color + '.light', borderRadius: '50%', p: 1, display: 'flex'}}>{React.cloneElement(statusMapping.SENT.icon, {sx: {color: statusMapping.SENT.color + '.main'}})}</Box>
+            <Box sx={{ mr: 1.5, backgroundColor: statusMapping.SENT.color + '.light', borderRadius: '50%', p: 1, display: 'flex'}}>{React.cloneElement(statusMapping.SENT.icon, {sx: {color: statusMapping.SENT.color + '.main'}} as SvgIconProps)}</Box>
             <Box><Typography variant="body2" color="text.secondary">{t('notification.stats.sent','Đã gửi')}</Typography><Typography variant="h6">{notifications.filter(n=>n.status === 'SENT').length}</Typography></Box>
           </Paper>
         </Box>
@@ -610,7 +611,7 @@ const NotificationManagement: React.FC = () => {
                     <Grid item xs={12} sm={6}>
                       <Typography variant="subtitle2">{t('notification.form.status', 'Trạng thái')}:</Typography>
                       <Chip 
-                        icon={React.cloneElement(statusMapping[selectedNotification.status].icon, {fontSize: 'small'})}
+                        icon={React.cloneElement(statusMapping[selectedNotification.status].icon, {fontSize: 'small'} as SvgIconProps)}
                         label={statusMapping[selectedNotification.status].label}
                         color={statusMapping[selectedNotification.status].color}
                         size="small"

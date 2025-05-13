@@ -127,6 +127,26 @@ const MovieList: React.FC = () => {
     return 'secondary';
   };
   
+  // Helper to get background color for age restriction
+  const getAgeRestrictionBackground = (restriction?: string) => {
+    if (!restriction) return theme.palette.primary.main;
+    if (restriction === 'P') return theme.palette.success.main;
+    if (restriction === 'C13') return theme.palette.warning.main;
+    if (restriction === 'C16') return theme.palette.error.main;
+    if (restriction === 'C18') return '#880E4F'; // deep purple for C18
+    return theme.palette.secondary.main;
+  };
+  
+  // Helper to get age restriction tooltip text
+  const getAgeRestrictionTooltip = (restriction?: string) => {
+    if (!restriction) return '';
+    if (restriction === 'P') return 'Phù hợp mọi lứa tuổi';
+    if (restriction === 'C13') return 'Cấm khán giả dưới 13 tuổi';
+    if (restriction === 'C16') return 'Cấm khán giả dưới 16 tuổi';
+    if (restriction === 'C18') return 'Cấm khán giả dưới 18 tuổi';
+    return restriction;
+  };
+  
   // Helper to generate random rating data for demo purposes
   const getRandomRating = () => {
     return (Math.random() * 2 + 3).toFixed(1); // Random between 3.0 and 5.0
@@ -161,6 +181,7 @@ const MovieList: React.FC = () => {
     const movieStatus = movie.status === "SHOWING" ? "ACTIVE" : movie.status === "UPCOMING" ? "INACTIVE" : movie.status;
     const ratingValue = getRatingValue(movie);
     const ageRestriction = movie.ageRestriction || (movie.ageLimit ? `C${movie.ageLimit}` : "P");
+    const reviewCount = Math.floor(Math.random() * 1000) + 100; // Mock review count
     
     return (
       <Grid item xs={12} sm={6} md={4} lg={3} key={movie.id}>
@@ -169,25 +190,37 @@ const MovieList: React.FC = () => {
             height: '100%', 
             display: 'flex', 
             flexDirection: 'column',
-            transition: 'all 0.3s ease',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             position: 'relative',
             borderRadius: 3,
             overflow: 'hidden',
             boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
             '&:hover': {
-              transform: 'translateY(-8px)',
+              transform: 'translateY(-8px) scale(1.02)',
               cursor: 'pointer',
-              boxShadow: '0 12px 24px rgba(0,0,0,0.15)',
+              boxShadow: '0 16px 32px rgba(0,0,0,0.2)',
               '& .MuiCardMedia-root': {
-                filter: 'brightness(1.05)',
+                transform: 'scale(1.05)',
+              },
+              '& .poster-overlay': {
+                opacity: 1,
+              },
+              '& .movie-status-badge': {
+                transform: 'translateY(-3px)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              },
+              '& .age-restriction-badge': {
+                transform: 'translateY(-3px) scale(1.1)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
               }
             }
           }}
           onClick={() => handleMovieClick(movie.id)}
         >
-          {/* Status Badge */}
+          {/* Status Badge - Enhanced with animation */}
           {movieStatus && (
             <Chip
+              className="movie-status-badge"
               label={movieStatus === 'ACTIVE' ? t('movies.showing') : t('movies.upcoming')}
               color={movieStatus === 'ACTIVE' ? 'success' : 'info'}
               size="small"
@@ -197,41 +230,55 @@ const MovieList: React.FC = () => {
                 left: 12,
                 zIndex: 2,
                 fontWeight: 'bold',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                fontSize: '0.7rem',
-                height: 24,
-                px: 1
+                boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                fontSize: '0.75rem',
+                height: 28,
+                px: 1.5,
+                background: movieStatus === 'ACTIVE' 
+                  ? 'linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%)' 
+                  : 'linear-gradient(90deg, #03A9F4 0%, #00BCD4 100%)',
+                border: 'none',
+                transition: 'all 0.3s ease'
               }}
             />
           )}
           
-          {/* Age Restriction Badge */}
+          {/* Age Restriction Badge - Enhanced with animation and better visibility */}
           {ageRestriction && (
-            <Tooltip title={
-              ageRestriction === 'P' ? 'Phù hợp mọi lứa tuổi' :
-              ageRestriction === 'C13' ? 'Cấm khán giả dưới 13 tuổi' :
-              ageRestriction === 'C16' ? 'Cấm khán giả dưới 16 tuổi' :
-              ageRestriction === 'C18' ? 'Cấm khán giả dưới 18 tuổi' : ''
-            }>
-              <Chip
-                label={ageRestriction}
-                color={ageRestrictionColor}
+            <Tooltip 
+              title={getAgeRestrictionTooltip(ageRestriction)}
+              arrow
+              placement="top"
+            >
+              <Box
+                className="age-restriction-badge"
                 sx={{
                   position: 'absolute',
                   top: 12,
                   right: 12,
                   zIndex: 2,
                   fontWeight: 'bold',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                  fontSize: '0.7rem',
-                  height: 24
+                  borderRadius: '50%',
+                  width: 36,
+                  height: 36,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  fontSize: '0.9rem',
+                  color: '#fff',
+                  background: getAgeRestrictionBackground(ageRestriction),
+                  boxShadow: '0 3px 8px rgba(0,0,0,0.35)',
+                  border: '2px solid #fff',
+                  transition: 'all 0.3s ease'
                 }}
-              />
+              >
+                {ageRestriction}
+              </Box>
             </Tooltip>
           )}
           
           {/* Poster Image */}
-          <Box sx={{ position: 'relative' }}>
+          <Box sx={{ position: 'relative', overflow: 'hidden' }}>
             <CardMedia
               component="img"
               height="350"
@@ -239,41 +286,61 @@ const MovieList: React.FC = () => {
               alt={title}
               sx={{ 
                 objectFit: 'cover',
-                filter: movieStatus !== 'ACTIVE' ? 'brightness(0.85)' : 'brightness(1)',
-                transition: 'all 0.3s ease'
+                filter: movieStatus !== 'ACTIVE' ? 'brightness(0.8)' : 'brightness(1)',
+                transition: 'all 0.5s ease-in-out',
+                transform: 'scale(1)'
               }}
             />
             
-            {/* Rating Overlay */}
-            <Badge
-              badgeContent={
-                <Box sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  bgcolor: 'rgba(0, 0, 0, 0.7)',
-                  color: 'white',
-                  borderRadius: '12px',
-                  px: 1,
-                  py: 0.5,
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                  border: '2px solid rgba(255, 215, 0, 0.7)',
-                }}>
-                  <StarIcon fontSize="small" sx={{ color: 'gold', mr: 0.5, fontSize: '16px' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
-                    {ratingValue.toFixed(1)}
-                  </Typography>
-                </Box>
-              }
+            {/* Poster Overlay with gradient - Enhanced with stronger gradient */}
+            <Box
+              className="poster-overlay"
               sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                background: `linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 30%, rgba(0,0,0,0) 60%)`,
+                opacity: 0.8,
+                transition: 'opacity 0.3s ease'
+              }}
+            />
+            
+            {/* Rating Overlay - Further enhanced with better visibility */}
+            <Box
+              sx={{ 
                 position: 'absolute',
                 bottom: 12,
                 left: 12,
-                '& .MuiBadge-badge': {
-                  position: 'static',
-                  transform: 'none'
-                }
+                display: 'flex', 
+                alignItems: 'center', 
+                bgcolor: 'rgba(0, 0, 0, 0.7)',
+                color: 'white',
+                borderRadius: '16px',
+                px: 2,
+                py: 0.7,
+                boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+                border: '1px solid rgba(255, 215, 0, 0.5)',
               }}
-            />
+            >
+              <StarIcon sx={{ 
+                color: ratingValue >= 4 ? '#FFC107' : ratingValue >= 3 ? '#FFD54F' : '#FFF176', 
+                mr: 0.7, 
+                fontSize: '18px' 
+              }} />
+              <Typography variant="body2" sx={{ 
+                fontWeight: 'bold', 
+                fontSize: '0.95rem', 
+                mr: 0.8,
+                color: ratingValue >= 4 ? '#FFC107' : ratingValue >= 3 ? '#FFD54F' : '#FFF176',
+              }}>
+                {ratingValue.toFixed(1)}
+              </Typography>
+              <Typography variant="caption" sx={{ opacity: 0.8, fontWeight: '500' }}>
+                ({reviewCount})
+              </Typography>
+            </Box>
             
             {/* Language Badge */}
             {movie.language && (
@@ -328,14 +395,14 @@ const MovieList: React.FC = () => {
             flexGrow: 1, 
             display: 'flex', 
             flexDirection: 'column', 
-            p: 2,
+            p: 2.5,
             bgcolor: movieStatus !== 'ACTIVE' ? alpha(theme.palette.action.disabledBackground, 0.05) : 'inherit'
           }}>
             {/* Movie Title */}
             <Typography variant="h6" component="div" gutterBottom sx={{ 
               mb: 0.5, 
               fontWeight: 'bold',
-              fontSize: '1.1rem',
+              fontSize: '1.15rem',
               display: '-webkit-box',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
@@ -346,35 +413,77 @@ const MovieList: React.FC = () => {
               {title}
             </Typography>
             
-            {/* Rating Stars */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            {/* Rating Stars - Enhanced with better spacing and color coding */}
+            <Box
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                mb: 1.5, 
+                p: 1, 
+                borderRadius: 1.5,
+                background: alpha(theme.palette.action.hover, 0.05),
+                '&:hover': {
+                  background: alpha(theme.palette.action.hover, 0.1),
+                }
+              }}
+            >
               <MuiRating
                 value={ratingValue}
                 precision={0.5}
                 size="small"
                 readOnly
+                sx={{
+                  '& .MuiRating-icon': {
+                    color: ratingValue >= 4 ? '#FFC107' : ratingValue >= 3 ? '#FFD54F' : '#FFF176',
+                  }
+                }}
               />
-              <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5, fontSize: '0.75rem' }}>
-                ({Math.floor(Math.random() * 1000) + 100})
-              </Typography>
+              <Box sx={{ ml: 1, display: 'flex', flexDirection: 'column' }}>
+                <Typography variant="body2" sx={{ 
+                  lineHeight: 1.2, 
+                  fontWeight: 500,
+                  fontSize: '0.8rem',
+                  color: ratingValue >= 4 ? 'success.main' : ratingValue >= 3 ? 'text.primary' : 'text.secondary',
+                }}>
+                  {ratingValue.toFixed(1)}/5
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                  ({reviewCount} đánh giá)
+                </Typography>
+              </Box>
             </Box>
             
             {/* Movie Info Row */}
-            <Box sx={{ mb: 1.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Box sx={{ mb: 1.5, display: 'flex', flexDirection: 'column', gap: 0.8 }}>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                 {/* Duration */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mr: 1.5 }}>
-                  <AccessTimeIcon fontSize="small" color="action" sx={{ fontSize: '1rem', mr: 0.5 }} />
-                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  mr: 1.5,
+                  padding: '4px 10px',
+                  borderRadius: '16px',
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                  background: alpha(theme.palette.primary.main, 0.05),
+                }}>
+                  <AccessTimeIcon fontSize="small" color="primary" sx={{ fontSize: '0.95rem', mr: 0.5 }} />
+                  <Typography variant="body2" color="primary" sx={{ fontSize: '0.8rem', fontWeight: 500 }}>
                     {movie.duration} {t('movies.minutes')}
                   </Typography>
                 </Box>
                 
                 {/* Release Date */}
                 {releaseDate && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <CalendarMonthIcon fontSize="small" color="action" sx={{ fontSize: '1rem', mr: 0.5 }} />
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    padding: '4px 10px',
+                    borderRadius: '16px',
+                    border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                    background: alpha(theme.palette.info.main, 0.05),
+                  }}>
+                    <CalendarMonthIcon fontSize="small" color="info" sx={{ fontSize: '0.95rem', mr: 0.5 }} />
+                    <Typography variant="body2" color="info.main" sx={{ fontSize: '0.8rem', fontWeight: 500 }}>
                       {formatReleaseDate(releaseDate)}
                     </Typography>
                   </Box>
@@ -392,12 +501,13 @@ const MovieList: React.FC = () => {
               mb: 2,
               minHeight: '60px',
               fontSize: '0.85rem',
-              opacity: 0.8
+              opacity: 0.9,
+              lineHeight: 1.5
             }}>
               {description}
             </Typography>
             
-            {/* Book Button */}
+            {/* Book Button - Enhanced with gradient and better spacing */}
             <Box sx={{ mt: 'auto', pt: 1 }}>
               <Button 
                 variant="contained" 
@@ -411,19 +521,21 @@ const MovieList: React.FC = () => {
                 }}
                 sx={{ 
                   borderRadius: '12px',
-                  py: 1,
+                  py: 1.2,
                   textTransform: 'none',
                   fontWeight: 'bold',
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
                   background: movieStatus === 'ACTIVE' ? 
                     'linear-gradient(45deg, #FF2E63 30%, #FF5555 90%)' : 
-                    'linear-gradient(45deg, #808080 30%, #A0A0A0 90%)',
+                    'linear-gradient(45deg, #757575 30%, #9E9E9E 90%)',
                   '&:hover': {
                     background: movieStatus === 'ACTIVE' ? 
                       'linear-gradient(45deg, #E6004D 30%, #E63939 90%)' : 
-                      'linear-gradient(45deg, #707070 30%, #909090 90%)',
-                    boxShadow: '0 6px 12px rgba(0,0,0,0.2)',
-                  }
+                      'linear-gradient(45deg, #616161 30%, #757575 90%)',
+                    boxShadow: '0 6px 12px rgba(0,0,0,0.25)',
+                    transform: 'translateY(-2px)'
+                  },
+                  transition: 'all 0.3s ease'
                 }}
                 disabled={movieStatus !== 'ACTIVE'}
               >
@@ -534,36 +646,54 @@ const MovieList: React.FC = () => {
     { id: 'family', name: 'Family' }
   ];
 
-  // Section title component
+  // Section title component - Enhanced version
   const SectionTitle = ({ title, icon }: { title: string, icon?: React.ReactNode }) => (
     <Box sx={{ 
       mb: 3, 
-      mt: 4, 
+      mt: 5, 
       display: 'flex', 
       alignItems: 'center',
-      pb: 1,
-      borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.1)}`
+      pb: 2,
+      borderRadius: 2,
+      position: 'relative',
+      '&:after': {
+        content: '""',
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        width: '100%',
+        height: 1,
+        background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${alpha(theme.palette.primary.main, 0.1)} 100%)`,
+      }
     }}>
-      {icon && <Box sx={{ mr: 1, color: theme.palette.primary.main }}>{icon}</Box>}
+      {icon && (
+        <Box 
+          sx={{ 
+            mr: 2, 
+            borderRadius: '50%', 
+            width: 40, 
+            height: 40, 
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+            boxShadow: `0 4px 10px ${alpha(theme.palette.primary.main, 0.4)}`
+          }}
+        >
+          {icon}
+        </Box>
+      )}
       <Typography 
         variant="h5" 
         component="h2" 
         sx={{ 
           fontWeight: 'bold',
-          position: 'relative',
-          color: theme.palette.primary.main,
-          display: 'flex',
-          alignItems: 'center',
-          '&:after': {
-            content: '""',
-            position: 'absolute',
-            bottom: -10,
-            left: 0,
-            width: 80,
-            height: 5,
-            backgroundColor: theme.palette.primary.main,
-            borderRadius: 2
-          }
+          background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          textShadow: '0 2px 4px rgba(0,0,0,0.05)',
+          letterSpacing: 1
         }}
       >
         {title}
@@ -573,26 +703,43 @@ const MovieList: React.FC = () => {
 
   return (
     <Container maxWidth={isMobile ? "xs" : isTablet ? "sm" : "lg"} sx={{ py: 4 }}>
-      {/* Page Title */}
-      <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ 
-        mb: 4,
-        fontWeight: 'bold',
-        fontSize: { xs: '1.6rem', sm: '2rem', md: '2.2rem' },
-        background: 'linear-gradient(45deg, #FF2E63 30%, #FF5555 90%)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      {/* Page Title - Enhanced */}
+      <Box sx={{ 
+        mb: 5,
+        textAlign: 'center',
+        position: 'relative',
+        '&:after': {
+          content: '""',
+          position: 'absolute',
+          bottom: -15,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 80,
+          height: 6,
+          borderRadius: 3,
+          background: `linear-gradient(45deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+        }
       }}>
-        {t('movies.browseMovies')}
-      </Typography>
+        <Typography variant="h3" component="h1" gutterBottom sx={{ 
+          fontWeight: '800',
+          fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+          background: 'linear-gradient(45deg, #FF2E63 30%, #FF5555 90%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          textShadow: '0 4px 8px rgba(0,0,0,0.1)',
+          letterSpacing: 1
+        }}>
+          {t('movies.browseMovies')}
+        </Typography>
+      </Box>
       
-      {/* Tab Navigation */}
+      {/* Tab Navigation - Enhanced */}
       <Paper elevation={0} sx={{ 
         mb: 4, 
         borderRadius: 3, 
         overflow: 'hidden', 
         bgcolor: theme.palette.background.paper,
-        boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+        boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
       }}>
         <Tabs 
           value={tabValue} 
@@ -601,20 +748,48 @@ const MovieList: React.FC = () => {
           variant="fullWidth"
           sx={{ 
             '& .MuiTabs-indicator': {
-              height: 3,
-              borderRadius: '3px 3px 0 0'
+              height: 4,
+              borderRadius: '4px 4px 0 0',
+              background: 'linear-gradient(45deg, #FF2E63 30%, #FF5555 90%)'
+            },
+            '& .Mui-selected': {
+              color: '#FF2E63 !important',
+              fontWeight: '700 !important'
             }
           }}
-          indicatorColor="primary"
           textColor="primary"
         >
-          <Tab label={t('movies.allMovies')} sx={{ fontWeight: 'bold', textTransform: 'none', py: 2 }} />
-          <Tab label={t('movies.nowShowing')} sx={{ fontWeight: 'bold', textTransform: 'none', py: 2 }} />
-          <Tab label={t('movies.comingSoon')} sx={{ fontWeight: 'bold', textTransform: 'none', py: 2 }} />
+          <Tab 
+            label={t('movies.allMovies')} 
+            sx={{ 
+              fontWeight: 600, 
+              textTransform: 'none', 
+              py: 2.5, 
+              fontSize: '1.05rem'
+            }} 
+          />
+          <Tab 
+            label={t('movies.nowShowing')} 
+            sx={{ 
+              fontWeight: 600, 
+              textTransform: 'none', 
+              py: 2.5, 
+              fontSize: '1.05rem'
+            }} 
+          />
+          <Tab 
+            label={t('movies.comingSoon')} 
+            sx={{ 
+              fontWeight: 600, 
+              textTransform: 'none', 
+              py: 2.5, 
+              fontSize: '1.05rem'
+            }} 
+          />
         </Tabs>
       </Paper>
       
-      {/* Filter and Search */}
+      {/* Filter and Search - Enhanced */}
       {tabValue === 0 && (
         <Paper elevation={0} sx={{ 
           mb: 4, 
@@ -622,7 +797,7 @@ const MovieList: React.FC = () => {
           borderRadius: 3,
           bgcolor: theme.palette.background.paper,
           border: `1px solid ${theme.palette.divider}`,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          boxShadow: '0 6px 16px rgba(0,0,0,0.06)'
         }}>
           <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2 }}>
             <TextField
@@ -634,27 +809,44 @@ const MovieList: React.FC = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon />
+                    <SearchIcon color="primary" />
                   </InputAdornment>
                 ),
               }}
               sx={{ 
                 flexGrow: 1,
                 '& .MuiOutlinedInput-root': {
-                  borderRadius: 2
+                  borderRadius: 3,
+                  borderColor: alpha(theme.palette.primary.main, 0.2),
+                  '&:hover': {
+                    borderColor: alpha(theme.palette.primary.main, 0.5),
+                  },
+                  '&.Mui-focused': {
+                    boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.1)}`
+                  }
                 }
               }}
               size="small"
             />
             
-            <FormControl sx={{ minWidth: 180 }} size="small">
+            <FormControl sx={{ minWidth: 200 }} size="small">
               <InputLabel id="genre-label">{t('movies.genre')}</InputLabel>
               <Select
                 labelId="genre-label"
                 value={filters.genre}
                 onChange={handleGenreChange as any}
                 label={t('movies.genre')}
-                sx={{ borderRadius: 2 }}
+                sx={{ 
+                  borderRadius: 3,
+                  '&:hover': {
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: alpha(theme.palette.primary.main, 0.5),
+                    }
+                  },
+                  '&.Mui-focused': {
+                    boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.1)}`
+                  }
+                }}
               >
                 <MenuItem value="">{t('common.all')}</MenuItem>
                 {genres.map((genre) => (
@@ -700,43 +892,83 @@ const MovieList: React.FC = () => {
         </Box>
       )}
       
-      {/* Movie Grid */}
+      {/* Movie Grid - Enhanced section styles */}
       {!isLoading && !isError && Array.isArray(moviesToRender) && moviesToRender.length > 0 && (
         <>
           {/* Show section titles only for All Movies tab */}
           {tabValue === 0 && (
             <>
-              {/* Now Showing Section */}
+              {/* Now Showing Section - Enhanced with better visual separation */}
               {moviesToRender.some(movie => movie.status === 'ACTIVE' || movie.status === 'SHOWING') && (
-                <>
+                <Box sx={{ position: 'relative' }}>
                   <SectionTitle title={t('movies.nowShowing')} icon={<LocalActivityIcon fontSize="medium" />} />
-                  <Grid container spacing={3}>
-                    {moviesToRender
-                      .filter(movie => movie.status === 'ACTIVE' || movie.status === 'SHOWING')
-                      .map(renderMovieCard)}
-                  </Grid>
-                </>
+                  <Paper 
+                    elevation={0} 
+                    sx={{ 
+                      p: 3, 
+                      pt: 4,
+                      borderRadius: 4, 
+                      mb: 5,
+                      background: `linear-gradient(to bottom, ${alpha(theme.palette.success.light, 0.08)}, ${alpha(theme.palette.success.light, 0.02)})`,
+                      border: `1px solid ${alpha(theme.palette.success.main, 0.15)}`,
+                      boxShadow: `0 4px 20px ${alpha(theme.palette.success.main, 0.07)}`
+                    }}
+                  >
+                    <Grid container spacing={3}>
+                      {moviesToRender
+                        .filter(movie => movie.status === 'ACTIVE' || movie.status === 'SHOWING')
+                        .map(renderMovieCard)}
+                    </Grid>
+                  </Paper>
+                </Box>
               )}
               
-              {/* Coming Soon Section */}
+              {/* Coming Soon Section - Enhanced with better visual separation */}
               {moviesToRender.some(movie => movie.status === 'INACTIVE' || movie.status === 'UPCOMING') && (
-                <>
+                <Box sx={{ position: 'relative' }}>
                   <SectionTitle title={t('movies.comingSoon')} icon={<CalendarMonthIcon fontSize="medium" />} />
-                  <Grid container spacing={3}>
-                    {moviesToRender
-                      .filter(movie => movie.status === 'INACTIVE' || movie.status === 'UPCOMING')
-                      .map(renderMovieCard)}
-                  </Grid>
-                </>
+                  <Paper 
+                    elevation={0} 
+                    sx={{ 
+                      p: 3, 
+                      pt: 4,
+                      borderRadius: 4, 
+                      mb: 4,
+                      background: `linear-gradient(to bottom, ${alpha(theme.palette.info.light, 0.08)}, ${alpha(theme.palette.info.light, 0.02)})`,
+                      border: `1px solid ${alpha(theme.palette.info.main, 0.15)}`,
+                      boxShadow: `0 4px 20px ${alpha(theme.palette.info.main, 0.07)}`
+                    }}
+                  >
+                    <Grid container spacing={3}>
+                      {moviesToRender
+                        .filter(movie => movie.status === 'INACTIVE' || movie.status === 'UPCOMING')
+                        .map(renderMovieCard)}
+                    </Grid>
+                  </Paper>
+                </Box>
               )}
             </>
           )}
           
-          {/* For other tabs, just show the list */}
+          {/* For other tabs, just show the list with enhanced container */}
           {tabValue !== 0 && (
-            <Grid container spacing={3}>
-              {moviesToRender.map(renderMovieCard)}
-            </Grid>
+            <Paper 
+              elevation={0} 
+              sx={{ 
+                p: 3, 
+                borderRadius: 4, 
+                mb: 4,
+                background: tabValue === 1
+                  ? `linear-gradient(to bottom, ${alpha(theme.palette.success.light, 0.08)}, ${alpha(theme.palette.success.light, 0.02)})`
+                  : `linear-gradient(to bottom, ${alpha(theme.palette.info.light, 0.08)}, ${alpha(theme.palette.info.light, 0.02)})`,
+                border: `1px solid ${alpha(tabValue === 1 ? theme.palette.success.main : theme.palette.info.main, 0.15)}`,
+                boxShadow: `0 4px 20px ${alpha(tabValue === 1 ? theme.palette.success.main : theme.palette.info.main, 0.07)}`
+              }}
+            >
+              <Grid container spacing={3}>
+                {moviesToRender.map(renderMovieCard)}
+              </Grid>
+            </Paper>
           )}
         </>
       )}
@@ -781,19 +1013,28 @@ const MovieList: React.FC = () => {
         </Paper>
       )}
       
-      {/* Pagination */}
+      {/* Pagination - Enhanced */}
       {tabValue === 0 && totalPages > 1 && (
-        <Box display="flex" justifyContent="center" mt={4}>
+        <Box display="flex" justifyContent="center" mt={5}>
           <Pagination 
             count={totalPages} 
             page={page + 1} 
             onChange={handlePageChange} 
             color="primary" 
-            size={isMobile ? 'small' : 'medium'}
+            size={isMobile ? 'medium' : 'large'}
             shape="rounded"
             sx={{
               '& .MuiPaginationItem-root': {
-                borderRadius: 1
+                borderRadius: 2,
+                fontWeight: 'bold',
+                transition: 'all 0.2s ease',
+                '&.Mui-selected': {
+                  background: 'linear-gradient(45deg, #FF2E63 30%, #FF5555 90%)',
+                  boxShadow: '0 2px 8px rgba(255, 46, 99, 0.3)',
+                },
+                '&:hover': {
+                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                }
               }
             }}
           />

@@ -316,4 +316,76 @@ export const calculateTicketPrice = (
   
   // Round to nearest 1000 VND
   return Math.round(price / 1000) * 1000;
+};
+
+// API for admin interface - will be used in admin panel
+export const getAllCinemas = async (page = 0, size = 10) => {
+  try {
+    // Actual API call when backend is ready
+    // const response = await axios.get(`/api/v1/cinema`, {
+    //   params: { page, size }
+    // });
+    // return response.data;
+    
+    // Temporary mock implementation
+    let allCinemas: Cinema[] = [];
+    Object.values(mockCinemas).forEach(cinemaArray => {
+      allCinemas = [...allCinemas, ...cinemaArray];
+    });
+    
+    const totalElements = allCinemas.length;
+    const totalPages = Math.ceil(totalElements / size);
+    const content = allCinemas.slice(page * size, (page + 1) * size);
+    
+    return {
+      content,
+      totalElements,
+      totalPages,
+      size,
+      number: page
+    };
+  } catch (error) {
+    console.error('Error fetching all cinemas:', error);
+    throw new Error('Failed to fetch cinemas');
+  }
+};
+
+export const getBranchesByCinemaId = async (cinemaId: number) => {
+  try {
+    // Actual API call when backend is ready
+    // const response = await axios.get(`/api/v1/branch/cinema/${cinemaId}`);
+    // return response.data;
+    
+    // Temporary mock implementation
+    return [
+      { id: 1, name: 'Chi nhánh 1', cinemaId: 1 },
+      { id: 2, name: 'Chi nhánh 2', cinemaId: 1 },
+      { id: 3, name: 'Chi nhánh 3', cinemaId: 2 },
+      { id: 4, name: 'Chi nhánh 4', cinemaId: 2 },
+    ].filter(branch => branch.cinemaId === cinemaId);
+  } catch (error) {
+    console.error(`Error fetching branches for cinema ${cinemaId}:`, error);
+    throw new Error('Failed to fetch branches');
+  }
+};
+
+export const getRoomsByBranchId = async (branchId: number) => {
+  try {
+    // Actual API call when backend is ready
+    // const response = await axios.get(`/api/v1/room/branch/${branchId}`);
+    // return response.data;
+    
+    // Temporary mock implementation
+    return [
+      { id: 1, name: 'Phòng 1', type: 'VIP', branchId: 1 },
+      { id: 2, name: 'Phòng 2', type: 'Standard', branchId: 1 },
+      { id: 3, name: 'Phòng 3', type: 'Standard', branchId: 2 },
+      { id: 4, name: 'Phòng 4', type: 'VIP', branchId: 2 },
+      { id: 5, name: 'Phòng 5', type: 'Standard', branchId: 3 },
+      { id: 6, name: 'Phòng 6', type: 'Standard', branchId: 4 },
+    ].filter(room => room.branchId === branchId);
+  } catch (error) {
+    console.error(`Error fetching rooms for branch ${branchId}:`, error);
+    throw new Error('Failed to fetch rooms');
+  }
 }; 

@@ -93,7 +93,19 @@ const UserHeader: React.FC = () => {
 
   // Handle navigation
   const handleNavigation = (path: string) => {
+    // Kiểm tra nếu user có role admin và đang ở trang admin thì không chuyển hướng đến user pages
+    const isCurrentlyInAdmin = window.location.pathname.includes('/admin');
+    const isAdminRole = user?.role === 'ADMIN';
+    
+    if (isCurrentlyInAdmin && isAdminRole) {
+      console.log('Prevented navigation from admin panel to:', path);
+      // Đóng drawer nếu đang mở
+      setDrawerOpen(false);
+      return;
+    }
+    
     navigate(path);
+    // Đóng drawer nếu đang mở
     setDrawerOpen(false);
     handleProfileMenuClose();
   };

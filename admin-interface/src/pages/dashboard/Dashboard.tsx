@@ -37,6 +37,7 @@ import {
   NotificationsNone as NotificationsNoneIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import {
   BarChart,
   Bar,
@@ -186,6 +187,7 @@ const ChartContainer: React.FC<{
 
 const Dashboard: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const stats = {
     movies: 25,
@@ -261,19 +263,19 @@ const Dashboard: React.FC = () => {
         </Typography>
         <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap', justifyContent: 'flex-end', gap: {xs: 1, sm: 1.5} }}>
           <MuiTooltip title={t('dashboard.addMovieFull', 'Thêm phim mới vào hệ thống')} placement="bottom">
-            <Button variant="contained" size="medium" startIcon={<AddIcon />} href="/admin/movies" sx={{ borderRadius: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', textTransform: 'none' }}>{t('dashboard.addMovie', 'Thêm phim')}</Button>
+            <Button variant="contained" size="medium" startIcon={<AddIcon />} onClick={() => navigate('/admin/movies')} sx={{ borderRadius: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', textTransform: 'none' }}>{t('dashboard.addMovie', 'Thêm phim')}</Button>
           </MuiTooltip>
           <MuiTooltip title={t('dashboard.manageShowtimesFull', 'Quản lý các suất chiếu phim')} placement="bottom">
-            <Button variant="outlined" size="medium" startIcon={<EventIcon />} href="/admin/showtimes" sx={{ borderRadius: 2, textTransform: 'none' }}>{t('dashboard.showtimes', 'Suất chiếu')}</Button>
+            <Button variant="outlined" size="medium" startIcon={<EventIcon />} onClick={() => navigate('/admin/showtimes')} sx={{ borderRadius: 2, textTransform: 'none' }}>{t('dashboard.showtimes', 'Suất chiếu')}</Button>
           </MuiTooltip>
           <MuiTooltip title={t('dashboard.manageUsersFull', 'Quản lý tài khoản người dùng')} placement="bottom">
-            <Button variant="outlined" size="medium" startIcon={<GroupIcon />} href="/admin/users" sx={{ borderRadius: 2, textTransform: 'none' }}>{t('dashboard.users', 'Người dùng')}</Button>
+            <Button variant="outlined" size="medium" startIcon={<GroupIcon />} onClick={() => navigate('/admin/users')} sx={{ borderRadius: 2, textTransform: 'none' }}>{t('dashboard.users', 'Người dùng')}</Button>
           </MuiTooltip>
           <MuiTooltip title={t('dashboard.viewBookingsFull', 'Xem danh sách tất cả đặt vé')} placement="bottom">
-            <Button variant="outlined" size="medium" startIcon={<BookingListIcon />} href="/admin/bookings" sx={{ borderRadius: 2, textTransform: 'none' }}>{t('dashboard.bookings', 'Đặt vé')}</Button>
+            <Button variant="outlined" size="medium" startIcon={<BookingListIcon />} onClick={() => navigate('/admin/bookings')} sx={{ borderRadius: 2, textTransform: 'none' }}>{t('dashboard.bookings', 'Đặt vé')}</Button>
           </MuiTooltip>
           <MuiTooltip title={t('dashboard.viewReportsFull', 'Xem báo cáo doanh thu và phân tích')} placement="bottom">
-            <Button variant="outlined" size="medium" startIcon={<BarChartIcon />} href="/admin/reports" sx={{ borderRadius: 2, textTransform: 'none' }}>{t('dashboard.reports', 'Báo cáo')}</Button>
+            <Button variant="outlined" size="medium" startIcon={<BarChartIcon />} onClick={() => navigate('/admin/reports')} sx={{ borderRadius: 2, textTransform: 'none' }}>{t('dashboard.reports', 'Báo cáo')}</Button>
           </MuiTooltip>
         </Stack>
       </Box>

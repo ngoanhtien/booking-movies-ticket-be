@@ -115,43 +115,46 @@ const authSlice = createSlice({
       state.lastActivityTime = Date.now();
       
       if (storedToken) {
-        // Kiểm tra token đã hết hạn chưa
+        // Check if token is expired
         if (storedTokenExpiresAt && Date.now() < storedTokenExpiresAt) {
-          // Token còn hạn
+          // Token is valid and not expired
           state.token = storedToken;
-          state.refreshToken = storedRefreshToken;
+          state.refreshToken = storedRefreshToken; // Keep refresh token
           state.isAuthenticated = true;
           state.tokenExpiresAt = storedTokenExpiresAt;
-          console.log('Valid token found in localStorage, user is authenticated');
+          // DO NOT change state.user here. If it was already populated, keep it.
+          console.log('Valid token found in localStorage, user is authenticated (user state preserved)');
         } else if (storedRefreshToken) {
-          // Token hết hạn nhưng có refresh token
-          // Đánh dấu là chưa xác thực, nhưng giữ token để thử refresh
-          state.token = storedToken;
+          // Token expired, but refresh token exists
+          state.token = storedToken; // Keep expired token to attempt refresh
           state.refreshToken = storedRefreshToken;
-          state.isAuthenticated = false; // Đặt false để trigger refresh ở components khác
+          state.isAuthenticated = false; // Set to false to trigger refresh logic elsewhere
           state.tokenExpiresAt = null;
-          console.log('Token expired but refresh token found');
+          // DO NOT change state.user here either, as refresh might succeed
+          console.log('Token expired but refresh token found (user state preserved pending refresh)');
         } else {
-          // Token hết hạn và không có refresh token
+          // Token expired AND no refresh token
           state.isAuthenticated = false;
-          state.user = null;
+          state.user = null; // Reset user ONLY here
           state.token = null;
           state.refreshToken = null;
           state.tokenExpiresAt = null;
           localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
           localStorage.removeItem('tokenExpiresAt');
           console.log('Token expired and no refresh token, clearing auth state');
         }
       } else {
-        // Không có token
+        // No token found at all
         state.isAuthenticated = false;
-        state.user = null;
+        state.user = null; // Reset user ONLY here
         state.token = null;
+        state.refreshToken = null;
         state.tokenExpiresAt = null;
         console.log('No token found in localStorage, user is not authenticated');
       }
       
-      state.initialized = true; // Đánh dấu đã kiểm tra localStorage
+      state.initialized = true; // Mark check as complete
     },
     updateTokens: (state, action: PayloadAction<{ 
       token: string; 

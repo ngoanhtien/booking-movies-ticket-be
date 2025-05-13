@@ -31,4 +31,6 @@ public interface MovieService {
     List<Movie> getUpcomingMovies();
 
     Movie findMovie(Long id);
+    
+    Movie saveMovie(Movie movie);
 }

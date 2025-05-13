@@ -3,7 +3,110 @@
 ## Current Focus
 **Với việc các API liên quan đến tạo và lấy lịch chiếu đã được sửa lỗi và hoạt động ổn định, trọng tâm hiện tại là đảm bảo các chức năng cốt lõi của người dùng (duyệt phim, xem chi tiết, đặt vé) hoạt động trơn tru và chính xác trên giao diện người dùng.** Đồng thời, tiếp tục rà soát và đảm bảo tính nhất quán của các đường dẫn API còn lại trong toàn bộ hệ thống.
 
-### Showtime Generation & Display Troubleshooting (LATEST - Resolved)
+### Admin Panel API Integration (LATEST)
+- **Current State**: Admin panel hiện đang sử dụng dữ liệu mẫu (mock data) thay vì kết nối với backend API thực.
+- **Problem**: Sau khi đã giải quyết vấn đề xác thực và quyền truy cập cho người dùng ADMIN, cần thay thế dữ liệu mẫu bằng dữ liệu thật từ API để quản lý hiệu quả.
+- **Implementation Plan**:
+  1. **Kiểm tra & Cập nhật Service Layer**:
+     - Xem xét tất cả service files trong `admin-interface/src/services/`
+     - Thay thế các hàm trả về mock data bằng API calls thực tế
+     - Đảm bảo interceptor được cấu hình đúng để đính kèm JWT token
+  2. **Thứ Tự Ưu Tiên**:
+     - `movieService`: quản lý phim (CRUD operations)
+     - `userService`: quản lý người dùng và phân quyền
+     - `showtimeService`: quản lý lịch chiếu
+     - `bookingService`: quản lý đặt vé 
+     - `reportService`: dữ liệu báo cáo và thống kê
+     - Các service phụ trợ khác
+  3. **Tích Hợp React Query**:
+     - Chuyển đổi từ việc gọi API trực tiếp sang sử dụng hooks `useQuery` và `useMutation`
+     - Cấu hình cache, stale time và retry options phù hợp
+     - Xử lý loading state và error handling nhất quán
+- **Expected Outcome**: Admin panel sẽ làm việc với dữ liệu thực từ database, cho phép quản lý nội dung thông qua API và đảm bảo tính nhất quán của dữ liệu giữa admin panel và user interface.
+- **Technical Considerations**:
+  - Sử dụng axiosInstance đã được cấu hình với interceptor để xử lý token authentication
+  - Cần xem xét lại các điểm cuối API (endpoints) để đảm bảo chúng match với API controller trong backend
+  - Kiểm tra và cập nhật các TypeScript interface/types để phản ánh cấu trúc dữ liệu thực tế từ API
+
+### User Role Upgrade to ADMIN (PREVIOUS)
+- **Action**: Nâng cấp role của tài khoản người dùng `mrrdavidd1` từ USER lên ADMIN để có quyền truy cập vào admin panel.
+- **Database Connection Details**:
+  - Host: movie-ticket.crm2sq0ssrzj.ap-southeast-2.rds.amazonaws.com
+  - Database: movie
+  - Username: postgres
+  - Password: Anhtien123.
+- **SQL Command Used**:
+  ```sql
+  UPDATE users SET role_id = 1 WHERE username = 'mrrdavidd1';
+  ```
+- **Purpose**: Cho phép truy cập đầy đủ vào admin panel để phát triển và kiểm thử các chức năng quản lý phim và các tính năng admin khác.
+- **Caution**: Đây là thao tác trên môi trường phát triển/staging. Trên môi trường production, việc nâng cấp quyền cần được thực hiện thông qua quy trình chính thức và có xác nhận.
+
+### Authentication Fix for Login API (LATEST)
+- **Problem**: Người dùng không thể đăng nhập vì API endpoint `/auth/login` bị chặn bởi bộ lọc xác thực, dẫn đến lỗi 401 "Token is not valid".
+- **Root Causes**:
+  1. `AuthenticationFilter` không có `/auth/login` trong danh sách `publicPaths`
+  2. `SecurityConfiguration` không có cấu hình `.requestMatchers("/auth/login").permitAll()`
+- **Fix Applied**:
+  1. Thêm `/auth/login`, `/auth/register`, `/auth/refresh-token`, `/auth/refresh` vào danh sách `publicPaths` trong `AuthenticationFilter`
+  2. Thêm các cấu hình tương ứng `.requestMatchers("/auth/login").permitAll()`, etc. trong `SecurityConfiguration`
+- **Outcome**: Người dùng đã có thể đăng nhập thành công vào hệ thống, không còn lỗi 401 khi gọi API login.
+- **Lesson Learned**: Phải đảm bảo tất cả các endpoints liên quan đến xác thực được đánh dấu là public trong cả `SecurityConfiguration` và `AuthenticationFilter`.
+
+### DatePicker Fix in MovieForm (PREVIOUS)
+- **Problem**: MovieForm.tsx component had TypeScript errors related to DatePicker from MUI:
+  1. `TS2322: Type '{ label: string; value: Date; onChange: (date: Date | null) => Promise<void> | Promise<FormikErrors<MovieFormData>>; renderInput: (params: any) => Element; }' is not assignable to type 'IntrinsicAttributes & DatePickerProps<Date> & RefAttributes<HTMLDivElement>'`
+  2. `TS7006: Parameter 'params' implicitly has an 'any' type`
+  3. `TS2322: Type 'FormikErrors<Date> | undefined' is not assignable to type 'ReactNode'`
+- **Investigation and Solution**:
+  1. Identified that the API for MUI DatePicker component had changed between versions
+  2. The `renderInput` prop is no longer supported in the current MUI v5 API
+  3. Replaced the deprecated approach with the modern `slotProps` pattern
+  4. Wrapped DatePicker in a LocalizationProvider with AdapterDateFns
+  5. Fixed type errors by ensuring helperText receives a proper string value with `String(formik.errors.releaseDate)` conversion
+- **Implementation Details**:
+  1. Upgraded the DatePicker implementation in MovieForm.tsx:
+     ```tsx
+     <LocalizationProvider dateAdapter={AdapterDateFns}>
+       <DatePicker
+         label={t('movies.releaseDate')}
+         value={formik.values.releaseDate}
+         onChange={(date) => formik.setFieldValue('releaseDate', date || new Date())}
+         slotProps={{
+           textField: {
+             fullWidth: true,
+             margin: "normal",
+             error: formik.touched.releaseDate && Boolean(formik.errors.releaseDate),
+             helperText: formik.touched.releaseDate && formik.errors.releaseDate ? String(formik.errors.releaseDate) : undefined
+           }
+         }}
+       />
+     </LocalizationProvider>
+     ```
+- **Outcome**: All TypeScript errors were resolved, and the DatePicker component now renders and functions correctly in the MovieForm while maintaining proper form validation and error handling.
+
+### Date Picker Implementation and Troubleshooting in MovieDetails (LATEST)
+- **Problem**: Khi triển khai DatePicker từ Material UI (@mui/x-date-pickers) trong MovieDetails.tsx để cho phép người dùng chọn ngày xem lịch chiếu, xuất hiện nhiều lỗi liên quan đến thư viện date-fns, như "export X was not found in date-fns/Y" và "Cannot find module 'ajv/dist/compile/codegen'".
+- **Investigation Path & Key Issues**:
+  1. **Incompatible Libraries**: 
+     - `@mui/x-date-pickers` với `AdapterDateFnsV3` cần date-fns phiên bản 3, trong khi project đang sử dụng phiên bản cũ hơn.
+     - Việc cập nhật date-fns lên phiên bản mới dẫn đến xung đột với các thư viện khác trong dự án.
+  2. **Locale Issues**: 
+     - Lỗi import locale từ date-fns cho tiếng Việt (vi), có thể do cấu trúc thư mục khác nhau giữa các phiên bản date-fns.
+  3. **Node Module Cache Problems**: 
+     - Sau khi cập nhật dependencies, vẫn còn lỗi có thể do cache npm.
+- **Solution Implemented**:
+  1. **Simplification Approach**: 
+     - Thay thế DatePicker phức tạp từ @mui/x-date-pickers bằng TextField input type="date" chuẩn của Material UI.
+     - Loại bỏ phụ thuộc vào adapter date-fns phức tạp trong khi vẫn duy trì chức năng chọn ngày.
+  2. **State Management Adjustment**:
+     - Tiếp tục sử dụng useState để đặt ngày mặc định (hôm nay).
+     - Cập nhật handler cho sự kiện thay đổi để sử dụng với input date chuẩn.
+  3. **Data Fetching Consistency**:
+     - Duy trì sử dụng ngày đã chọn trong React Query để fetch dữ liệu lịch chiếu từ API.
+- **Outcome**: Component hiển thị và hoạt động ổn định với control chọn ngày đơn giản. Người dùng có thể chọn ngày để xem lịch chiếu phim mà không gặp lỗi. Giảm thiểu phụ thuộc vào các thư viện phức tạp, giúp ứng dụng ổn định hơn.
+
+### Showtime Generation & Display Troubleshooting (Resolved)
 - **Initial Problem**: Người dùng không thấy lịch chiếu trên UI, mặc dù có thông tin lịch chiếu đã được tạo ở backend.
 - **Investigation Path & Key Issues Addressed**:
     1.  **API Call for Showtime Generation (`POST /api/v1/showtime/public/add-showtimes-for-active-movies`) Failures**:
@@ -31,7 +134,7 @@
     -   `NoResourceFoundException` (thường được `GlobalExceptionHandler` bắt và trả về lỗi 500) là dấu hiệu mạnh mẽ của việc Spring MVC không tìm thấy handler cho request URI và HTTP method, thường do sai sót trong annotation mapping của controller.
     -   Lỗi 403 (Forbidden) cho một endpoint đáng lẽ là public thường chỉ ra vấn đề với `requestMatchers` trong `SecurityConfiguration` không khớp với URI của request, khiến request rơi vào rule `anyRequest().authenticated()`.
 
-### Movie Details Display & Actor Info Fix (LATEST - Resolved)
+### Movie Details Display & Actor Info Fix (Resolved)
 - **Problem**: Sau khi sửa lỗi JSON backend, trang chi tiết phim tuy tải được nhưng gặp lỗi `actor.charAt is not a function` ở frontend, ngăn cản việc hiển thị thông tin diễn viên.
 - **Investigation Path & Key Issues Addressed**:
     1.  **Frontend Type Mismatch**: Lỗi `actor.charAt` xảy ra do component `MovieDetails.tsx` xử lý `movie.actors` như một mảng các chuỗi (`string[]`), trong khi API (sau các thay đổi backend hoặc do cấu trúc gốc) có thể trả về một mảng các đối tượng diễn viên.
@@ -45,7 +148,7 @@
         - Truy cập đúng thuộc tính của đối tượng `actor` (ví dụ: `actor.name`, `actor.profilePath`, `actor.character`) thay vì xử lý `actor` như một chuỗi.
 - **Outcome**: Lỗi `actor.charAt is not a function` đã được khắc phục. Thông tin diễn viên hiển thị chính xác trên trang chi tiết phim.
 
-### Booking Redirection Issue & Movie List Button Fix (LATEST - Workaround Applied)
+### Booking Redirection Issue & Movie List Button Fix (Workaround Applied)
 - **Problem**: Clicking the "Book Ticket" button on the movie list page (`MovieList.tsx`) for any movie (showing or upcoming) redirected the user to the login page, even if they were already authenticated. This did not happen when booking from the movie details page. The browser's network tab showed no API calls during this faulty redirection, but backend logs revealed a 401 Unauthorized error for the `GET /api/v1/showtime/{movieId}/by-date` request, which is configured with `permitAll()` in Spring Security.
 - **Investigation Path & Key Findings**:
     1.  **Frontend Behavior**: The redirection to `/login` was happening on the frontend, likely triggered by the `ProtectedRoute` component in response to an unauthenticated state or a failed API call that wasn't immediately visible in the network tab (possibly an API call within a protected route that fails silently or is handled by a global error handler that triggers logout/redirect).
@@ -106,32 +209,57 @@
     -   Đã hiểu rõ hơn về tác động của `@SQLRestriction` kết hợp với giá trị `NULL` trong các trường boolean và cách nó ảnh hưởng đến các truy vấn phức tạp với join.
 
 ### Next Steps:
-1.  **Thorough Testing & Validation (PRIORITY)**:
-    -   **Focus on the end-to-end movie booking flow now that showtime generation, display, and TypeScript issues are fixed.**
-    -   Test booking from both the movie list (via the movie details workaround) and directly from movie details pages.
-    -   Verify that created showtimes appear correctly in the UI.
-    -   Ensure all steps of the booking process (seat selection, food, payment placeholder, confirmation) work smoothly.
-    -   Check that bookings are correctly recorded in the database.
-    -   Test edge cases (e.g., booking last seat, attempting to double-book).
-2.  **Enhance Booking Form UI (NEW PRIORITY)**:
-    -   Improve the user experience of the booking form with a more visually appealing design.
-    -   Add clear visual indicators for seat types and pricing.
-    -   Implement smoother transitions between booking steps.
-    -   Ensure responsive design works correctly on all screen sizes.
-3.  **Continuing Code Quality Improvements**:
-    -   Continue reviewing for any remaining TypeScript issues in other components.
-    -   Apply consistent interface usage patterns as established in the recent fixes.
-    -   Consider adding more detailed JSDoc documentation to interfaces for better developer experience.
-4.  **Verify Frontend API Calls**:
-    -   Đảm bảo tất cả các API calls từ frontend đều sử dụng đúng đường dẫn đầy đủ (bao gồm `/api/v1/` nếu applicable) và đúng phương thức HTTP như đã định nghĩa ở backend và cấu hình trong security.
-5.  **Review Remaining API Path Consistency**:
-    -   Rà soát lại tất cả các controllers và cấu hình security (`AuthenticationFilter`, `SecurityConfiguration`) để đảm bảo tất cả các đường dẫn API (đặc biệt là các `permitAll` và các đường dẫn được bảo vệ khác) đều nhất quán với tiền tố `/api/v1/` (nếu đó là convention chung).
-6.  **Continue MoMo Cinema UX Enhancements**:
-    -   Tiếp tục làm việc trên trang Cinema Selection.
-7.  **Address Root Cause of Booking Redirection (Lower Priority)**:
-5.  **Address Root Cause of Booking Redirection (Lower Priority)**:
-    -   Investigate the backend's handling of `permitAll()` with existing (valid) tokens for `GET /api/v1/showtime/{movieId}/by-date` to understand why it initially caused a 401 (trước khi các sửa lỗi về path consistency được áp dụng). While the current workaround (navigating to movie details first) is functional, a direct booking from the list should ideally work.
-6.  **Address any new findings or minor issues** that may have arisen from the recent fixes.
+1.  **MoMo-Inspired Booking Flow Enhancements (User Interface - IMMEDIATE PRIORITY):**
+    *   **Improve `MovieList.tsx` (User-Facing Movie List) - CURRENT TASK:**
+        *   Implement clearer "Now Showing" vs. "Coming Soon" sections.
+        *   Display movie ratings (e.g., 4.5/5 stars) and age restrictions (e.g., P, C13, C16, C18).
+        *   Enhance grid layout for better visual appeal and information density.
+    *   **Enhance `MovieDetails.tsx` (User-Facing Movie Details):**
+        *   Include detailed cast/crew information (director, actors).
+        *   Embed a movie trailer (e.g., YouTube).
+        *   Ensure a prominent "Book Ticket" button.
+    *   **Implement Standalone Cinema/Theater Selection Step:**
+        *   Allow filtering by city/region.
+        *   Display different prices based on cinema, day of the week, and showtime.
+    *   **Upgrade Seat Selection UI:**
+        *   Clearly differentiate seat types (e.g., regular, VIP, couple/sweetbox).
+        *   Show varying prices per seat type directly on the seat map or legend.
+        *   Improve visual cues for selected, booked, and unavailable seats.
+    *   **Develop Enhanced Food & Drink Selection:**
+        *   Offer options for different sizes (e.g., Small, Medium, Large for drinks/popcorn).
+        *   Provide flavor choices where applicable.
+        *   Showcase popular combos with clear pricing and contents.
+    *   **Refine Confirmation & Payment UI:**
+        *   Provide a very clear and itemized booking summary before payment.
+        *   Integrate/mock multiple payment methods (e.g., MoMo, ZaloPay, Credit Card, Bank Transfer placeholders).
+    *   **Improve Booking History Page:**
+        *   Display a QR code or barcode for each ticket.
+        *   Add options to print or email tickets.
+2.  **Thorough Testing & Validation (PRIORITY)**:
+    *   **Focus on the end-to-end movie booking flow now that showtime generation, display, and TypeScript issues are fixed.**
+    *   Test booking from both the movie list (via the movie details workaround) and directly from movie details pages.
+    *   Verify that created showtimes appear correctly in the UI.
+    *   Ensure all steps of the booking process (seat selection, food, payment placeholder, confirmation) work smoothly.
+    *   Check that bookings are correctly recorded in the database.
+    *   Test edge cases (e.g., booking last seat, attempting to double-book).
+3.  **Enhance Booking Form UI (NEW PRIORITY)**:
+    *   Improve the user experience of the booking form with a more visually appealing design.
+    *   Add clear visual indicators for seat types and pricing.
+    *   Implement smoother transitions between booking steps.
+    *   Ensure responsive design works correctly on all screen sizes.
+4.  **Continuing Code Quality Improvements**:
+    *   Continue reviewing for any remaining TypeScript issues in other components.
+    *   Apply consistent interface usage patterns as established in the recent fixes.
+    *   Consider adding more detailed JSDoc documentation to interfaces for better developer experience.
+5.  **Verify Frontend API Calls**:
+    *   Đảm bảo tất cả các API calls từ frontend đều sử dụng đúng đường dẫn đầy đủ (bao gồm `/api/v1/` nếu applicable) và đúng phương thức HTTP như đã định nghĩa ở backend và cấu hình trong security.
+6.  **Review Remaining API Path Consistency**:
+    *   Rà soát lại tất cả các controllers và cấu hình security (`AuthenticationFilter`, `SecurityConfiguration`) để đảm bảo tất cả các đường dẫn API (đặc biệt là các `permitAll` và các đường dẫn được bảo vệ khác) đều nhất quán với tiền tố `/api/v1/` (nếu đó là convention chung).
+7.  **Continue MoMo Cinema UX Enhancements**:
+    *   Tiếp tục làm việc trên trang Cinema Selection.
+8.  **Address Root Cause of Booking Redirection (Lower Priority)**:
+    *   Investigate the backend's handling of `permitAll()` with existing (valid) tokens for `GET /api/v1/showtime/{movieId}/by-date` to understand why it initially caused a 401 (trước khi các sửa lỗi về path consistency được áp dụng). While the current workaround (navigating to movie details first) is functional, a direct booking from the list should ideally work.
+9.  **Address any new findings or minor issues** that may have arisen from the recent fixes.
 
 ### Missing Showtimes Issue & Data Generation (Previously Resolved - Context for Showtime Generation Fix)
 - **Problem**: Khi người dùng cố gắng đặt vé cho bất kỳ bộ phim nào, họ luôn nhận được thông báo "Không có lịch chiếu nào cho phim này hoặc lựa chọn này" (No showtimes available for this movie or selection), khiến không thể tiếp tục luồng đặt vé.
@@ -524,25 +652,50 @@
     *   **Improve Booking History Page:**
         *   Display a QR code or barcode for each ticket.
         *   Add options to print or email tickets.
-2.  **Frontend Testing & Verification** (Ongoing):
-    *   Thoroughly test the Movie Browsing UI and other frontend features to ensure they fetch and display data correctly now that the backend is running.
-    *   Test user and admin role separation to ensure security measures are working correctly.
-    *   Verify page refresh behavior maintains authentication state properly.
-    *   Check that logout functionality works as expected across all pages.
-2.  **Backend Warning Resolution**:
-    *   Address MapStruct "Unmapped target properties" warnings in mappers (e.g., `CategoryMapper`, `CinemaMapper`, `ActorMapper`, `MovieMapper`, `UserMapper`) by either ignoring base entity fields explicitly or ensuring they are correctly mapped if intended.
-    *   Evaluate and explicitly configure `spring.jpa.open-in-view` (currently enabled by default, causing a warning).
-3.  **Data Integrity for `Cinema.address`**:
-    *   Review existing `NULL` values in the `cinemas` table for the `address` column.
-    *   Decide on a strategy: update existing `NULL`s to valid addresses or confirm that `address` can indeed be optional for cinemas. If it must be mandatory, plan to re-introduce `nullable = false` after data cleanup.
-4.  **Continue Previously Planned Frontend Work**:
-    *   **Testing**: Conduct a thorough review and test of the implemented features, especially the authentication flow and booking form.
-    *   **Data Integration**: Xử lý vấn đề dữ liệu cho các UI hiện tại:
-        *   Triển khai mock data cho Movie Browsing UI nếu backend chưa sẵn sàng (evaluate if still needed now backend is up).
-        *   Tạo các hàm API service giả lập để đảm bảo UI hoạt động mà không cần backend đầy đủ (evaluate if still needed).
-    *   **UI Polish**: Review all user-facing components to ensure consistent styling and proper Vietnamese translations.
-5.  **Verify User Info Display After Login**:
-    *   Confirm that user information (e.g., name in header, profile details) is correctly displayed after login, which depends on the `userResponse.data.result` assumption for `/user/me` in `Login.tsx`. Adjust if necessary based on the actual API response structure of `/user/me`.
+2.  **Thorough Testing & Validation (PRIORITY)**:
+    *   **Focus on the end-to-end movie booking flow now that showtime generation, display, and TypeScript issues are fixed.**
+    *   Test booking from both the movie list (via the movie details workaround) and directly from movie details pages.
+    *   Verify that created showtimes appear correctly in the UI.
+    *   Ensure all steps of the booking process (seat selection, food, payment placeholder, confirmation) work smoothly.
+    *   Check that bookings are correctly recorded in the database.
+    *   Test edge cases (e.g., booking last seat, attempting to double-book).
+3.  **Enhance Booking Form UI (NEW PRIORITY)**:
+    *   Improve the user experience of the booking form with a more visually appealing design.
+    *   Add clear visual indicators for seat types and pricing.
+    *   Implement smoother transitions between booking steps.
+    *   Ensure responsive design works correctly on all screen sizes.
+4.  **Continuing Code Quality Improvements**:
+    *   Continue reviewing for any remaining TypeScript issues in other components.
+    *   Apply consistent interface usage patterns as established in the recent fixes.
+    *   Consider adding more detailed JSDoc documentation to interfaces for better developer experience.
+5.  **Verify Frontend API Calls**:
+    *   Đảm bảo tất cả các API calls từ frontend đều sử dụng đúng đường dẫn đầy đủ (bao gồm `/api/v1/` nếu applicable) và đúng phương thức HTTP như đã định nghĩa ở backend và cấu hình trong security.
+6.  **Review Remaining API Path Consistency**:
+    *   Rà soát lại tất cả các controllers và cấu hình security (`AuthenticationFilter`, `SecurityConfiguration`) để đảm bảo tất cả các đường dẫn API (đặc biệt là các `permitAll` và các đường dẫn được bảo vệ khác) đều nhất quán với tiền tố `/api/v1/` (nếu đó là convention chung).
+7.  **Continue MoMo Cinema UX Enhancements**:
+    *   Tiếp tục làm việc trên trang Cinema Selection.
+8.  **Address Root Cause of Booking Redirection (Lower Priority)**:
+    *   Investigate the backend's handling of `permitAll()` with existing (valid) tokens for `GET /api/v1/showtime/{movieId}/by-date` to understand why it initially caused a 401 (trước khi các sửa lỗi về path consistency được áp dụng). While the current workaround (navigating to movie details first) is functional, a direct booking from the list should ideally work.
+9.  **Address any new findings or minor issues** that may have arisen from the recent fixes.
+
+### Missing Showtimes Issue & Data Generation (Previously Resolved - Context for Showtime Generation Fix)
+- **Problem**: Khi người dùng cố gắng đặt vé cho bất kỳ bộ phim nào, họ luôn nhận được thông báo "Không có lịch chiếu nào cho phim này hoặc lựa chọn này" (No showtimes available for this movie or selection), khiến không thể tiếp tục luồng đặt vé.
+- **Investigation Path & Key Findings**:
+    1. **Database Data Issue**: Kiểm tra API endpoint `/showtime/{movieId}/by-date` trả về mảng rỗng mặc dù endpoint hoạt động bình thường. Phân tích cơ sở dữ liệu cho thấy bảng `schedules` và `showtimes` không có dữ liệu thực cho các bộ phim hiện tại.
+    2. **Schema & Relationships**: Cấu trúc bảng dữ liệu đã được thiết lập đúng (Movie -> Schedule -> Showtime -> ShowtimeSeat), nhưng thiếu dữ liệu thực tế.
+    3. **Security Challenges**: Các API admin để thêm lịch chiếu yêu cầu quyền ADMIN, gây khó khăn trong việc thêm dữ liệu mẫu.
+- **Solution Implemented**:
+    1. **Public API Endpoints**: Tạo hai endpoint không yêu cầu xác thực:
+        - `/showtime/public/check-movies` để kiểm tra danh sách phim hiện có trong cơ sở dữ liệu
+        - `/showtime/public/add-showtimes-for-active-movies` để thêm lịch chiếu cho tất cả phim ACTIVE
+    2. **Security Configuration**: Cập nhật `SecurityConfiguration.java` để cho phép truy cập vào các endpoint `/showtime/public/**` mà không cần xác thực.
+    3. **Data Generation Logic**: Thêm logic để tạo lịch chiếu cho ngày hiện tại và ngày mai với 3 khung giờ chiếu (10:00, 13:30, 17:00) cho mỗi phim hoạt động.
+    4. **Entity Relationship Handling**: Giải quyết vấn đề với vòng lặp entity khi lấy danh sách ghế thông qua `entityManager` thay vì trực tiếp từ `room.getSeats()`.
+- **Outcome**: Người dùng giờ đây có thể xem các lịch chiếu có sẵn khi đặt vé, cho phép hoàn thành toàn bộ luồng đặt vé. Các endpoint công khai cũng cung cấp cách dễ dàng để kiểm tra và cập nhật dữ liệu lịch chiếu khi cần thiết.
+- **Lessons Learned**:
+    1. Kiểm tra dữ liệu cơ sở dữ liệu là bước quan trọng khi khắc phục sự cố, đặc biệt là với các ứng dụng phụ thuộc vào dữ liệu chuẩn bị trước.
+    2. Các endpoint công khai không yêu cầu xác thực có thể là công cụ hữu ích để hỗ trợ trong quá trình phát triển và khắc phục sự cố.
+    3. Xử lý quan hệ entity cẩn thận để tránh các vấn đề liên quan đến vòng lặp và lazy loading trong JPA.
 
 ## Active Decisions
 - Using JPA for entity relationships.
@@ -876,3 +1029,87 @@ This error occurred due to inconsistency between the data structure expected by 
     - When working with external APIs, interfaces should account for all properties that might be used, even if they're optional
 
 // ... remaining of the file
+
+### Admin Panel Redirect Issue (PERSISTENT)
+- **Problem**: Khi đăng nhập với tài khoản có quyền ADMIN và truy cập admin panel, người dùng vẫn bị redirect về trang `/movies` khi click vào bất kỳ chức năng nào trong admin panel.
+- **Investigation Path & Key Findings**:
+  1. **User Role Verification**:
+     - Đã xác nhận role_id = 1 cho tài khoản mrrdavidd1 trong database
+     - Logs cho thấy role "ADMIN" được đúng đắn gán cho user trong Redux store
+     - `AdminProtectedRoute` component xác nhận "Admin access granted" và không tự redirect
+  2. **Token & Authentication Mechanism**:
+     - Khi đăng nhập thành công, JWT token được lưu đúng cách vào localStorage
+     - Tài khoản mrrdavidd1 được xác thực với role ADMIN thành công: `User role: ADMIN`
+     - Axios interceptor đính kèm token vào các request sau khi đăng nhập
+  3. **Common Issues & Attempted Fixes**:
+     - **Sửa đổi axios.ts**:
+       - Thêm hàm `isAdminUrl()` để kiểm tra các URL thuộc về admin panel
+       - Ngăn chặn redirect tự động khi các API request từ admin panel gặp lỗi 401
+       - Cải thiện logging để theo dõi chi tiết các request
+     - **Chỉnh sửa AdminProtectedRoute.tsx**:
+       - Thêm logs chi tiết để theo dõi quá trình xác thực
+       - Thêm useEffect để theo dõi và xác nhận quyền admin liên tục
+       - Cập nhật cách thức chuyển hướng từ object `location` sang `location.pathname`
+     - **Sửa UserHeader.tsx**:
+       - Thêm logic ngăn chặn navigation từ admin panel sang user pages
+       - Kiểm tra đường dẫn hiện tại và role của user để tránh chuyển hướng không mong muốn
+- **Current Status**: Vấn đề vẫn tồn tại. Mặc dù logs xác nhận người dùng được xác thực đúng với role ADMIN, nhưng vẫn có cơ chế hoặc sự kiện nào đó gây ra việc redirect ra khỏi admin panel.
+- **Potential Solutions for Future Investigation**:
+  1. **Kiểm tra Auth Flow toàn diện**:
+     - Xem xét toàn bộ lifecycle của các route và component trong admin panel
+     - Tìm kiếm các hook hoặc event listener có thể gây trigger redirect
+  2. **Phân tích Navigation Guards**:
+     - Kiểm tra các thành phần React Router (Route, Switch, Navigate) cấu hình trong `routes.tsx`
+     - Đảm bảo không có nested navigate/redirect component trong admin panel
+  3. **Cải thiện Layout Component**:
+     - Xem xét `Layout.tsx` đang sử dụng trong admin panel
+     - Cập nhật cách xử lý navigation và role để ngăn chặn redirect không mong muốn
+  4. **Kiểm tra Phụ thuộc UI Framework**:
+     - Material UI `Button` và `List` components có thể xử lý sự kiện navigation không mong đợi
+     - Xem xét các hành vi mặc định của các component trong UI framework
+  5. **Xem xét cách thiết lập React Router và nested routes**:
+     - Phân tích cấu trúc route trong `routes.tsx`
+     - Xem xét nested routes và cách chúng tương tác với cơ chế xác thực
+
+### Admin Panel Redirect Issue (RESOLVED - Formerly PERSISTENT)
+- **Problem**: Clicking buttons within the main content area of the Admin Dashboard (e.g., "Add Movie", "Manage Showtimes" quick action buttons) caused a full page reload and redirection back to the user homepage (`/movies`), despite the user being authenticated as ADMIN and the left sidebar navigation working correctly.
+- **Investigation Path & Key Findings**:
+  1. **Initial Checks**: Confirmed user authentication, ADMIN role, and correct functioning of `AdminProtectedRoute` and sidebar navigation (`Layout.tsx`). Ruled out issues in `AuthCheck.tsx`, `authSlice.ts`, and `axios.ts` interceptors as the core problem for *this specific* behaviour.
+  2. **Symptom Analysis**: The key difference was sidebar links (likely using React Router's `Link` or `navigate`) vs. dashboard buttons. Full page reload indicated standard HTML link behavior (`<a>` tag with `href`) bypassing React Router's client-side routing.
+  3. **Code Review (`Dashboard.tsx`)**: Found that the "Quick Actions" buttons were implemented using Material UI `Button` components, but incorrectly used the `href` prop (e.g., `href="/admin/movies"`). This rendered them as standard anchor tags (`<a>`), causing the browser to perform a full navigation instead of using React Router.
+- **Solution Implemented**:
+  1. **Refactored `Dashboard.tsx`**:
+     - Imported `useNavigate` hook from `react-router-dom`.
+     - Removed the `href` prop from the affected `Button` components.
+     - Added an `onClick` handler to each button using the `navigate` function (e.g., `onClick={() => navigate('/admin/movies')}`).
+- **Outcome**: Buttons on the Admin Dashboard now correctly use React Router's navigation, preventing the full page reload and resolving the redirection issue. Admins can navigate within the admin panel using both the sidebar and dashboard controls as expected.
+- **Key Learning**: Within a Single Page Application (SPA) using React Router, internal navigation must be handled programmatically (using `navigate` hook) or declaratively (using `Link` component) rather than using standard `href` attributes on buttons or anchors meant for internal routing, as `href` triggers browser-level navigation.
+
+## Next Steps
+1.  **Admin Panel API Integration (CONTINUED PRIORITY):**
+    *   With the navigation and authentication issues resolved, the focus shifts to connecting the admin panel components to the backend APIs.
+    *   **Current State**: Admin panel largely uses mock data.
+    *   **Implementation Plan**:
+        1.  **Review & Update Service Layer**: Go through `admin-interface/src/services/` (e.g., `movieService`, `userService`, `showtimeService`) and replace mock data functions with actual `axiosInstance` API calls.
+        2.  **Integrate React Query**: Refactor components (e.g., `MovieManagement`, `UserManagement`, `BookingManagement`) to use `useQuery` for data fetching and `useMutation` for create/update/delete operations.
+        3.  **Handle Data Structures**: Ensure frontend interfaces/types match the actual API response structures.
+        4.  **Implement Loading/Error States**: Use React Query's status flags to show loading indicators and handle API errors gracefully in the UI.
+    *   **Priority Order**: Movies -> Users -> Showtimes -> Bookings -> Reports.
+2.  **MoMo-Inspired Booking Flow Enhancements (User Interface - HIGH PRIORITY):**
+    *   Continue improvements on the user-facing side now that the backend/admin stabilization is better.
+    *   **Improve `MovieList.tsx`**: Add "Now Showing"/"Coming Soon", ratings, age restrictions, better layout.
+    *   **Enhance `MovieDetails.tsx`**: Add cast/crew, trailer, prominent booking button.
+    *   **Implement Cinema Selection Step**: Filter by location, show varying prices.
+    *   **Upgrade Seat Selection UI**: Differentiate seat types/prices, improve visual cues.
+    *   **Develop Food & Drink Selection**: Size/flavor options, combos.
+    *   **Refine Confirmation & Payment UI**: Clear summary, payment method placeholders.
+    *   **Improve Booking History Page**: QR code, print/email options.
+3.  **Thorough Testing & Validation (HIGH PRIORITY)**:
+    *   **Focus on the end-to-end movie booking flow.** Test showtime selection, seat selection, food, payment placeholder, confirmation, and database recording.
+    *   **Test Admin Panel API Integrations** as they are completed. Verify CRUD operations work correctly via the UI.
+4.  **Enhance Booking Form UI (Medium Priority)**:
+    *   Improve visual design, seat indicators, transitions, responsiveness.
+5.  **Continuing Code Quality Improvements (Ongoing)**:
+    *   Review TypeScript usage, apply consistent patterns, add JSDoc.
+6.  **Verify Frontend API Calls & Path Consistency (Ongoing)**.
+7.  **Address Root Cause of Previous Booking Redirection (Lower Priority)**: Although the workaround exists, investigate the backend's `permitAll()` handling with tokens if time permits.
