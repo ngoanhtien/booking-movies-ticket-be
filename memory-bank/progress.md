@@ -19,95 +19,15 @@
   - Added proper type conversion for form validation error messages
   - Wrapped DatePicker in LocalizationProvider with AdapterDateFns
   - Ensured proper form validation and error display
-- **API Circular Reference Resolution**:
-  - Successfully implemented multiple-level extraction strategy in movieService.ts
-  - Added standard, direct, deep search, and regex extraction methods as fallbacks
-  - Disabled Axios automatic JSON parsing with `transformResponse` to handle raw API responses
-  - Implemented cloning with targeted removal of circular references
-  - Added comprehensive error handling and fallback mechanisms
-  - Created type-safe extraction with detailed console logging
-  - Successfully displaying movies from API (Dune and others)
-  - Problem with circular references in the API response resolved
-- **Movie API Integration**:
-  - Updated movie data interface to handle multiple field naming conventions
-  - Implemented robust response normalization in movieService.ts
-  - Added recursive search functions to extract movie data from complex nested API responses
-  - Fixed template literal errors and missing closing tags in MovieDetails.tsx
-  - Added proper handling for string/array director field
-  - Updated MovieForm.tsx to convert between API and UI status values (SHOWING/ACTIVE)
-  - Created data normalization pattern for consistent handling of API data
-  - Implemented fallback logic for missing fields with sensible defaults
-  - Added comprehensive logging for API response troubleshooting
-  - Fixed TypeScript errors related to potentially undefined values
-- **CORS Configuration for Frontend-Backend Communication**:
-    - Created WebConfig.java with fully configured CorsConfigurationSource bean
-    - Set up allowed origins for development and production environments
-    - Configured comprehensive allowed methods, headers, and exposed headers
-    - Enabled credentials and set appropriate max age for preflight requests
-    - Applied configuration to all endpoints ensuring full backend access from frontend
-- **React Query Integration and TypeScript Fixes**:
-    - Updated useQuery implementation to use the object-based syntax required by @tanstack/react-query v5
-    - Fixed type issues with movie data structure in CinemaSelection.tsx
-    - Implemented proper error and loading states
-    - Added appropriate type definitions for API responses
-    - Used proper type assertions to handle complex data structures
-    - Corrected event handler types for Material-UI components like SelectChangeEvent
-- **User Authentication & Registration (Frontend & Backend)**:
-    - Frontend forms for Login and Register (`Login.tsx`, `Register.tsx`).
-    - Backend API endpoints for `/auth/login` and `/auth/register`.
-    - JWT generation and token-based authentication flow.
-    - Frontend correctly calls backend via proxy (`package.json`).
-    - Backend DTOs (`RegisterRequest`) correctly map frontend payloads (e.g., `fullName`, `email`).
-    - Backend validation for existing username and email during registration.
-    - Frontend correctly parses API responses (e.g., `response.data.result` for tokens).
-    - Endpoint `GET /user/me` implemented in backend to fetch current user details after login.
-    - Successful login now correctly redirects based on user role (admin to `/admin/dashboard`, user to `/`).
-- **Security and Access Control**:
-    - Frontend role-based route protection with `AdminProtectedRoute` component
-    - Backend API security with Spring Security role-based permissions
-    - Modified `DomainUserDetailsService` to add "ROLE_" prefix to roles for Spring Security
-    - Restricted admin routes and API endpoints to users with ADMIN role
-    - Added axios interceptors for automatic token handling on all requests
-    - Authentication persistence across page refreshes
-    - UserLayout with integrated logout functionality in header
-    - Proper cleanup of authentication tokens on logout
-    - Debug logging for authentication flow troubleshooting
-- **Authentication Persistence Enhancements**:
-    - Fixed lost authentication state after page refresh that was forcing users to re-login
-    - Rewritten axios interceptors in App.tsx with proper token refresh logic to handle 401 errors correctly
-    - Optimized AuthCheck component to prevent redundant API calls when already authenticated
-    - Enhanced Redux authSlice to initialize authentication state directly from localStorage
-    - Implemented differentiated error handling for network issues vs. authentication errors
-    - Added proper TypeScript typing for axios interceptors and fixed TS2339 error with handlers property
-    - Improved token naming consistency between login response and localStorage
-    - Added fallback handling for different API response structures (result vs. data)
-    - Implemented request retry prevention with proper _retry flag to avoid infinite loops
-    - Added comprehensive logging for all authentication-related operations
-    - Enabled token refresh to automatically retry the original failed request after refresh
-- **Authentication in Booking Flow**:
-    - Enhanced BookingForm.tsx with token validation checks before initiating booking
-    - Implemented specific handling for 401 (Unauthorized) errors with user-friendly messages
-    - Added redirect to login with delay to allow users to read error messages
-    - Updated Login.tsx to detect and display when a session has expired
-    - Fixed TypeScript type errors with refreshToken and axios interceptors
-    - Improved user experience with clear feedback when authentication fails
-    - Added smooth transitions when redirecting due to authentication issues
-    - Implemented proper error handling for refresh token failures
-- Vietnamese Language Support
-  - Translation configuration with i18next
-  - Vietnamese translation file
-  - Vietnamese UI text
-  - Comprehensive translations for booking form UI
-  - Complete translations for enhanced placeholder components
-  - Organized translation structure with logical namespaces (auth, profile, booking, etc.)
-  - Form validation messages in Vietnamese
-  - Consistent translation keys across similar components
-  - Complete translations for user-facing components:
-    - Register and Login pages
-    - UserHeader with profile dropdown menu
-    - UserProfile with personal information and password sections
-    - BookingHistory with filtering tabs and details
-    - Footer with all informational sections
+- **API Circular Reference Resolution**: Resolved API circular reference issues in `movieService.ts` by implementing a multi-level extraction strategy with fallbacks and targeted data cloning to prevent serialization loops.
+- **Movie API Integration**: Integrated movie API: Updated `movie.ts` interface for field name variations, implemented robust response normalization in `movieService.ts`, and fixed data handling in `MovieDetails.tsx` and `MovieForm.tsx` for consistent display.
+- **CORS Configuration for Frontend-Backend Communication**: Implemented backend CORS configuration (`WebConfig.java`) to allow full communication from the frontend, setting up necessary origins, methods, and headers.
+- **React Query Integration and TypeScript Fixes**: Integrated React Query (`@tanstack/react-query` v5) using object-based syntax and resolved related TypeScript issues in components like `CinemaSelection.tsx`, including data structure typing and event handlers.
+- **User Authentication & Registration (Frontend & Backend)**: Established end-to-end user authentication and registration: Implemented frontend forms (`Login.tsx`, `Register.tsx`), backend APIs (`/auth/login`, `/auth/register`) with JWT, DTO mapping, validation, and role-based redirection after login via `/user/me`.
+- **Security and Access Control**: Implemented security and access control: Added frontend `AdminProtectedRoute`, backend Spring Security role permissions (e.g., `hasRole("ADMIN")`), Axios interceptors for token handling, and ensured authentication persistence with logout functionality.
+- **Authentication Persistence Enhancements**: Enhanced authentication persistence: Rewritten Axios interceptors for proper token refresh and request retries, initialized Redux auth state from localStorage, and improved error handling for network vs. auth issues to prevent session loss on page refresh.
+- **Authentication in Booking Flow**: Stabilized authentication in booking flow: Added token validation in `BookingForm.tsx`, improved 401 error handling with user feedback, and refined session expiration detection and redirection logic.
+- **Vietnamese Language Support**: Implemented comprehensive Vietnamese language support using i18next, including UI text, form validation messages, and organized translation files with logical namespaces for all key user-facing and admin components.
 - Admin Panel UI Development
   - Authentication bypass for UI preview
   - Direct access to admin panel without backend
@@ -117,203 +37,27 @@
   - Consistent sidebar navigation with collapsible groups
   - Path prefixes for proper route nesting
   - Placeholder components for all menu items
-  - Enhanced placeholder components with rich mock data and full UI:
-    - RoomManagement.tsx with DataGrid, form validation, status indicators, support for different room types (2D, 3D, IMAX, VIP), interactive seat layout editor, and improved table/title UI aesthetics (padding, column distribution).
-    - PromotionsManagement.tsx with rich promotion data, different discount types (percentage/fixed), various targets (all/movie/food/combo), and date range selection
-    - TheaterLocations.tsx with location data, dual view modes (grid/list), Google Maps integration, and search functionality
-- Showtime Management Interface
-  - Showtime list view with DataGrid
-  - Add/Edit showtime form
-  - Movie-cinema-room relationship
-  - Date and time selection
-  - Price management
-  - Status management
-  - Vietnamese translations
-- User Management Interface
-  - User list view with DataGrid
-  - Add/Edit user form
-  - Membership level management
-  - Status management
-  - Form validation
-  - Vietnamese translations
-  - Avatar upload
-  - Search and filtering functionality
-- Booking System Core
-  - Booking entity implementation
-  - BookingStatus enum
-  - Entity relationships
-  - Repository implementation
-  - Sales report functionality
-  - Status management
-  - Payment tracking
-- User-Facing Booking System
-  - Multi-step booking form with Material-UI Stepper
-  - Showtime selection UI with radio buttons for available showtimes
-  - Interactive seat map with visual seat status indicators
-  - Food & drink selection with quantity controls
-  - Booking summary with payment options
-  - Form validation for each step
-  - Mock data with simulated API delays
-  - State management between steps
-  - Responsive design considerations
-  - Vietnamese translations for all UI elements
-- Booking Management Interface
-  - Booking list view with DataGrid
-  - Booking details view
-  - Status management with confirmation
-  - Export functionality
-  - Search and filtering
-  - Vietnamese translations
-  - Loading states and error handling
-  - API integration
-- Reports and Analytics Interface
-  - Sales reports with charts and data tables
-  - Attendance reports with visualizations
-  - Date range selection with Vietnamese localization
-  - Export functionality for both report types
-  - Interactive charts using Recharts
-  - Loading states and error handling
-  - Vietnamese translations
-  - Responsive layout
-  - Backend data aggregation
-  - Excel export with Apache POI
-- Cinema Management features implemented with:
-  - DataGrid for cinema listing with Vietnamese headers
-  - Form validation using Formik and Yup with Vietnamese messages
-  - Image upload with preview
-  - Status management with Vietnamese indicators
-  - Add/edit/delete UI
-  - Routing and sidebar link
-  - Vietnamese translations
-- Branch Management features implemented with:
-  - DataGrid for branch listing with Vietnamese headers
-  - Form validation using Formik and Yup with Vietnamese messages
-  - Cinema selection dropdown
-  - Add/edit/delete UI
-  - Routing and sidebar link
-  - Vietnamese translations
-- Invoice (Bill) Management features implemented with:
-  - DataGrid for invoice listing with Vietnamese headers
-  - Form validation using Formik and Yup with Vietnamese messages
-  - User and booking selection dropdowns
-  - Add/edit/delete UI
-  - Routing and sidebar link
-  - Vietnamese translations
-- Partially functional placeholder components:
-  - RolesManagement.tsx (basic structure)
-  - MovieSchedules.tsx (basic structure)
-  - DiscountManagement.tsx (basic structure)
-  - NotificationManagement.tsx (basic structure)
-- Admin Panel UI Enhancements:
-    - Sidebar in `Layout.tsx` harmonized with dashboard design (styling, hover effects).
-    - Dashboard charts (`BarChart`, `PieChart`, `LineChart` in `Dashboard.tsx`) visually enhanced (gradients, styling, tooltips, `ChartContainer` improvements).
-- Theater Management Module (Admin Panel):
-    - `TheaterManagement.tsx` page implemented with DataGrid, add/edit/delete dialogs (mocked), Formik/Yup validation, image upload placeholder.
-    - `theater.ts` type definitions (`Theater`, `TheaterFormData`) created.
-    - Styling consistent with modern dashboard design.
-    - Resolved `imageUrl` TypeScript errors in form submission logic.
-- Linter Error Fixes:
-    - Corrected Recharts prop usage in `Dashboard.tsx` (removed invalid animation props from top-level chart components).
-    - Added placeholder `Register.tsx` component at `admin-interface/src/pages/auth/Register.tsx` to resolve import error in `routes.tsx`.
-    - Addressed `MovieForm` prop type errors in `routes.tsx` by passing `null` for `movie` and empty functions for callbacks (temporary measure).
-    - Fixed TypeScript errors in form validation by properly handling field error checks.
-    - Fixed TypeScript errors in UserHeader component related to property access.
-    - **Showtime Generation Endpoint Functional (`/showtime/public/add-showtimes-for-active-movies`) (LATEST)**:
-        - Successfully debugged and fixed the endpoint for generating showtimes for movies with "SHOWING" status.
-        - **AuthenticationFilter Fix**: Modified `AuthenticationFilter.java` using `AntPathMatcher` to correctly allow public access to `/showtime/public/**` even when a JWT token is present, resolving initial 401 errors.
-        - **ShowtimeController Fixes & Debugging**:
-            - Changed movie status query from a hardcoded "ACTIVE" string to `StatusMovie.SHOWING` enum.
-            - Resolved `NoResourceFoundException` (initially reported as "Uncategorized error") by:
-                - Adding a `/public/ping` test endpoint to confirm controller reachability.
-                - Systematically uncommenting logic in `addShowtimesForActiveMoviesPublic` method, which helped isolate the issue to the status query and confirm overall method mapping and logic flow.
-        - **Outcome**: Endpoint now successfully creates `Schedule`, `Showtime`, and `ShowtimeSeat` entities, unblocking the movie booking flow.
-        - **Learnings**: Reinforced the importance of `AntPathMatcher` for wildcard public paths with JWT, checking detailed server logs, step-by-step code isolation for debugging, and using Enums for status queries.
-- Minor UI Fixes:
-    - Login Page: Removed unnecessary "auth.noAccount" text.
-    - `Register.tsx`: Simplified by removing a `Typography` wrapper.
-    - Translation Files: Added "logout" key for consistency.
-- **Movie List Display & Booking Flow Stability (LATEST FIXES)**:
-    - **Backend Fixes (JSON & Circular References)**:
-        - Resolved JSON serialization issues caused by circular dependencies in JPA entities.
-            - Strategically applied `@JsonIgnore` to back-references in entities like `Movie`, `Category`, `Schedule`, `Review`, `Actor` (initial approach for movie list).
-            - Applied `@JsonManagedReference` and `@JsonBackReference` to resolve circular dependencies involving `Bill`, `Promotion`, `User`, `Review` (secondary fix for broader stability, e.g., in movie details if reviews are deeply nested).
-        - Corrected the "concatenated JSON" / "double JSON" error by modifying `GlobalExceptionHandler` and `ExceptionHandlingFilter` to check `HttpServletResponse.isCommitted()` before attempting to write an error response body.
-    - **Frontend Fixes (Movie Details & Actor Display)**:
-        - Defined `Actor` interface in `types/movie.ts`.
-        - Updated `Movie` interface to use `actors: Actor[]`.
-        - Modified `MovieDetails.tsx` to import `Actor`, use type assertion `(actor: Actor)` in map function, and correctly access actor properties (`actor.name`, `actor.profilePath`, `actor.character`).
-    - **Outcome**:
-        - `movieService.ts` now successfully parses API responses for both movie list and movie details.
-        - The movie list displays correctly in `MovieList.tsx`.
-        - Movie details, including actor information, display correctly in `MovieDetails.tsx`.
-        - The issue of being redirected to login when navigating to movie-related pages or attempting to book tickets has been resolved.
-        - Overall stability of movie browsing and detail view significantly improved.
-
-- **Showtime Generation and Display Fully Functional (LATEST)**:
-    - **Issue Addressed**: Users unable to see showtimes on UI, despite backend indicating showtimes were generated/existed. This was due to a cascade of issues related to API path consistency and security configurations.
-    - **Backend API Path and Security Fixes**:
-        - **`AuthenticationFilter.java`**: Updated `publicPaths` to include the `/api/v1/` prefix for all relevant public endpoints (e.g., `/api/v1/showtime/public/**`, `/api/v1/auth/login`, etc.) to ensure correct identification of public paths and prevent premature token validation errors (401).
-        - **`SecurityConfiguration.java`**: Updated `requestMatchers` for `permitAll()` rules to include the `/api/v1/` prefix for all corresponding public endpoints (e.g., `/api/v1/showtime/public/**`, `/api/v1/showtime/*/by-date`, `/api/v1/movie/**`, `/api/v1/auth/**`, etc.). This resolved 403 errors caused by `AuthorizationFilter` when `permitAll()` paths didn't match the actual request URI.
-        - **`ShowtimeController.java`**:
-            - Changed class-level `@RequestMapping` from `"/showtime"` to `"/api/v1/showtime"` to align with the `/api/v1/` convention.
-            - Changed method-level mapping for `addShowtimesForActiveMoviesPublic` from `@GetMapping` to `@PostMapping` to match the intended HTTP method.
-            - These changes resolved `NoResourceFoundException` (which appeared as a 500 error) for the `POST /api/v1/showtime/public/add-showtimes-for-active-movies` endpoint.
-    - **Outcome**:
-        - The endpoint `POST /api/v1/showtime/public/add-showtimes-for-active-movies` is now correctly mapped, secured, and callable. It successfully executes its logic (and reports "SKIPPED" if showtimes already exist).
-        - The endpoint `GET /api/v1/showtime/{movieId}/by-date` is now correctly configured as `permitAll()` and returns showtime data successfully when called without authentication (e.g., from Postman or UI).
-        - Showtimes are now correctly displayed on the user interface.
-    - **Key Learnings**: Reinforced the critical importance of API path and HTTP method consistency across controller mappings, security filter configurations (`AuthenticationFilter`, `SecurityConfiguration`), and frontend API calls. Identified common error patterns (401, 403, `NoResourceFoundException`) related to security and mapping misconfigurations.
-
-- **Showtime Display in Booking Form Fully Functional (LATEST)**:
-    - **Issue Addressed**: Lịch chiếu không hiển thị trên UI (`BookingForm.tsx`) mặc dù API backend trả về dữ liệu.
-    - **Frontend Fixes (`BookingForm.tsx`)**:
-        -   **Type Alignment**: Chuyển từ việc sử dụng kiểu `Showtime[]` (từ `bookingService.ts`) sang sử dụng các kiểu chi tiết hơn từ `types/showtime.ts` (`MovieShowtimesResponse`, `BranchWithShowtimes`, `ShowtimeDetail`).
-        -   **State Management**:
-            -   Sử dụng state `showtimeBranches: BranchWithShowtimes[]` để lưu trữ dữ liệu lịch chiếu theo cấu trúc lồng nhau (cụm rạp -> danh sách suất chiếu).
-            -   Thêm state `currentMovieInfo` để lưu `movieId` và `movieName` từ response API.
-        -   **Data Fetching Logic (`fetchShowtimesData`)**:
-            -   Cập nhật để xử lý đúng `MovieShowtimesResponse` (lấy từ `response.data.result` của `bookingService.getShowtimesByMovie`).
-            -   Gán `apiResponse.branches` cho `showtimeBranches` và thông tin phim cho `currentMovieInfo`.
-        -   **Helper Functions (`getSelectedShowtimeDetails`)**:
-            -   Điều chỉnh để làm việc với cấu trúc `showtimeBranches` và `ShowtimeDetail`, lấy thông tin phim từ `currentMovieInfo`.
-        -   **UI Rendering**:
-            -   Cập nhật logic render để lặp qua `showtimeBranches`, sau đó lặp qua `branch.showtimes` để hiển thị thông tin chi tiết của từng suất chiếu (`scheduleTime`, `roomName`, `roomType`).
-            -   Sử dụng ID kết hợp (`scheduleId`-`roomId`) cho việc chọn suất chiếu.
-            -   **Handling Missing Data**: Tạm thời xử lý việc thiếu `price` và `availableSeats` trong `ShowtimeDetail` bằng giá trị mặc định hoặc thông tin thay thế.
-    - **Outcome**: Lịch chiếu phim hiển thị chính xác và có thể chọn được trong `BookingForm.tsx`, cho phép người dùng tiếp tục quá trình đặt vé.
-
-- **TypeScript Interface Errors Fixed (LATEST)**:
-    - **Issue Addressed**: Project had multiple TypeScript errors due to mismatches between interface definitions and actual usage in the code, particularly with showtime-related interfaces.
-    - **Root Issues**:
-        - `BranchWithShowtimes` interface lacked properties `address`, `hotline`, and `imageUrl` that are used in `MovieDetails.tsx`.
-        - `ShowtimeDetail` interface was missing `scheduleDate` property used for URL construction in booking flow.
-        - Some services methods were missing proper type declarations for `ApiResponse<T>`.
-        - Variables of type `unknown` (like error handling) were being accessed without proper type checking.
-    - **Solution Implemented**:
-        - **Enhanced `types/showtime.ts`**:
-            - Added missing properties to `BranchWithShowtimes` interface (`address?: string`, `hotline?: string`, `imageUrl?: string`).
-            - Added `scheduleDate?: string` and `scheduleEndTime?: string` to `ShowtimeDetail` interface.
-            - Enhanced `MovieShowtimesResponse` with additional optional properties like `imageUrl`, `duration`, etc.
-            - Centralized `ApiResponse<T>` interface definition in this file for consistent imports elsewhere.
-        - **Updated Service Methods**:
-            - Applied proper type checking for errors with type assertion `const err = error as any` before accessing properties.
-            - Updated return type declarations to use the interfaces from `types/showtime.ts`.
-        - **Fixed Import Declarations**:
-            - In `BookingForm.tsx`, added import of `ApiResponse` from `types/showtime.ts` and removed local definition.
-    - **Outcome**: All TypeScript errors have been resolved, enabling successful compilation. Consistent interface usage across components improves code quality and prevents runtime errors from missing properties.
-
-- **Date Picker Implementation and Simplification (LATEST)**:
-    - **Issue Addressed**: Implementation of DatePicker from Material UI in MovieDetails.tsx led to numerous dependency and compatibility errors with date-fns library.
-    - **Root Issues**:
-        - Incompatibility between @mui/x-date-pickers (with AdapterDateFnsV3) and existing date-fns version
-        - Vietnamese locale import issues in date-fns
-        - Persistent module errors even after updating packages and clearing cache
-    - **Solution Implemented**:
-        - Replaced complex DatePicker component from @mui/x-date-pickers with standard TextField input of type "date"
-        - Maintained useState implementation for setting default date (today)
-        - Updated change handlers to work with standard date input
-        - Preserved usage of selected date in React Query for fetching showtime data
-    - **Outcome**: Simplified solution that maintains the date selection functionality while eliminating dependency issues. Users can now select dates to view showtimes without encountering errors, and the application is more stable with fewer complex dependencies.
+  - Enhanced key admin placeholder components (`RoomManagement`, `PromotionsManagement`, `TheaterLocations`) with rich mock data, full UI features (DataGrid, form validation, status indicators), and specific functionalities like seat layout editing, varied promotion types, and map integration.
+  - Showtime Management Interface
+  - User Management Interface
+  - Booking System Core
+  - User-Facing Booking System
+  - Booking Management Interface
+  - Reports and Analytics Interface
+  - Cinema Management features implemented with:
+  - Branch Management features implemented with:
+  - Invoice (Bill) Management features implemented with:
+  - Partially functional placeholder components:
+  - Admin Panel UI Enhancements:
+  - Theater Management Module (Admin Panel):
+  - Linter Error Fixes:
+  - **Showtime Generation Endpoint Functional (`/showtime/public/add-showtimes-for-active-movies`) (LATEST)**:
+  - Minor UI Fixes:
+  - **Movie List Display & Booking Flow Stability (LATEST FIXES)**:
+  - **Showtime Generation and Display Fully Functional (LATEST)**:
+  - **Showtime Display in Booking Form Fully Functional (LATEST)**:
+  - **TypeScript Interface Errors Fixed (LATEST)**:
+  - **Date Picker Implementation and Simplification (LATEST)**:
 
 ## What's Left to Build
 1. Frontend Features
