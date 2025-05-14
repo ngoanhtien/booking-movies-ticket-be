@@ -2,6 +2,7 @@ package com.booking.movieticket.entity;
 
 import com.booking.movieticket.entity.base.BaseEntity;
 import com.booking.movieticket.entity.enums.StatusBill;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -32,6 +33,7 @@ public class Bill extends BaseEntity {
     @Column(name = "bill_code")
     private String billCode;
 
+    @JsonManagedReference("bill-promotion")
     @ManyToOne
     @JoinColumn(name = "promotion_id")
     private Promotion promotion;
@@ -42,6 +44,7 @@ public class Bill extends BaseEntity {
     @OneToMany(mappedBy = "bill")
     private Set<BillFood> billFoods = new HashSet<>();
 
+    @JsonManagedReference("bill-user")
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
