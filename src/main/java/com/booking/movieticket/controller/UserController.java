@@ -28,6 +28,10 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.booking.movieticket.dto.response.UserDetailResponse;
+import com.booking.movieticket.security.jwt.DomainUserDetails;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @RestController
 @RequestMapping("/user")
@@ -86,6 +90,49 @@ public class UserController {
         } catch (Exception e) {
             log.error("Unexpected error during authentication: {}.", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Unexpected error: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserDetailResponse>> getCurrentUser() {
+        log.info("Attempting to get current user info for /user/me endpoint...");
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal() instanceof String && "anonymousUser".equals(authentication.getPrincipal())) {
+            log.warn("No authenticated user found for /user/me");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                           .body(new ApiResponse<>("User not authenticated", null));
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof DomainUserDetails) {
+            DomainUserDetails userDetails = (DomainUserDetails) principal;
+            Long userId = userDetails.getUserId();
+            log.info("Authenticated user ID for /user/me: {}", userId);
+            User userEntity = userService.findUserById(userId);
+
+            UserDetailResponse userDetailResponse = new UserDetailResponse();
+            if (userEntity != null) {
+                userDetailResponse.setId(userEntity.getId());
+                userDetailResponse.setUsername(userEntity.getUsername());
+                userDetailResponse.setFullName(userEntity.getFullName());
+                userDetailResponse.setEmail(userEntity.getEmail());
+                if (userEntity.getRole() != null) {
+                    userDetailResponse.setRole(userEntity.getRole().getName());
+                }
+                // Set other fields as needed
+                // userDetailResponse.setAvatarUrl(userEntity.getAvatarUrl());
+            } else {
+                log.error("User not found in database with ID: {}", userId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                               .body(new ApiResponse<>("User details not found in database.", null));
+            }
+
+            return ResponseEntity.ok(new ApiResponse<>("Current user details fetched successfully.", userDetailResponse));
+        } else {
+            log.error("Principal is not an instance of DomainUserDetails for /user/me. Principal type: {}", principal.getClass().getName());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                           .body(new ApiResponse<>("Error processing user details.", null));
         }
     }
 

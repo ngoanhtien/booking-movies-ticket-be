@@ -3,6 +3,7 @@ package com.booking.movieticket.entity;
 import com.booking.movieticket.entity.base.BaseEntity;
 import com.booking.movieticket.entity.enums.MembershipLevel;
 import com.booking.movieticket.entity.enums.SignupDevice;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
@@ -66,9 +67,11 @@ public class User extends BaseEntity {
     @JoinColumn(name = "role_id", referencedColumnName = "id")
     private Role role;
 
+    @JsonBackReference("bill-user")
     @OneToMany(mappedBy = "user")
     private Set<Bill> bills = new HashSet<>();
 
+    @JsonBackReference("review-user")
     @OneToMany(mappedBy = "user")
     private Set<Review> reviews = new HashSet<>();
 }

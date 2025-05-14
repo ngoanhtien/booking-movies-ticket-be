@@ -130,6 +130,14 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
     }
 
+    @Override
+    public User findUserById(Long id) {
+        if (id == null) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
+        return userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    }
+
     private void validateImages(MultipartFile avatarUrl, BindingResult bindingResult) {
         if (avatarUrl == null || avatarUrl.isEmpty()) {
             bindingResult.rejectValue("avatarUrl", "user.avatarUrl.required", "Avatar image is required");

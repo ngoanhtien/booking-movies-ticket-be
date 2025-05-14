@@ -1,6 +1,7 @@
 package com.booking.movieticket.entity;
 
 import com.booking.movieticket.entity.base.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Nationalized;
@@ -30,6 +31,7 @@ public class Category extends BaseEntity {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "categories")
     private Set<Movie> movies = new HashSet<>();
 }

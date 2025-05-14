@@ -28,4 +28,6 @@ public interface UserService {
     String resetPassword(User user);
 
     User findUser(String email);
+
+    User findUserById(Long id);
 }
