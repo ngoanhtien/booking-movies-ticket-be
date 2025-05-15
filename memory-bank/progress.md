@@ -58,6 +58,22 @@
   - **Showtime Display in Booking Form Fully Functional (LATEST)**:
   - **TypeScript Interface Errors Fixed (LATEST)**:
   - **Date Picker Implementation and Simplification (LATEST)**:
+  - **Pessimistic Locking for Seat Booking (LATEST)**:
+    - Implemented database-level pessimistic locking for seat selection
+    - Added `@Lock(LockModeType.PESSIMISTIC_WRITE)` to repository method
+    - Created validation to properly handle race conditions during booking
+    - Added proper error handling with specific error code for already booked seats
+  - **Movie Search API Accuracy Enhancement (LATEST)**:
+    - Refactored search functionality to focus on movie name for more relevant results
+    - Updated parameter naming from `name` to `searchTerm` for better API clarity
+    - Fixed frontend components to use the new parameter
+    - Improved search algorithm to match all search words in movie title
+  - **User Movie Review System (LATEST)**:
+    - Implemented review eligibility logic based on past bookings
+    - Fixed database query to correctly check past showtimes
+    - Added API endpoints for submitting and retrieving reviews
+    - Integrated review functionality into the MovieDetails.tsx page
+    - Handled proper error cases for ineligible users and duplicate reviews
 
 ## What's Left to Build
 1. Frontend Features
@@ -163,6 +179,7 @@
      - [x] Add loading states, error handling, and empty states
      - [x] Add Vietnamese translations for all UI elements
      - [x] Update routes to include movie browsing as the homepage
+     - [x] Add movie review and rating functionality
    - [x] Ticket booking flow (Initial UI with mock data complete, API integration for core booking done)
      - [ ] **Implement Standalone Cinema/Theater Selection step**
         - [ ] Allow filtering by city/region.
@@ -348,6 +365,20 @@
   - TypeScript errors in components using translations have been fixed
 - **MoMo Cinema booking flow analysis completed.**
 - **Memory Bank updated to reflect new plans for booking flow enhancements.**
+- **Movie Search API Accuracy fixed:**
+  - Simplified search algorithm to focus on movie name only
+  - Split search term into words and require all to be present in movie name
+  - Removed joins that were causing duplicate results
+  - Changed parameter name from `name` to `searchTerm` for better API clarity
+- **Pessimistic locking for seat booking implemented:**
+  - Added `@Lock(LockModeType.PESSIMISTIC_WRITE)` annotation to seat repository
+  - Modified booking service to use locking during seat selection
+  - Added validation to prevent duplicate bookings
+- **User review system for watched movies implemented:**
+  - Added logic to verify if a user has watched a movie before allowing reviews
+  - Implemented endpoints for checking eligibility and submitting reviews
+  - Created frontend components for movie reviews in MovieDetails.tsx
+  - Fixed database query issues related to `Showtime.startTime` vs `Schedule.date`/`timeStart`
 
 ## Known Issues (And Resolutions)
 - **RESOLVED**: Malformed JSON / Concatenated JSON from backend API (`/movie`, `/movie/detail/{id}`).
@@ -365,6 +396,9 @@
 - **Frontend Type Definitions**: Reinforced the importance of keeping frontend TypeScript types (`types/movie.ts`) strictly in sync with the actual structure of API responses, especially after backend changes or when dealing with nested objects.
 - **UI Component Simplification**: Opted for simpler standard HTML/Material UI components over more complex components when facing dependency or compatibility issues, as seen with the Date picker implementation. This approach reduces risk while maintaining core functionality.
 - **API Integration Strategy**: Initially focused on getting UI components working with mock data. Now transitioning to integrating with real API endpoints as authentication and security issues have been resolved, ensuring proper data flow between frontend and backend.
+- **Concurrency Control Approach**: Initially relied on application-level validation for seat booking. Now implemented database-level pessimistic locking to prevent race conditions more effectively, especially in a multi-user environment where multiple users might try to book the same seats simultaneously.
+- **Search Functionality Refinement**: Started with a broad, multi-field search approach but found it produced confusing results. Simplified to focus on movie name matches for more intuitive and relevant search results, aligning better with user expectations.
+- **Entity Time Representation**: Discovered the importance of understanding how time is represented across different entities. For `Showtime`, learned that the actual start time is stored as separate `date` (LocalDate) and `timeStart` (LocalTime) fields in the related `Schedule` entity rather than as a single datetime field.
 
 ## Next Steps
 1. **API Integration for Admin Panel (NEW TOP PRIORITY)**:

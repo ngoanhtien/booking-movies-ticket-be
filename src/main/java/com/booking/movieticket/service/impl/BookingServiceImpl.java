@@ -50,25 +50,27 @@ public class BookingServiceImpl implements BookingService {
             Movie movie = schedule.getMovie();
             Branch branch = room.getBranch();
 
-            // Kiểm tra và lấy thông tin ghế
-            List<ShowtimeSeat> selectedSeats = new ArrayList<>();
+            // Kiểm tra và lấy thông tin ghế đã được khoá
+            List<ShowtimeSeat> selectedSeats = showtimeSeatRepository.findAllByIdsForUpdate(bookingRequest.getSeatIds());
+            
+            if (selectedSeats.size() != bookingRequest.getSeatIds().size()) {
+                // Không tìm thấy tất cả các ghế yêu cầu hoặc một số ID không hợp lệ
+                throw new AppException(ErrorCode.SHOWTIMESEAT_NOT_FOUND, "One or more selected seats not found or invalid.");
+            }
+
             double totalSeatPrice = 0.0;
 
-            for (Long seatId : bookingRequest.getSeatIds()) {
-                ShowtimeSeat showtimeSeat = showtimeSeatRepository.findById(seatId)
-                        .orElseThrow(() -> new AppException(ErrorCode.SHOWTIMESEAT_NOT_FOUND));
-
-                // Kiểm tra xem ghế có thuộc showtime không
+            for (ShowtimeSeat showtimeSeat : selectedSeats) {
+                // Kiểm tra xem ghế có thuộc showtime không (có thể không cần nếu ID là duy nhất toàn cục,
+                // nhưng vẫn tốt để kiểm tra logic nếu ID ghế được truyền riêng lẻ)
                 if (!showtimeSeat.getShowtime().getId().equals(showtimeId)) {
-                    throw new AppException(ErrorCode.BAD_REQUEST, "Seat not in this showtime: " + seatId);
+                    throw new AppException(ErrorCode.BAD_REQUEST, "Seat " + showtimeSeat.getId() + " not in this showtime.");
                 }
 
                 // Kiểm tra xem ghế đã được đặt chưa
                 if (showtimeSeat.getStatus() != StatusSeat.AVAILABLE) {
-                    throw new AppException(ErrorCode.BAD_REQUEST, "Seat already booked: " + seatId);
+                    throw new AppException(ErrorCode.SEAT_ALREADY_BOOKED, "Seat " + showtimeSeat.getId() + " already booked or not available.");
                 }
-
-                selectedSeats.add(showtimeSeat);
                 totalSeatPrice += showtimeSeat.getPrice();
             }
 

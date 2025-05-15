@@ -1,7 +1,13 @@
 # Active Context
 
 ## Current Focus
-**Với việc các API liên quan đến tạo và lấy lịch chiếu đã được sửa lỗi và hoạt động ổn định, trọng tâm hiện tại là đảm bảo các chức năng cốt lõi của người dùng (duyệt phim, xem chi tiết, đặt vé) hoạt động trơn tru và chính xác trên giao diện người dùng.** Đồng thời, tiếp tục rà soát và đảm bảo tính nhất quán của các đường dẫn API còn lại trong toàn bộ hệ thống.
+**The "Người dùng đã xem phim có thể bình luận" (Users who have watched a movie can comment/review) feature has been implemented. This included backend logic for checking eligibility (paid booking, past showtime), creating reviews, and frontend integration on the `MovieDetails.tsx` page. A key bug related to querying `Showtime.startTime` (which doesn't exist directly on `Showtime`) was resolved by querying `Schedule.date` and `Schedule.timeStart` separately.**
+
+**Two other key features have also been implemented:**
+1. **"Đồng bộ trạng thái ghế và khoá pessimistic lock" (Synchronize seat status and pessimistic lock)**: Implemented pessimistic locking for seat selection using `@Lock(LockModeType.PESSIMISTIC_WRITE)` to prevent race conditions during booking.
+2. **"API tìm kiếm phim đang chưa tìm chính xác" (Movie search API accuracy fix)**: Fixed movie search functionality to be more precise, focusing on movie name rather than other fields to ensure more relevant search results.
+
+The previous focus on "Admin Panel API Integration" and "MoMo-Inspired Booking Flow Enhancement" for `MovieList.tsx` remain important ongoing tasks.
 
 ### Admin Panel API Integration (LATEST)
 - **Current State**: Admin panel hiện đang sử dụng dữ liệu mẫu (mock data) thay vì kết nối với backend API thực.
@@ -29,6 +35,27 @@
   - Kiểm tra và cập nhật các TypeScript interface/types để phản ánh cấu trúc dữ liệu thực tế từ API
 
 ## Key Active Issues & Workarounds
+
+### Pessimistic Locking for Seat Booking (Implemented)
+- **Problem**: During the booking process, multiple users could try to book the same seats simultaneously, leading to race conditions and duplicate bookings.
+- **Solution**: Implemented pessimistic locking with the following components:
+  - Added `@Lock(LockModeType.PESSIMISTIC_WRITE)` annotation to a new method `findAllByIdsForUpdate` in `ShowtimeSeatRepository.java`.
+  - Modified `BookingServiceImpl.createBooking` to use this method to lock the selected seats during the transaction.
+  - Added validation to check if seats are already booked and throw a `SEAT_ALREADY_BOOKED` error if necessary.
+  - Created the new error code in `ErrorCode.java` with proper HTTP status (CONFLICT).
+- **Outcome**: The system now safely handles concurrent booking attempts, ensuring that seats cannot be double-booked. This provides a more reliable user experience during peak booking times.
+
+### Movie Search API Accuracy (Refined)
+- **Problem**: Initial multi-field search was too broad. Searching for a specific movie title (e.g., "Frozen") returned irrelevant results if other movies contained the search term in their description or other fields.
+- **Resolution Path**:
+  1. Changed the parameter name from `name` to `searchTerm` in `MovieCriteria.java` to better reflect its purpose.
+  2. Simplified the search algorithm in `MovieSpecificationBuilder.java` to:
+     - Only search in the movie's name field (instead of across multiple fields).
+     - Split the search term into words.
+     - Require all words to be present in the movie name (case-insensitive, using LIKE with wildcards).
+     - Removed joins with other tables that were causing duplicate results.
+  3. Updated frontend components to use `searchTerm` instead of `search` in API calls.
+- **Outcome**: Search results are now much more relevant, focusing primarily on movie title matches, which aligns better with user expectations when searching for specific movies.
 
 ### Booking Redirection Issue & Movie List Button Fix (Workaround Applied)
 - **Problem**: Clicking the "Book Ticket" button on the movie list page (`MovieList.tsx`) for any movie (showing or upcoming) redirected the user to the login page, even if they were already authenticated. This did not happen when booking from the movie details page. The browser's network tab showed no API calls during this faulty redirection, but backend logs revealed a 401 Unauthorized error for the `GET /api/v1/showtime/{movieId}/by-date` request, which is configured with `permitAll()` in Spring Security.
@@ -160,40 +187,33 @@
         - Truy cập đúng thuộc tính của đối tượng `actor` (ví dụ: `actor.name`, `actor.profilePath`, `actor.character`) thay vì xử lý `actor` như một chuỗi.
 - **Outcome**: Lỗi `actor.charAt is not a function` đã được khắc phục. Thông tin diễn viên hiển thị chính xác trên trang chi tiết phim.
 
-### Booking Redirection Issue & Movie List Button Fix (Workaround Applied)
-- **Problem**: Clicking the "Book Ticket" button on the movie list page (`MovieList.tsx`) for any movie (showing or upcoming) redirected the user to the login page, even if they were already authenticated. This did not happen when booking from the movie details page. The browser's network tab showed no API calls during this faulty redirection, but backend logs revealed a 401 Unauthorized error for the `GET /api/v1/showtime/{movieId}/by-date` request, which is configured with `permitAll()` in Spring Security.
-- **Investigation Path & Key Findings**:
-    1.  **Frontend Behavior**: The redirection to `/login` was happening on the frontend, likely triggered by the `ProtectedRoute` component in response to an unauthenticated state or a failed API call that wasn't immediately visible in the network tab (possibly an API call within a protected route that fails silently or is handled by a global error handler that triggers logout/redirect).
-    2.  **Backend Log Analysis**:
-        - The `GET /api/v1/showtime/{movieId}/by-date?date=YYYY-MM-DD` endpoint was called by the frontend when attempting to navigate to the booking page (`/bookings/book-movie/{movieId}`).
-        - Spring Security logs (`TRACE` level) showed the `AuthenticationFilter` processing the request. Despite the endpoint being `permitAll()`, the filter still processed the JWT token if present in the `Authorization` header.
-        - A `401 Unauthorized` error was thrown by the backend for this request, with the message `An Authentication object was not found in the SecurityContext`. This is unexpected for a `permitAll()` endpoint that should ideally ignore authentication status or not fail if an invalid/expired token is passed (unless explicitly configured to do so).
-        - The JWT token being sent was confirmed to be valid and not expired (token validity is 30 days).
-    3.  **Hypothesis**: The `AuthenticationFilter` (or a related security component) might be incorrectly invalidating the security context or failing to establish an anonymous authentication for `permitAll()` routes when a (valid) token is present but perhaps not expected or processed correctly for such routes. It's also possible that some downstream processing in the `ShowtimeController` or `ShowtimeService` for `/showtime/{movieId}/by-date` makes an implicit security check that fails.
-    4.  **Security Configuration (`SecurityConfiguration.java`)**:
-        - The endpoint `/api/v1/showtime/**` is indeed configured with `permitAll()`.
-        - Other booking-related endpoints like `/api/v1/booking/**` require authentication (`hasAnyRole("USER", "ADMIN")`).
-- **Workaround Implemented (Frontend)**:
-    - Modified the `onClick` handler for the "Book Tickets" button in `admin-interface/src/pages/user/MovieList.tsx`.
-    - Instead of navigating directly to `/bookings/book-movie/{movieId}`, the button now navigates to the movie details page (`/movies/${movie.id}`).
-    - From the movie details page, the booking flow works correctly as it likely initializes the booking page with necessary state or follows a slightly different (and correctly authenticated) path for fetching initial showtimes.
-- **Outcome**: Users are no longer redirected to login when trying to book from the movie list. They are first taken to the movie details page, from which booking proceeds normally. This is a temporary workaround. The root cause in the backend's handling of `permitAll()` with existing tokens needs further investigation for a complete fix.
-
-### Movie List Display & Backend JSON Serialization (Previously Resolved)
-
-- **Initial Problem**: Users were unable to see any movies in the movie list. Clicking on movie-related navigation often led to being redirected to the login page, even if authenticated. API trả về JSON không hợp lệ.
+### Showtime Generation & Display Troubleshooting (Resolved)
+- **Initial Problem**: Người dùng không thấy lịch chiếu trên UI, mặc dù có thông tin lịch chiếu đã được tạo ở backend.
 - **Investigation Path & Key Issues Addressed**:
-    1.  **Frontend Parsing Errors (`movieService.ts`)**: `JSON.parse()` thất bại.
-    2.  **Malformed JSON from Backend (Root Cause)**: Lỗi `Unexpected token ']', ... is not valid JSON` và `Unexpected non-whitespace character after JSON`.
-    3.  **Backend Circular Dependencies (JPA Entities)**: Mối quan hệ hai chiều trong JPA entities gây vòng lặp serialization.
-        - **Fix**: Áp dụng `@JsonManagedReference` và `@JsonBackReference` cho các mối quan hệ có vấn đề (ví dụ: `Bill` <-> `Promotion`, `User` <-> `Bill`, `User` <-> `Review`) để phá vỡ vòng lặp. Trước đó đã thử `@JsonIgnore` cho các mối quan hệ khác (`Movie` <-> `Category`, etc.).
-    4.  **Backend Concatenated JSON Responses (Exception Handling)**: `GlobalExceptionHandler` và `ExceptionHandlingFilter` ghi đè response đã commit.
-        - **Fix**: Kiểm tra `response.isCommitted()` trước khi ghi error body.
-- **Outcome**:
-    - API endpoint `/movie` và `/movie/detail/{id}` trả về JSON hợp lệ.
-    - Frontend có thể parse và hiển thị danh sách phim và chi tiết phim.
+    1.  **API Call for Showtime Generation (`POST /api/v1/showtime/public/add-showtimes-for-active-movies`) Failures**:
+        -   **Initial 401 Unauthorized**: `AuthenticationFilter.java` không nhận diện đúng public path do thiếu tiền tố `/api/v1/` trong danh sách `publicPaths`.
+            -   **Fix**: Cập nhật `publicPaths` trong `AuthenticationFilter.java` để bao gồm `/api/v1/`.
+        -   **Subsequent 401 (then 500 via GlobalExceptionHandler from `AuthorizationDeniedException`)**: `SecurityConfiguration.java` thiếu tiền tố `/api/v1/` cho rule `permitAll()` của endpoint này, khiến `AuthorizationFilter` từ chối.
+            -   **Fix**: Cập nhật `requestMatchers` trong `SecurityConfiguration.java` để sử dụng `/api/v1/showtime/public/**`.permitAll().
+        -   **Subsequent 500 (from `NoResourceFoundException`)**: `ShowtimeController.java` có mapping sai:
+            -   Sử dụng `@GetMapping` thay vì `@PostMapping` cho phương thức `addShowtimesForActiveMoviesPublic`.
+            -   Annotation `@RequestMapping` ở cấp class là `"/showtime"` thay vì `"/api/v1/showtime"` trong `ShowtimeController.java`.
+            -   **Fix**: Sửa `@GetMapping` thành `@PostMapping` và `@RequestMapping` cấp class thành `"/api/v1/showtime"` trong `ShowtimeController.java`.
+        -   **Outcome**: API tạo lịch chiếu (`POST /api/v1/showtime/public/add-showtimes-for-active-movies`) hoạt động, báo cáo "SKIPPED" vì lịch chiếu đã tồn tại từ các lần gọi trước.
+    2.  **API Call for Fetching Showtimes for UI (`GET /api/v1/showtime/{movieId}/by-date`) Failures**:
+        -   **Initial 403 Forbidden from UI/Postman (No Auth)**: Endpoint lấy lịch chiếu không được phép truy cập công khai.
+            -   **Root Cause**: `SecurityConfiguration.java` thiếu tiền tố `/api/v1/` cho rule `permitAll()` của `"/showtime/*/by-date"`.
+            -   **Fix**: Cập nhật toàn diện các `requestMatchers` cho các đường dẫn `permitAll()` trong `SecurityConfiguration.java` (bao gồm `/api/v1/showtime/*/by-date`, `/api/v1/movie/**`, `/api/v1/auth/**`, etc.) để bao gồm tiền tố `/api/v1/`, đảm bảo tính nhất quán với `AuthenticationFilter.java` và `ShowtimeController.java`.
+        -   **Outcome**: API lấy lịch chiếu (`GET /api/v1/showtime/{movieId}/by-date`) hoạt động thành công với `permitAll()` và trả về dữ liệu. Lịch chiếu hiển thị trên UI.
 
-### Showtime Generation Endpoint Debugging & Fix (Consolidated into LATEST above)
+- **Key Learnings & Patterns**:
+    -   **API Path Consistency is CRITICAL**: Đảm bảo tính nhất quán tuyệt đối của đường dẫn API (bao gồm base path như `/api/v1/`) và phương thức HTTP (GET/POST) giữa:
+        -   Định nghĩa trong Controller (`@RequestMapping`, `@GetMapping`, `@PostMapping`).
+        -   Cấu hình public path trong `AuthenticationFilter` (`publicPaths`).
+        -   Cấu hình rule `permitAll()` trong `SecurityConfiguration` (`requestMatchers`).
+        -   Cách gọi API từ frontend.
+    -   `NoResourceFoundException` (thường được `GlobalExceptionHandler` bắt và trả về lỗi 500) là dấu hiệu mạnh mẽ của việc Spring MVC không tìm thấy handler cho request URI và HTTP method, thường do sai sót trong annotation mapping của controller.
+    -   Lỗi 403 (Forbidden) cho một endpoint đáng lẽ là public thường chỉ ra vấn đề với `requestMatchers` trong `SecurityConfiguration` không khớp với URI của request, khiến request rơi vào rule `anyRequest().authenticated()`.
 
 ### Showtimes Not Displaying Due to `Schedule.isDeleted = null` (LATEST - Resolved)
 - **Problem**: Lịch chiếu không hiển thị cho phim, mặc dù endpoint `/showtime/public/add-showtimes-for-active-movies` báo cáo đã tạo lịch chiếu thành công. API frontend (`GET /api/v1/showtime/{movieId}/by-date`) trả về `result.branches: []`.
@@ -252,6 +272,16 @@ Details of specific changes and resolutions are logged chronologically in `progr
 - Providing rich mock data that closely resembles expected production data patterns.
 - Điều hướng trang chủ mặc định đến trang Movie List để tạo trải nghiệm người dùng tốt hơn
 - Sử dụng React Query cho việc tải dữ liệu phim với các trạng thái loading và error
+- Sử dụng các tab để phân loại dữ liệu (tất cả phim, đang chiếu, sắp chiếu)
+- Hierarchy-based translation structure matching component structure
+- Namespace organization for translations based on feature domains
+- **Review Eligibility Logic**: Decision to determine if a user can review a movie based on:
+  - Existence of a paid `Bill` associated with a `Booking`.
+  - The `Booking` being for a `Showtime` of the specific `Movie`.
+  - The `Showtime`'s start time (`Schedule.date` and `Schedule.timeStart`) being in the past.
+  - The user not having already submitted a `Review` for that `Movie`.
+- **Pessimistic Locking Strategy**: Use database-level locking for seat bookings to prevent race conditions, rather than application-level synchronization, to ensure consistency even with multiple application instances.
+- **Movie Search Focus**: Prioritize movie name matches over other fields (description, actors, etc.) for search results to provide more intuitive and relevant search results to users.
 
 ## Important Patterns
 - JPA entity relationship mapping and `mappedBy` usage.
@@ -312,7 +342,6 @@ Details of specific changes and resolutions are logged chronologically in `progr
 - **Proxy Configuration is Key for Dev**: For local development with separate frontend/backend servers, a proxy (e.g., in `package.json`) is essential to avoid CORS and simplify frontend API calls.
 - **Backend DTOs Must Match Frontend Payloads**: The structure and field names of backend DTOs used for request bodies must precisely match the JSON objects sent by the frontend.
 - **Frontend Must Correctly Parse Backend Responses**: Assumptions about response structure (e.g., `response.data.data` vs. `response.data.result`) can break frontend logic even if the API call itself returns a 200 OK.
-- **Missing Controller Endpoint Mappings**: If a frontend API call reaches the backend but there's no specific controller method mapped to that exact path and HTTP method, it can lead to generic errors (like 500 Uncategorized) without clear application-level logs.
 - Entity relationships are crucial for data integrity
 - Status management improves workflow control
 - Data visualization is crucial for effective reporting
@@ -344,6 +373,9 @@ Details of specific changes and resolutions are logged chronologically in `progr
 - Separating translations into logical namespaces improves maintainability and organization
 - Translations should be tested with actual UI rendering to catch any display or formatting issues
 - Translation file structure should mirror component organization for easier maintenance
+- **UI Component Simplification**: Opted for simpler standard HTML/Material UI components over more complex components when facing dependency or compatibility issues, as seen with the Date picker implementation. This approach reduces risk while maintaining core functionality.
+- **API Integration Strategy**: Initially focused on getting UI components working with mock data. Now transitioning to integrating with real API endpoints as authentication and security issues have been resolved, ensuring proper data flow between frontend and backend.
+- **`Showtime.startTime` vs. `Schedule.date`/`timeStart`**: Learned that `Showtime` entity does not directly store the start time as a single field. The actual start time is a combination of `Schedule.date` (LocalDate) and `Schedule.timeStart` (LocalTime). Queries needing to compare with the current time must use these two fields and pass `LocalDate.now()` and `LocalTime.now()` as parameters. This was crucial for fixing the `canUserReviewMovie` logic.
 
 ## Areas for Improvement
 - Add more chart customization options
@@ -464,14 +496,15 @@ Details of specific changes and resolutions are logged chronologically in `progr
 
 ## Next Steps
 1.  **MoMo-Inspired Booking Flow Enhancements (User Interface - IMMEDIATE PRIORITY):**
-    *   **Improve `MovieList.tsx` (User-Facing Movie List) - CURRENT TASK:**
+    *   **Improve `MovieList.tsx` (User-Facing Movie List):**
         *   Implement clearer "Now Showing" vs. "Coming Soon" sections.
-        *   Display movie ratings (e.g., 4.5/5 stars) and age restrictions (e.g., P, C13, C16, C18).
+        *   Display movie ratings (e.g., 4.5/5 stars) and age restrictions (e.g., P, C13, C16, C18) - *Note: Movie entity already has rating and ageRestriction*.
         *   Enhance grid layout for better visual appeal and information density.
     *   **Enhance `MovieDetails.tsx` (User-Facing Movie Details):**
         *   Include detailed cast/crew information (director, actors).
         *   Embed a movie trailer (e.g., YouTube).
         *   Ensure a prominent "Book Ticket" button.
+        *   *Movie review display and submission form are now implemented.*
     *   **Implement Standalone Cinema/Theater Selection Step:**
         *   Allow filtering by city/region.
         *   Display different prices based on cinema, day of the week, and showtime.
@@ -479,6 +512,7 @@ Details of specific changes and resolutions are logged chronologically in `progr
         *   Clearly differentiate seat types (e.g., regular, VIP, couple/sweetbox).
         *   Show varying prices per seat type directly on the seat map or legend.
         *   Improve visual cues for selected, booked, and unavailable seats.
+        *   *Pessimistic locking for seat selection is now implemented on the backend.*
     *   **Develop Enhanced Food & Drink Selection:**
         *   Offer options for different sizes (e.g., Small, Medium, Large for drinks/popcorn).
         *   Provide flavor choices where applicable.
@@ -489,31 +523,19 @@ Details of specific changes and resolutions are logged chronologically in `progr
     *   **Improve Booking History Page:**
         *   Display a QR code or barcode for each ticket.
         *   Add options to print or email tickets.
-2.  **Thorough Testing & Validation (PRIORITY)**:
-    *   **Focus on the end-to-end movie booking flow now that showtime generation, display, and TypeScript issues are fixed.**
-    *   Test booking from both the movie list (via the movie details workaround) and directly from movie details pages.
-    *   Verify that created showtimes appear correctly in the UI.
-    *   Ensure all steps of the booking process (seat selection, food, payment placeholder, confirmation) work smoothly.
-    *   Check that bookings are correctly recorded in the database.
-    *   Test edge cases (e.g., booking last seat, attempting to double-book).
-3.  **Enhance Booking Form UI (NEW PRIORITY)**:
-    *   Improve the user experience of the booking form with a more visually appealing design.
-    *   Add clear visual indicators for seat types and pricing.
-    *   Implement smoother transitions between booking steps.
-    *   Ensure responsive design works correctly on all screen sizes.
-4.  **Continuing Code Quality Improvements**:
-    *   Continue reviewing for any remaining TypeScript issues in other components.
-    *   Apply consistent interface usage patterns as established in the recent fixes.
-    *   Consider adding more detailed JSDoc documentation to interfaces for better developer experience.
-5.  **Verify Frontend API Calls**:
-    *   Đảm bảo tất cả các API calls từ frontend đều sử dụng đúng đường dẫn đầy đủ (bao gồm `/api/v1/` nếu applicable) và đúng phương thức HTTP như đã định nghĩa ở backend và cấu hình trong security.
-6.  **Review Remaining API Path Consistency**:
-    *   Rà soát lại tất cả các controllers và cấu hình security (`AuthenticationFilter`, `SecurityConfiguration`) để đảm bảo tất cả các đường dẫn API (đặc biệt là các `permitAll` và các đường dẫn được bảo vệ khác) đều nhất quán với tiền tố `/api/v1/` (nếu đó là convention chung).
-7.  **Continue MoMo Cinema UX Enhancements**:
-    *   Tiếp tục làm việc trên trang Cinema Selection.
-8.  **Address Root Cause of Booking Redirection (Lower Priority)**:
-    *   Investigate the backend's handling of `permitAll()` with existing (valid) tokens for `GET /api/v1/showtime/{movieId}/by-date` to understand why it initially caused a 401 (trước khi các sửa lỗi về path consistency được áp dụng). While the current workaround (navigating to movie details first) is functional, a direct booking from the list should ideally work.
-9.  **Address any new findings or minor issues** that may have arisen from the recent fixes.
+2.  **Admin Panel API Integration (HIGH PRIORITY):**
+    * Replace mock data with real API data in movieService.ts
+    * Update all admin panel components to work with real data
+    * Implement loading states and error handling for API calls
+    * Use React Query for improved data fetching and caching
+3.  **Testing Movie Review System (NEW):**
+    * Test that users with completed movie bookings for past showtimes can leave reviews
+    * Verify that users cannot review movies multiple times
+    * Ensure proper error handling when users are not eligible
+    * Test frontend integration with actual review data
+4.  **Address Root Cause of Booking Redirection (Lower Priority):**
+    * Investigate the backend's handling of `permitAll()` with existing (valid) tokens for `GET /api/v1/showtime/{movieId}/by-date` to understand why it initially caused a 401 (before the path consistency fixes were applied)
+    * While the current workaround (navigating to movie details first) is functional, a direct booking from the list should ideally work
 
 ## Key Recent Resolutions & Learnings
 (Details of these items are logged in `progress.md`. Key patterns and learnings should be in `systemPatterns.md`.)
@@ -550,3 +572,4 @@ Details of specific changes and resolutions are logged chronologically in `progr
   - Continue working on the Cinema Selection page.
   - Address the root cause of booking redirection (lower priority).
   - Investigate and address any new findings or minor issues from recent fixes.
+

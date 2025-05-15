@@ -1,5 +1,5 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Container, 
   Typography, 
@@ -26,7 +26,7 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
-import { fetchMovieDetails, fetchShowtimesByMovie } from '../../services/movieService';
+import { fetchMovieDetails, fetchShowtimesByMovie, checkCanReview, submitReview } from '../../services/movieService';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LocalMoviesIcon from '@mui/icons-material/LocalMovies';
@@ -42,6 +42,7 @@ import SpeedIcon from '@mui/icons-material/Speed';
 import DebugPanel from '../../components/debug/DebugPanel';
 import { MovieShowtimesResponse, BranchWithShowtimes, ShowtimeDetail } from '../../types/showtime';
 import { Actor } from '../../types';
+import { Review } from '../../types';
 
 // Helper function to format date as YYYY-MM-DD
 const formatDate = (date: Date): string => {
@@ -56,11 +57,16 @@ const MovieDetails: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const theme = useTheme();
+  const queryClient = useQueryClient();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isMediumScreen = useMediaQuery(theme.breakpoints.down('md'));
   
   const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
   const [directBooking, setDirectBooking] = React.useState<boolean>(false);
+  const [showReviewForm, setShowReviewForm] = React.useState<boolean>(false);
+  const [reviewRating, setReviewRating] = React.useState<number | null>(null);
+  const [reviewComment, setReviewComment] = React.useState<string>('');
+  const [reviewError, setReviewError] = React.useState<string>('');
 
   const formattedSelectedDate = formatDate(selectedDate);
   console.log("Formatted Date for API call:", formattedSelectedDate);
@@ -87,6 +93,41 @@ const MovieDetails: React.FC = () => {
     queryFn: () => fetchShowtimesByMovie(id as string, formattedSelectedDate),
     enabled: !!id && !!movie && !!formattedSelectedDate,
   });
+  
+  // Query to check if user can review
+  const { data: canReview, isLoading: isLoadingCanReview } = useQuery({
+    queryKey: ['canReview', id],
+    queryFn: () => checkCanReview(id as string),
+    enabled: !!id && !!movie,
+  });
+  
+  // Mutation for submitting a review
+  const reviewMutation = useMutation({
+    mutationFn: ({ movieId, rating, comment }: { movieId: string; rating: number; comment: string }) => 
+      submitReview(movieId, rating, comment),
+    onSuccess: (newReview) => {
+      console.log('Review submitted successfully:', newReview);
+      queryClient.invalidateQueries({ queryKey: ['movieDetails', id] });
+      queryClient.invalidateQueries({ queryKey: ['canReview', id]});
+      setShowReviewForm(false);
+      setReviewRating(null);
+      setReviewComment('');
+      setReviewError('');
+    },
+    onError: (err: Error) => {
+      console.error('Error submitting review:', err);
+      setReviewError(err.message || t('errors.somethingWentWrong'));
+    }
+  });
+
+  const handleSubmitReview = () => {
+    if (!id || reviewRating === null || reviewRating < 1 || reviewComment.trim() === '') {
+      setReviewError(t('reviews.validationError'));
+      return;
+    }
+    setReviewError('');
+    reviewMutation.mutate({ movieId: id, rating: reviewRating, comment: reviewComment });
+  };
   
   // Helper function to get color for age restriction
   const getAgeRestrictionColor = (restriction?: string) => {
@@ -151,6 +192,8 @@ const MovieDetails: React.FC = () => {
   
   const ageRestrictionColor = getAgeRestrictionColor(ageRestriction);
   
+  const reviews = movie.reviews || [];
+
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 4, md: 8 } }}>
       {/* <DebugPanel /> */}

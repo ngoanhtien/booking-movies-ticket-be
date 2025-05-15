@@ -30,6 +30,9 @@ public enum ErrorCode {
     SHOWING_MOVIE_NOT_FOUND(1203, "Showing movie not found", HttpStatus.NOT_FOUND),
     UPCOMING_MOVIE_NOT_FOUND(1203, "Showing movie not found", HttpStatus.NOT_FOUND),
     BRANCH_NOT_FOUND(1204, "Brand not found", HttpStatus.NOT_FOUND),
+    SEAT_ALREADY_BOOKED(1205, "Seat already booked or not available", HttpStatus.CONFLICT),
+    USER_ALREADY_REVIEWED_MOVIE(1206, "User has already reviewed this movie", HttpStatus.CONFLICT),
+    USER_NOT_ELIGIBLE_TO_REVIEW(1207, "User is not eligible to review this movie", HttpStatus.FORBIDDEN),
 
     // Transaction Errors (1300-1399)
     BILL_NOT_FOUND(1300, "Bill not found", HttpStatus.NOT_FOUND),

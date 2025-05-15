@@ -7,7 +7,7 @@ const API_BASE_URL = '';
 
 export interface MovieFilters {
   status?: string;
-  search?: string;
+  searchTerm?: string;
   genre?: string;
 }
 
@@ -134,7 +134,7 @@ export const fetchMovies = async (page = 0, size = 10, filters?: MovieFilters): 
     params.append('size', size.toString());
     
     if (filters?.status) params.append('status', filters.status);
-    if (filters?.search) params.append('search', filters.search);
+    if (filters?.searchTerm) params.append('searchTerm', filters.searchTerm);
     if (filters?.genre) params.append('genre', filters.genre);
     
     console.log(`[fetchMovies] Requesting /movie with params:`, Object.fromEntries(params));
@@ -470,5 +470,109 @@ export const uploadMovieImage = async (movieId: number, imageFile: File, imageTy
   } catch (error: any) {
     console.error(`Error uploading movie ${imageType} image:`, error.message);
     throw new Error(`Failed to upload movie image: ${error.message}`);
+  }
+};
+
+// Interface for the review submission
+export interface ReviewSubmission {
+  movieId: string; // Should match what the backend ReviewRequest expects if it needs movieId in body
+  rating: number;
+  comment: string;
+}
+
+// Assumed Review type, align with your actual backend ReviewResponse
+// This was already present in src/types/index.ts based on previous interactions
+// export interface Review {
+//   id: string | number;
+//   username: string;
+//   rating: number;
+//   comment: string;
+//   createdAt: string;
+//   user?: { avatarUrl?: string }; 
+// }
+
+export const checkCanReview = async (movieId: string): Promise<boolean> => {
+  try {
+    console.log(`[checkCanReview] Checking eligibility for movie ID: ${movieId}`);
+    // The backend controller has /reviews/movie/{movieId}/can-review
+    const response = await axios.get(`${API_BASE_URL}/reviews/movie/${movieId}/can-review`);
+    console.log(`[checkCanReview] Eligibility response for movie ${movieId}:`, response.data);
+    if (response.data && typeof response.data.result === 'boolean') {
+      return response.data.result;
+    }
+    // Fallback if the structure is just { data: boolean } or similar, adjust as needed
+    if (response.data && typeof response.data.data === 'boolean') {
+      return response.data.data;
+    }
+    if (typeof response.data === 'boolean') { // Direct boolean response
+        return response.data;
+    }
+    console.warn('[checkCanReview] Unexpected response structure for eligibility check.');
+    return false; // Default to false if response is not as expected
+  } catch (error: any) {
+    console.error(`[checkCanReview] Error checking review eligibility for movie ${movieId}:`, error.message);
+    if (axios.isAxiosError(error) && error.response) {
+      console.error('[checkCanReview] Axios error response:', error.response.data);
+      // Optionally, you might want to return false or throw a more specific error
+      // based on the error.response.status if it's e.g. 401 (Unauthorized) or 403 (Forbidden)
+    }
+    return false; // Default to false on error
+  }
+};
+
+export const submitReview = async (movieId: string, rating: number, comment: string): Promise<MovieReview | null> => {
+  try {
+    const reviewData: ReviewSubmission = {
+      movieId: movieId, // Backend's ReviewRequest DTO expects movieId, rating, comment
+      rating: rating,
+      comment: comment,
+    };
+    console.log(`[submitReview] Submitting review for movie ID ${movieId}:`, reviewData);
+    // The backend controller has POST /reviews
+    const response = await axios.post(`${API_BASE_URL}/reviews`, reviewData);
+    console.log(`[submitReview] Submit review response for movie ${movieId}:`, response.data);
+
+    if (response.data && response.data.result) {
+      // Assuming the response.data.result is the created ReviewResponse object
+      // Need to map it to MovieReview type if they differ
+      const backendReview = response.data.result;
+      return {
+        id: backendReview.id,
+        numberStar: backendReview.rating, // Map rating to numberStar
+        comment: backendReview.comment,
+        user: {
+            id: backendReview.userId,
+            username: backendReview.username,
+            // avatarUrl might not be in ReviewResponse, get from user context or leave undefined
+        },
+        // likes, createdAt etc. might also be in backendReview and can be mapped
+        numberLike: backendReview.likes !== undefined ? backendReview.likes : 0,
+        createdAt: backendReview.createdAt,
+      } as MovieReview; // Cast to MovieReview, ensure all fields match or are optional
+    }
+    if (response.data && response.data.data) { // Fallback for { data: ReviewResponse }
+        const backendReview = response.data.data;
+         return {
+            id: backendReview.id,
+            numberStar: backendReview.rating,
+            comment: backendReview.comment,
+            user: { id: backendReview.userId, username: backendReview.username },
+            numberLike: backendReview.likes !== undefined ? backendReview.likes : 0,
+            createdAt: backendReview.createdAt,
+        } as MovieReview;
+    }
+    console.warn('[submitReview] Unexpected response structure after submitting review.');
+    return null;
+  } catch (error: any) {
+    console.error(`[submitReview] Error submitting review for movie ${movieId}:`, error.message);
+    if (axios.isAxiosError(error) && error.response) {
+      console.error('[submitReview] Axios error response:', error.response.data);
+      // You might want to throw an error with message from response.data.message
+      // to display it in the UI
+      if (error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
+      }
+    }
+    throw error; // Re-throw the error to be caught by useMutation in the component
   }
 }; 
