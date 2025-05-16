@@ -48,7 +48,7 @@ public class Branch extends BaseEntity {
     @OneToMany(mappedBy = "branch")
     private Set<Room> rooms = new HashSet<>();
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "cinema_id", referencedColumnName = "cinema_id")
     private Cinema cinema;
 

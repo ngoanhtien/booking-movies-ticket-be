@@ -1,6 +1,7 @@
 package com.booking.movieticket.dto.request.admin.create;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -16,8 +17,6 @@ public class BranchForCreateRequest {
     @Size(min = 2, max = 100, message = "Branch name must be between 2 and 100 characters.")
     private String name;
 
-    private String imageUrl;
-
     @NotBlank(message = "Branch address must not be blank.")
     @Size(max = 500, message = "Address cannot exceed 500 characters.")
     private String address;
@@ -28,6 +27,6 @@ public class BranchForCreateRequest {
 
     private String description;
 
-    @NotBlank(message = "Cinema ID must not be blank.")
+    @NotNull(message = "Cinema ID must not be blank.")
     private Long cinemaId;
 }

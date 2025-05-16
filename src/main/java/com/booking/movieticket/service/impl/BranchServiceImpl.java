@@ -3,12 +3,10 @@ package com.booking.movieticket.service.impl;
 import com.booking.movieticket.dto.criteria.BranchCriteria;
 import com.booking.movieticket.dto.request.admin.create.BranchForCreateRequest;
 import com.booking.movieticket.dto.request.admin.update.BranchForUpdateRequest;
-import com.booking.movieticket.dto.response.admin.BranchLocationDTO;
 import com.booking.movieticket.dto.response.admin.BranchResponse;
 import com.booking.movieticket.dto.response.admin.create.BranchCreatedResponse;
 import com.booking.movieticket.entity.Branch;
 import com.booking.movieticket.entity.Cinema;
-import com.booking.movieticket.entity.User;
 import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.exception.ErrorCode;
 import com.booking.movieticket.mapper.BranchMapper;
@@ -32,7 +30,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -48,7 +45,7 @@ public class BranchServiceImpl implements BranchService {
     @Override
     public BranchResponse getBranchById(Long id) {
         if (id == null) {
-            throw new AppException(ErrorCode.BAD_REQUEST, "Branch ID cannot be null");
+            throw new AppException(ErrorCode.BRANCH_NOT_FOUND);
         }
         return branchMapper.convertEntityToBranchResponse(branchRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.BRANCH_NOT_FOUND)));
@@ -72,7 +69,6 @@ public class BranchServiceImpl implements BranchService {
             processAndSetImages(branch, imageUrl);
             branch.setIsDeleted(false);
             branch.setRating(0);
-            branch.setRooms(null);
             return branchMapper.convertEntityToBranchCreatedResponse(branchRepository.save(branch));
 
         } catch (IOException e) {
@@ -93,10 +89,10 @@ public class BranchServiceImpl implements BranchService {
             if (branchRequest.getId() == null) {
                 throw new AppException(ErrorCode.BRANCH_NOT_FOUND);
             }
-            if (branchRepository.existsById(branchRequest.getId())) {
+            if (!branchRepository.existsById(branchRequest.getId())) {
                 throw new AppException(ErrorCode.BRANCH_NOT_FOUND);
             }
-            if (cinemaRepository.existsById((branchRepository.findById(branchRequest.getId()).get().getCinema().getId()))) {
+            if (!cinemaRepository.existsById((branchRepository.findById(branchRequest.getId()).get().getCinema().getId()))) {
                 throw new AppException(ErrorCode.CINEMA_NOT_FOUND);
             }
             Branch branch = branchRepository.findById(branchRequest.getId()).orElseThrow(() -> new AppException(ErrorCode.BRANCH_NOT_FOUND));
@@ -119,26 +115,6 @@ public class BranchServiceImpl implements BranchService {
         updateBranchStatus(id, true);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<BranchLocationDTO> getBranches() {
-        List<Branch> branches = branchRepository.findAll();
-        return branchMapper.convertEntitiesToBranchLocationDTOs(branches);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<BranchLocationDTO> getBranchesByCinemaId(Long cinemaId) {
-        if (!cinemaRepository.existsById(cinemaId)) {
-            throw new AppException(ErrorCode.CINEMA_NOT_FOUND);
-        }
-        Cinema cinema = cinemaRepository.findById(cinemaId).orElseThrow(() -> new AppException(ErrorCode.CINEMA_NOT_FOUND));
-        List<Branch> branches = branchRepository.findByCinema(cinema);
-        return branchMapper.convertEntitiesToBranchLocationDTOs(branches);
-    }
-
-    // Helper methods
-
     private void validateImages(MultipartFile imageUrl, BindingResult bindingResult) {
         if (imageUrl == null || imageUrl.isEmpty()) {
             bindingResult.rejectValue("imageUrl", "branch.imageUrl.required", "Branch image is required");
@@ -160,7 +136,7 @@ public class BranchServiceImpl implements BranchService {
                 .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST, "Branch not found"));
 
         if (Objects.equals(branch.getIsDeleted(), isDeleted)) {
-            return; // Already in desired state
+            return;
         }
 
         branch.setIsDeleted(isDeleted);

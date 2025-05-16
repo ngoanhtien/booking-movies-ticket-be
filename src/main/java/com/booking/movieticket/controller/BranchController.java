@@ -38,7 +38,7 @@ public class BranchController {
 
     @GetMapping("")
     public ResponseEntity<ApiResponse<Page<BranchResponse>>> getAllBranchByCinemaId(BranchCriteria branchCriteria,
-                                                                                    @PageableDefault(size = 20, sort = "cinemaName", direction = Sort.Direction.DESC) Pageable pageable) {
+                                                                                    @PageableDefault(size = 20, sort = "cinemaId", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ApiResponse<>("Branches fetched successfully.", branchService.getAllBranchByCinemaId(branchCriteria, pageable)));
     }
@@ -50,14 +50,14 @@ public class BranchController {
     }
 
     @PostMapping("")
-    public ResponseEntity<ApiResponse<BranchCreatedResponse>> createBranch(@Valid @RequestPart BranchForCreateRequest branchRequest,
+    public ResponseEntity<ApiResponse<BranchCreatedResponse>> createBranch(@Valid @RequestPart("branch") BranchForCreateRequest branchRequest,
                                                                            @RequestPart(value = "imageUrl", required = false) MultipartFile imageUrl,
                                                                            BindingResult bindingResult) throws MethodArgumentNotValidException {
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Branch created successfully.", branchService.createBranch(branchRequest, imageUrl, bindingResult)));
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<String>> updateBranch(@Valid @RequestPart BranchForUpdateRequest branchRequest,
+    public ResponseEntity<ApiResponse<String>> updateBranch(@Valid @RequestPart("branch") BranchForUpdateRequest branchRequest,
                                                             @RequestPart(value = "imageUrl", required = false) MultipartFile imageUrl,
                                                             BindingResult bindingResult) throws MethodArgumentNotValidException {
         branchService.updateBranch(branchRequest, imageUrl, bindingResult);
