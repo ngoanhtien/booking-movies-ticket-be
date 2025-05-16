@@ -7,7 +7,7 @@ import org.springframework.util.StringUtils;
 
 public class BranchSpecificationBuilder {
     public static Specification<Branch> findByCriteria(BranchCriteria criteria) {
-        Specification<Branch> spec = Specification.where(notDeleted());
+        Specification<Branch> spec = Specification.where(null);
         if (criteria != null && StringUtils.hasText(criteria.getName())) {
             spec = spec.and(hasName(criteria.getName()));
         }

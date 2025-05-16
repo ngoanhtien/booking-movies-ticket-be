@@ -57,7 +57,7 @@ public class MovieController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<MovieCreatedResponse>> createMovie(@Valid @RequestPart MovieForCreateRequest movieRequest,
+    public ResponseEntity<ApiResponse<MovieCreatedResponse>> createMovie(@Valid @RequestPart("movie") MovieForCreateRequest movieRequest,
                                                                          @RequestPart(value = "smallImgUrl", required = false) MultipartFile smallImgUrl,
                                                                          @RequestPart(value = "largeImgUrl", required = false) MultipartFile largeImgUrl,
                                                                          BindingResult bindingResult) throws MethodArgumentNotValidException {
@@ -66,7 +66,7 @@ public class MovieController {
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<String>> updateMovie(@Valid @RequestPart MovieForUpdateRequest movieRequest,
+    public ResponseEntity<ApiResponse<String>> updateMovie(@Valid @RequestPart("movie") MovieForUpdateRequest movieRequest,
                                                            @RequestPart(value = "smallImgUrl", required = false) MultipartFile smallImgUrl,
                                                            @RequestPart(value = "largeImgUrl", required = false) MultipartFile largeImgUrl,
                                                            BindingResult bindingResult) throws MethodArgumentNotValidException {

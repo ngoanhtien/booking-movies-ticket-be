@@ -1,5 +1,6 @@
 package com.booking.movieticket.dto.response.admin.create;
 
+import com.booking.movieticket.dto.response.BaseResponse;
 import com.booking.movieticket.dto.response.admin.RoomHasSeatsResponse;
 import com.booking.movieticket.dto.response.admin.RoomInformationResponse;
 import com.booking.movieticket.entity.enums.RoomStatus;
@@ -12,7 +13,7 @@ import lombok.Setter;
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(value = RoomInformationResponse.class, name = "information"), @JsonSubTypes.Type(value = RoomHasSeatsResponse.class, name = "hasSeats")})
-public class RoomDetailResponse {
+public class RoomDetailResponse extends BaseResponse {
     private Long id;
     private String name;
     private Integer seatNumbers;

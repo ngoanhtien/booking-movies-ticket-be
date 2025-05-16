@@ -8,7 +8,7 @@ import org.springframework.util.StringUtils;
 
 public class MovieSpecificationBuilder {
     public static Specification<Movie> findByCriteria(MovieCriteria criteria) {
-        Specification<Movie> spec = Specification.where(notDeleted());
+        Specification<Movie> spec = Specification.where(null);
         if (criteria == null) {
             return spec;
         }

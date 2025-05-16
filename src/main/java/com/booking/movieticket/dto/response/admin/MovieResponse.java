@@ -1,5 +1,6 @@
 package com.booking.movieticket.dto.response.admin;
 
+import com.booking.movieticket.dto.response.BaseResponse;
 import com.booking.movieticket.entity.Actor;
 import com.booking.movieticket.entity.Category;
 import com.booking.movieticket.entity.enums.StatusMovie;
@@ -14,7 +15,7 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MovieResponse {
+public class MovieResponse extends BaseResponse {
 
     private Long id;
     private String name;

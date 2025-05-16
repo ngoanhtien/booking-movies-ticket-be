@@ -1,5 +1,6 @@
 package com.booking.movieticket.dto.response.admin;
 
+import com.booking.movieticket.dto.response.BaseResponse;
 import com.booking.movieticket.entity.enums.MembershipLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,7 +11,7 @@ import java.time.LocalDate;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserResponse {
+public class UserResponse extends BaseResponse {
 
     private Long id;
     private String username;

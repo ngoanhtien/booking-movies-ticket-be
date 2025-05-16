@@ -49,7 +49,7 @@ public class RoomHasSeatsRequest {
     @Min(value = 0, message = "Aisle height must be non-negative.")
     private Integer aisleHeight;
 
-    @NotBlank(message = "Branch ID must not be blank.")
+    @NotNull(message = "Branch ID must not be blank.")
     private Long branchId;
 
     GenerateSeatsRequest generateSeatsRequest;

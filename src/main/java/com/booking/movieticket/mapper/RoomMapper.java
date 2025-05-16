@@ -25,10 +25,10 @@ public abstract class RoomMapper {
     @Autowired
     BranchRepository branchRepository;
 
-    @Mapping(source = "cinemaId", target = "java(getBranchFromId(branchId)")
+    @Mapping(target = "branch", expression = "java(getBranchFromId(request.getBranchId()))")
     public abstract Room convertNotCompletedRequestToRoom(RoomInformationRequest request);
 
-    @Mapping(source = "cinemaId", target = "java(getBranchFromId(branchId)")
+    @Mapping(target = "branch", expression = "java(getBranchFromId(request.getBranchId()))")
     public abstract Room convertCompletedRequestToRoom(RoomHasSeatsRequest request);
 
     @Mapping(source = "branch.id", target = "branchId")

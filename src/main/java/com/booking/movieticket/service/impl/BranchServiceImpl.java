@@ -3,7 +3,6 @@ package com.booking.movieticket.service.impl;
 import com.booking.movieticket.dto.criteria.BranchCriteria;
 import com.booking.movieticket.dto.request.admin.create.BranchForCreateRequest;
 import com.booking.movieticket.dto.request.admin.update.BranchForUpdateRequest;
-import com.booking.movieticket.dto.response.admin.BranchLocationDTO;
 import com.booking.movieticket.dto.response.admin.BranchResponse;
 import com.booking.movieticket.dto.response.admin.create.BranchCreatedResponse;
 import com.booking.movieticket.entity.Branch;
@@ -70,7 +69,6 @@ public class BranchServiceImpl implements BranchService {
             processAndSetImages(branch, imageUrl);
             branch.setIsDeleted(false);
             branch.setRating(0);
-            branch.setRooms(null);
             return branchMapper.convertEntityToBranchCreatedResponse(branchRepository.save(branch));
 
         } catch (IOException e) {
@@ -91,10 +89,10 @@ public class BranchServiceImpl implements BranchService {
             if (branchRequest.getId() == null) {
                 throw new AppException(ErrorCode.BRANCH_NOT_FOUND);
             }
-            if (branchRepository.existsById(branchRequest.getId())) {
+            if (!branchRepository.existsById(branchRequest.getId())) {
                 throw new AppException(ErrorCode.BRANCH_NOT_FOUND);
             }
-            if (cinemaRepository.existsById((branchRepository.findById(branchRequest.getId()).get().getCinema().getId()))) {
+            if (!cinemaRepository.existsById((branchRepository.findById(branchRequest.getId()).get().getCinema().getId()))) {
                 throw new AppException(ErrorCode.CINEMA_NOT_FOUND);
             }
             Branch branch = branchRepository.findById(branchRequest.getId()).orElseThrow(() -> new AppException(ErrorCode.BRANCH_NOT_FOUND));
@@ -115,24 +113,6 @@ public class BranchServiceImpl implements BranchService {
     @Override
     public void deactivateBranch(Long id) {
         updateBranchStatus(id, true);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<BranchLocationDTO> getBranches() {
-        List<Branch> branches = branchRepository.findAll();
-        return branchMapper.convertEntitiesToBranchLocationDTOs(branches);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<BranchLocationDTO> getBranchesByCinemaId(Long cinemaId) {
-        if (!cinemaRepository.existsById(cinemaId)) {
-            throw new AppException(ErrorCode.CINEMA_NOT_FOUND);
-        }
-        Cinema cinema = cinemaRepository.findById(cinemaId).orElseThrow(() -> new AppException(ErrorCode.CINEMA_NOT_FOUND));
-        List<Branch> branches = branchRepository.findByCinema(cinema);
-        return branchMapper.convertEntitiesToBranchLocationDTOs(branches);
     }
 
     private void validateImages(MultipartFile imageUrl, BindingResult bindingResult) {

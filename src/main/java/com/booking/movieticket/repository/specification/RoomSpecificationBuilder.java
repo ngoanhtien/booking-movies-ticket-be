@@ -7,7 +7,7 @@ import org.springframework.util.StringUtils;
 
 public class RoomSpecificationBuilder {
     public static Specification<Room> findByCriteria(RoomCriteria criteria) {
-        Specification<Room> spec = Specification.where(notDeleted());
+        Specification<Room> spec = Specification.where(null);
         if (criteria != null && StringUtils.hasText(criteria.getName())) {
             spec = spec.and(hasName(criteria.getName()));
         }

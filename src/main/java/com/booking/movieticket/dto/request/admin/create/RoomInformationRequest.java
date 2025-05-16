@@ -4,7 +4,9 @@ import com.booking.movieticket.entity.enums.RoomStatus;
 import com.booking.movieticket.entity.enums.RoomType;
 import com.booking.movieticket.entity.enums.ScreenSize;
 import jakarta.validation.constraints.*;
+import lombok.Getter;
 
+@Getter
 public class RoomInformationRequest {
 
     @NotBlank(message = "Room name must not be blank.")
@@ -30,6 +32,6 @@ public class RoomInformationRequest {
     private Integer aislePosition;
     private Integer aisleWidth;
     private Integer aisleHeight;
-    @NotBlank(message = "Branch ID must not be blank.")
+    @NotNull(message = "Branch ID must not be blank.")
     private Long branchId;
 }
