@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -39,38 +39,34 @@ import { useTheme } from '@mui/material/styles';
 import axiosInstance from '../../utils/axios';
 import { MovieShowtimesResponse, BranchWithShowtimes, ShowtimeDetail, ApiResponse } from '../../types/showtime';
 import { alpha } from '@mui/material/styles';
+import QrPaymentModal from './QrPaymentModal';
+import { toast, Toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import { BookingData, FoodItemInfo, MovieInfo, CinemaInfo, PaymentData } from '../../types/booking';
+// Thêm import cho WebSocket
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 
-interface MovieInfo {
-  movieId: number;
-  movieName: string;
-  date: string;
-  startTime: string;
-  endTime?: string;
-  time?: string;
+// Định nghĩa interface cho WebSocket message
+interface SeatUpdateMessage {
+  seatId: string;
+  status: SeatStatus; 
+  userId: string; // ID của người dùng đang chọn ghế
+  roomId: string;
+  scheduleId: string;
+  timestamp: number;
 }
 
-interface CinemaInfo {
-  cinemaName: string;
-  roomName: string;
-  address?: string;
+// Định nghĩa interface cho trạng thái ghế tạm thời (đang được người khác chọn)
+interface TemporarySeatStatus {
+  seatId: string;
+  userId: string;
+  timestamp: number;
 }
 
-interface FoodItemInfo {
-  id: string;
-  name: string;
-  quantity: number;
-  price: number;
-  subtotal: number;
-}
-
-interface BookingData {
-  bookingId: number;
-  status: string;
-  movie: MovieInfo;
-  cinema: CinemaInfo;
-  seats: string[];
-  totalAmount: number;
-  foodItems?: FoodItemInfo[];
+// Extend the imported CinemaInfo to include the name property needed locally
+interface ExtendedCinemaInfo extends CinemaInfo {
+  name?: string;  // Added to support both naming conventions
 }
 
 interface FinalBookingDetails extends BookingData {
@@ -79,48 +75,201 @@ interface FinalBookingDetails extends BookingData {
   bookingCode: string;
 }
 
-interface PaymentData {
-  paymentId: number;
-  status: string;
-  amount: number;
-}
-
 type BookingResponse = ApiResponse<BookingData>;
 type PaymentResponse = ApiResponse<PaymentData>;
-
-// Các interface đã được chuyển sang bookingService.ts
 
 const steps = ['Select Showtime', 'Select Seats', 'Add Food & Drinks', 'Confirm & Pay'];
 
 interface BookingFormProps {
   movieId?: string; 
-  cinemaId?: string; // Thêm cinemaId vào props
-  directBooking?: boolean; // Thêm tùy chọn đặt vé trực tiếp
+  cinemaId?: string; 
+  directBooking?: boolean;
+  showtimeId?: string; // Add showtimeId parameter for direct seat selection
+  branchId?: string; // Add branchId parameter for direct seat selection
+  roomType?: string; // Add roomType parameter for direct seat selection
 }
 
-const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBooking = false }) => {
+// Tạo component BookingSummaryBar hiển thị thông tin tổng hợp ở dưới mỗi bước
+const BookingSummaryBar = ({ 
+  seatIds, 
+  seatLayout, 
+  foodItems, 
+  availableFoodItems, 
+  calculateTotalPrice 
+}: { 
+  seatIds: string[]; 
+  seatLayout: Seat[][]; 
+  foodItems: FoodSelection[]; 
+  availableFoodItems: FoodItem[]; 
+  calculateTotalPrice: () => number;
+}) => {
+  // Tính tổng tiền ghế
+  const calculateSeatPrice = () => {
+    let total = 0;
+    seatIds.forEach(seatId => {
+      for (const row of seatLayout) {
+        const seat = row.find(s => s.id === seatId);
+        if (seat) {
+          total += seat.price;
+          break;
+        }
+      }
+    });
+    return total;
+  };
+
+  // Tính tổng tiền đồ ăn
+  const calculateFoodPrice = () => {
+    let total = 0;
+    foodItems.forEach(item => {
+      const foodInfo = availableFoodItems.find(fi => fi.id === item.itemId);
+      if (foodInfo) {
+        total += foodInfo.price * item.quantity;
+      }
+    });
+    return total;
+  };
+
+  // Tính tổng số lượng đồ ăn
+  const calculateFoodQuantity = () => {
+    return foodItems.reduce((total, item) => total + item.quantity, 0);
+  };
+
+  // Lấy tên ghế
+  const getSeatLabels = () => {
+    const seats: string[] = [];
+    seatIds.forEach(seatId => {
+      for (const row of seatLayout) {
+        const seat = row.find(s => s.id === seatId);
+        if (seat) {
+          seats.push(`${seat.row}${seat.number}`);
+          break;
+        }
+      }
+    });
+    return seats;
+  };
+
+  const seatPrice = calculateSeatPrice();
+  const foodPrice = calculateFoodPrice();
+  const foodQuantity = calculateFoodQuantity();
+  const totalPrice = calculateTotalPrice();
+  const seatLabels = getSeatLabels();
+
+  return (
+    <Paper
+      elevation={3}
+      sx={{
+        position: 'sticky',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        mt: 2,
+        p: 2,
+        backgroundColor: '#f5f5f5',
+        borderTop: '1px solid #e0e0e0',
+        zIndex: 10,
+      }}
+    >
+      <Grid container spacing={2} alignItems="center">
+        {seatIds.length > 0 && (
+          <Grid item xs={12} sm={6} md={4}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box sx={{ mr: 1 }}>
+                <Typography variant="subtitle2">Ghế đã chọn ({seatIds.length}):</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {seatLabels.join(', ')}
+                </Typography>
+              </Box>
+              <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ ml: 'auto' }}>
+                {seatPrice.toLocaleString('vi-VN')}đ
+              </Typography>
+            </Box>
+          </Grid>
+        )}
+
+        {foodQuantity > 0 && (
+          <Grid item xs={12} sm={6} md={4}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box sx={{ mr: 1 }}>
+                <Typography variant="subtitle2">Đồ ăn & thức uống ({foodQuantity}):</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {foodItems.map(item => {
+                    const foodInfo = availableFoodItems.find(fi => fi.id === item.itemId);
+                    return foodInfo ? `${foodInfo.name} x${item.quantity}` : '';
+                  }).filter(text => text).join(', ')}
+                </Typography>
+              </Box>
+              <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ ml: 'auto' }}>
+                {foodPrice.toLocaleString('vi-VN')}đ
+              </Typography>
+            </Box>
+          </Grid>
+        )}
+
+        <Grid item xs={12} sm={12} md={4}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+            <Typography variant="subtitle2" sx={{ mr: 1 }}>Tổng cộng:</Typography>
+            <Typography variant="h6" color="primary.main" fontWeight="bold">
+              {totalPrice.toLocaleString('vi-VN')}đ
+            </Typography>
+          </Box>
+        </Grid>
+      </Grid>
+    </Paper>
+  );
+};
+
+const BookingForm: React.FC<BookingFormProps> = ({ 
+  movieId, 
+  cinemaId, 
+  directBooking = false,
+  showtimeId,
+  branchId,
+  roomType
+}) => {
   const { t } = useTranslation();
-  const [activeStep, setActiveStep] = useState(0);
+  const theme = useTheme();
+  const navigate = useNavigate();
+  const [activeStep, setActiveStep] = useState(showtimeId ? 1 : 0); // Start at seat selection if showtimeId is provided
+  const [selectedMovie, setSelectedMovie] = useState<MovieInfo | null>(null);
+  const [selectedCinema, setSelectedCinema] = useState<ExtendedCinemaInfo>({cinemaName: '', roomName: '', address: '', name: ''});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [bookingCompleted, setBookingCompleted] = useState(false);
   const [bookingDetails, setBookingDetails] = useState<FinalBookingDetails | null>(null);
   const [currentMovieInfo, setCurrentMovieInfo] = useState<{id: number | null, name: string | null}>({id: null, name: null});
-  const [selectedShowtime, setSelectedShowtime] = useState<string>(''); // Biến state mới để theo dõi lịch chiếu đã chọn
+  const [selectedShowtime, setSelectedShowtime] = useState<string>(''); // State variable for tracking selected showtime
+  
+  // Thêm state cho WebSocket
+  const stompClient = useRef<Client | null>(null);
+  const [isSocketConnected, setIsSocketConnected] = useState(false);
+  const [temporaryReservedSeats, setTemporaryReservedSeats] = useState<TemporarySeatStatus[]>([]);
+  // ID người dùng - trong trường hợp thực tế lấy từ auth, ở đây tạo tạm một ID ngẫu nhiên
+  const userId = useRef<string>(`user_${Math.floor(Math.random() * 100000)}`);
 
   // State thay thế mock data với API data
   const [showtimeBranches, setShowtimeBranches] = useState<BranchWithShowtimes[]>([]);
   const [seatLayout, setSeatLayout] = useState<Seat[][]>([]); 
   const [availableFoodItems, setAvailableFoodItems] = useState<FoodItem[]>([]);
 
-  const theme = useTheme();
-
   // Thêm state để lưu trữ kết quả debug
   const [debugResult, setDebugResult] = useState<string>('');
 
   // Thêm một thông báo lỗi thân thiện với người dùng
   const [friendlyError, setFriendlyError] = useState<string | null>(null);
+
+  // Thêm state quản lý modal QR
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [bookingId, setBookingId] = useState<number | null>(null);
+
+  // Add new state variables to track selected data
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedSeats, setSelectedSeats] = useState<Array<{code: string}>>([]);
+
+  // Add a reference to store if we're in direct booking mode with showtimeId
+  const isDirectSeatSelection = useRef(!!showtimeId);
 
   const validationSchema = Yup.object().shape({
     // Define Yup validation based on activeStep
@@ -145,7 +294,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
       showtimeId: '',
       seatIds: [],
       foodItems: [],
-      paymentMethod: 'creditCard',
+      paymentMethod: 'QR_MOMO',
     },
     validationSchema,
     onSubmit: async (values) => {
@@ -274,6 +423,15 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
         setBookingDetails(finalBookingDetails);
         setBookingCompleted(true);
         setSuccessMessage('Đặt vé thành công!');
+
+        // Lưu bookingId để sử dụng trong QR modal
+        setBookingId(bookingData.bookingId);
+        
+        if (values.paymentMethod.startsWith('QR_')) {
+          // Hiển thị QR modal nếu chọn phương thức thanh toán QR
+          setShowQrModal(true);
+          setLoading(false);
+        }
       } catch (err: any) {
         console.error('Lỗi đặt vé:', err);
         handleAPIError(err, 'đặt vé');
@@ -510,9 +668,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
     fetchFoodItems();
   }, [activeStep]);
 
-  // Thêm một useEffect để kiểm tra và đồng bộ giữa formik.values.showtimeId và selectedShowtime
+  // Update the useEffect for selectedShowtime synchronization
   useEffect(() => {
-    // Đồng bộ hóa giữa formik value và state của component
+    // Only sync if one has a value and the other is empty or different
     if (formik.values.showtimeId && formik.values.showtimeId !== selectedShowtime) {
       console.log("[DEBUG useEffect] Syncing selectedShowtime from formik:", formik.values.showtimeId);
       setSelectedShowtime(formik.values.showtimeId);
@@ -522,12 +680,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
     }
   }, [formik.values.showtimeId, selectedShowtime]);
 
-  // Thêm hàm tiện ích để kiểm tra lịch chiếu đã được chọn chưa
-  const isShowtimeSelected = (showtimeId: string) => {
+  // Convert isShowtimeSelected to useCallback
+  const isShowtimeSelected = useCallback((showtimeId: string) => {
     return formik.values.showtimeId === showtimeId || selectedShowtime === showtimeId;
-  };
+  }, [formik.values.showtimeId, selectedShowtime]);
 
-  // Helper function to find selected showtime details
+  // Update getSelectedShowtimeDetails to be a pure function without state updates
   const getSelectedShowtimeDetails = () => {
     if (!formik.values.showtimeId || showtimeBranches.length === 0) return null;
     
@@ -536,6 +694,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
         st => `${st.scheduleId}-${st.roomId}` === formik.values.showtimeId
       );
       if (showtime) {
+        // Return the data without updating state
         return {
           scheduleId: showtime.scheduleId,
           roomId: showtime.roomId,
@@ -544,11 +703,32 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
           movieName: currentMovieInfo.name,
           movieId: currentMovieInfo.id,
           branchName: branch.branchName,
+          branchAddress: branch.address || branch.branchName,
+          startTime: showtime.scheduleTime,
+          endTime: showtime.scheduleTime,
+          scheduleDate: showtime.scheduleDate,
         };
       }
     }
     return null;
   };
+
+  // Add effect to update cinema and date when showtime changes
+  useEffect(() => {
+    const showtimeDetails = getSelectedShowtimeDetails();
+    if (showtimeDetails) {
+      setSelectedCinema({
+        cinemaName: showtimeDetails.branchName,
+        name: showtimeDetails.branchName,
+        roomName: showtimeDetails.roomName || '',
+        address: showtimeDetails.branchAddress || ''
+      });
+      
+      if (showtimeDetails.scheduleDate) {
+        setSelectedDate(showtimeDetails.scheduleDate);
+      }
+    }
+  }, [formik.values.showtimeId, showtimeBranches]);
 
   // Helper function to get details of selected food items
   const getSelectedFoodItemsDetails = (): FoodItemInfo[] => {
@@ -569,6 +749,15 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
   };
   
   const getSeatColors = (seat: Seat, isSelected: boolean) => {
+    // Kiểm tra xem ghế có đang được người khác chọn không
+    const isTemporaryReserved = temporaryReservedSeats.some(
+      s => s.seatId === seat.id && s.userId !== userId.current
+    );
+    
+    if (isTemporaryReserved) {
+      return theme.palette.warning.main; // Màu cam/vàng cho ghế đang được người khác chọn
+    }
+    
     if (isSelected) return theme.palette.success.main; // Màu xanh lá cho ghế đang chọn
 
     switch (seat.status) {
@@ -862,6 +1051,292 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
     }
   };
 
+  // Thêm các hàm xử lý cho QR modal
+  const handlePaymentCompleted = useCallback(() => {
+    // Đóng modal QR
+    setShowQrModal(false);
+    
+    // Chuyển đến màn hình thành công
+    setBookingCompleted(true);
+    setSuccessMessage('Đặt vé thành công!');
+  }, []);
+
+  const handlePaymentExpired = useCallback(() => {
+    // Đóng modal QR
+    setShowQrModal(false);
+    
+    // Hiển thị thông báo hết hạn và chuyển về trang chi tiết phim
+    toast.error('Quá thời hạn thanh toán', {
+      position: 'top-right',
+      duration: 3000 // Use duration instead of autoClose
+    });
+    
+    // Chuyển về trang chi tiết phim
+    if (movieId) {
+      navigate(`/movie/${movieId}`);
+    }
+  }, [movieId, navigate]);
+
+  // Update when a seat is selected/deselected
+  const handleSeatSelection = (seat: Seat, isSelected: boolean) => {
+    // Kiểm tra xem ghế có đang được người khác chọn không
+    const isTemporaryReserved = temporaryReservedSeats.some(
+      s => s.seatId === seat.id && s.userId !== userId.current
+    );
+    
+    // Nếu ghế đang được người khác chọn, hiển thị thông báo và không cho chọn
+    if (!isSelected && isTemporaryReserved) {
+      toast.error(`Ghế ${seat.row}${seat.number} đang được người khác chọn`);
+      return;
+    }
+    
+    if (!isSelected) {
+      // Add seat to selectedSeats when selected
+      setSelectedSeats(prev => [...prev, { code: seat.row + seat.number }]);
+      
+      // Update formik value
+      formik.setFieldValue('seatIds', [...formik.values.seatIds, seat.id]);
+    } else {
+      // Remove seat from selectedSeats when deselected
+      setSelectedSeats(prev => prev.filter(s => s.code !== seat.row + seat.number));
+      
+      // Update formik value
+      formik.setFieldValue('seatIds', formik.values.seatIds.filter(id => id !== seat.id));
+    }
+    
+    // Gửi cập nhật trạng thái ghế qua WebSocket
+    sendSeatUpdateToServer(seat.id, isSelected);
+  };
+
+  // Fix getBookingData function
+  const getBookingData = (): BookingData => {
+    const showtimeDetails = getSelectedShowtimeDetails();
+    
+    // Collect seat information from formik values
+    const seats = formik.values.seatIds.map(seatId => {
+      // Find the actual seat from the seatLayout
+      for (const row of seatLayout) {
+        const seat = row.find(s => s.id === seatId);
+        if (seat) {
+          return seat.row + seat.number; // Format like "A1", "B2", etc.
+        }
+      }
+      return seatId; // Fallback to the ID if seat not found
+    });
+    
+    return {
+      bookingId: bookingId || 0,
+      status: "PENDING",
+      movie: {
+        movieId: currentMovieInfo.id || 0,
+        movieName: currentMovieInfo.name || '',
+        date: selectedDate,
+        startTime: showtimeDetails?.startTime || '',
+        endTime: showtimeDetails?.endTime || ''
+      },
+      cinema: {
+        cinemaName: selectedCinema?.cinemaName || selectedCinema?.name || '',
+        roomName: showtimeDetails?.roomName || '',
+        address: selectedCinema?.address || ''
+      },
+      seats: seats,
+      totalAmount: calculateTotalPrice(),
+      foodItems: getSelectedFoodItemsDetails()
+    };
+  };
+
+  // Khởi tạo WebSocket connection
+  useEffect(() => {
+    const initializeWebSocketConnection = () => {
+      if (activeStep !== 1 || !formik.values.showtimeId) return;
+      
+      try {
+        // Tạo một token ngẫu nhiên để định danh client
+        const sessionId = localStorage.getItem('token') || userId.current;
+        
+        // Khởi tạo SockJS và STOMP client
+        const socket = new SockJS('/api/v1/websocket'); // Endpoint WebSocket ở backend
+        const client = new Client({
+          webSocketFactory: () => socket,
+          connectHeaders: {
+            Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+            'X-User-Id': userId.current
+          },
+          debug: function (str) {
+            console.log('STOMP Debug: ' + str);
+          },
+          reconnectDelay: 5000,
+          heartbeatIncoming: 4000,
+          heartbeatOutgoing: 4000,
+        });
+
+        // Handle connection success
+        client.onConnect = (frame) => {
+          console.log('Connected to WebSocket: ' + frame);
+          setIsSocketConnected(true);
+          
+          // Lấy roomId và scheduleId từ showtimeId
+          const [scheduleId, roomId] = formik.values.showtimeId.split('-');
+          
+          // Subscribe để nhận update về ghế
+          client.subscribe(`/topic/seats/${roomId}/${scheduleId}`, (message) => {
+            try {
+              const seatUpdate: SeatUpdateMessage = JSON.parse(message.body);
+              console.log('Received seat update:', seatUpdate);
+              
+              // Nếu nhận được tin nhắn từ người dùng khác
+              if (seatUpdate.userId !== userId.current) {
+                handleSeatUpdateFromOtherUser(seatUpdate);
+              }
+            } catch (error) {
+              console.error('Error parsing WebSocket message:', error);
+            }
+          });
+          
+          // Subscribe cho thông báo cụ thể cho người dùng này
+          client.subscribe(`/user/${userId.current}/queue/notifications`, (message) => {
+            console.log('Received personal notification:', message.body);
+            // Xử lý thông báo cá nhân nếu cần
+          });
+        };
+
+        // Handle errors
+        client.onStompError = (frame) => {
+          console.error('STOMP error:', frame.headers.message);
+          setIsSocketConnected(false);
+          toast.error('Kết nối thời gian thực bị lỗi. Trạng thái ghế có thể không được cập nhật');
+        };
+
+        client.activate();
+        stompClient.current = client;
+        
+        // Cleanup function
+        return () => {
+          if (client.active) {
+            console.log('Disconnecting WebSocket...');
+            client.deactivate();
+            setIsSocketConnected(false);
+          }
+        };
+      } catch (error) {
+        console.error('Error initializing WebSocket:', error);
+        setIsSocketConnected(false);
+      }
+    };
+
+    initializeWebSocketConnection();
+    
+    // Định kỳ xóa ghế tạm thời đã quá thời gian timeout
+    const cleanupInterval = setInterval(() => {
+      cleanupExpiredTemporaryReservations();
+    }, 10000); // Kiểm tra mỗi 10 giây
+    
+    return () => {
+      if (stompClient.current && stompClient.current.active) {
+        stompClient.current.deactivate();
+      }
+      clearInterval(cleanupInterval);
+    };
+  }, [activeStep, formik.values.showtimeId]);
+
+  // Xử lý cập nhật ghế từ người dùng khác
+  const handleSeatUpdateFromOtherUser = (seatUpdate: SeatUpdateMessage) => {
+    if (seatUpdate.status === SeatStatus.Selected) {
+      // Thêm vào danh sách ghế đang được người khác chọn tạm thời
+      setTemporaryReservedSeats(prev => {
+        // Xóa cùng ghế này nếu đã tồn tại (cập nhật)
+        const filtered = prev.filter(s => s.seatId !== seatUpdate.seatId);
+        // Thêm vào với timestamp mới
+        return [...filtered, {
+          seatId: seatUpdate.seatId,
+          userId: seatUpdate.userId,
+          timestamp: seatUpdate.timestamp
+        }];
+      });
+    } else if (seatUpdate.status === SeatStatus.Available) {
+      // Xóa khỏi danh sách ghế đang được người khác chọn
+      setTemporaryReservedSeats(prev => 
+        prev.filter(s => s.seatId !== seatUpdate.seatId)
+      );
+    } else if (seatUpdate.status === SeatStatus.Booked) {
+      // Cập nhật UI để hiển thị ghế đã bị đặt
+      setSeatLayout(prevLayout => {
+        return prevLayout.map(row => {
+          return row.map(seat => {
+            if (seat.id === seatUpdate.seatId) {
+              return { ...seat, status: SeatStatus.Booked };
+            }
+            return seat;
+          });
+        });
+      });
+      
+      // Kiểm tra xem người dùng hiện tại có đang chọn ghế này không
+      if (formik.values.seatIds.includes(seatUpdate.seatId)) {
+        // Nếu có, thông báo và xóa khỏi ghế đã chọn
+        toast.error(`Ghế ${getSeatLabel(seatUpdate.seatId)} vừa được người khác đặt`);
+        formik.setFieldValue('seatIds', 
+          formik.values.seatIds.filter(id => id !== seatUpdate.seatId)
+        );
+      }
+    }
+  };
+
+  // Hàm lấy tên ghế (ví dụ: A1, B5) từ seatId
+  const getSeatLabel = (seatId: string): string => {
+    for (const row of seatLayout) {
+      const seat = row.find(s => s.id === seatId);
+      if (seat) {
+        return `${seat.row}${seat.number}`;
+      }
+    }
+    return seatId;
+  };
+
+  // Xóa các ghế tạm thời đã quá timeout (1 phút)
+  const cleanupExpiredTemporaryReservations = () => {
+    const now = Date.now();
+    const TIMEOUT = 60000; // 1 phút
+    
+    setTemporaryReservedSeats(prev => 
+      prev.filter(s => (now - s.timestamp) < TIMEOUT)
+    );
+  };
+
+  // Gửi thông báo khi người dùng chọn hoặc bỏ chọn ghế
+  const sendSeatUpdateToServer = (seatId: string, isSelected: boolean) => {
+    if (!stompClient.current || !stompClient.current.active || !isSocketConnected) {
+      console.warn('WebSocket is not connected. Cannot send seat update.');
+      return;
+    }
+    
+    try {
+      // Lấy roomId và scheduleId từ showtimeId
+      const [scheduleId, roomId] = formik.values.showtimeId.split('-');
+      
+      const message: SeatUpdateMessage = {
+        seatId: seatId,
+        status: isSelected ? SeatStatus.Available : SeatStatus.Selected, // Ngược lại vì chúng ta gửi trạng thái MỚI
+        userId: userId.current,
+        roomId: roomId,
+        scheduleId: scheduleId, 
+        timestamp: Date.now()
+      };
+      
+      stompClient.current.publish({
+        destination: '/app/seat/update',
+        body: JSON.stringify(message),
+        headers: {
+          'X-User-Id': userId.current
+        }
+      });
+      
+      console.log('Sent seat update:', message);
+    } catch (error) {
+      console.error('Error sending seat update:', error);
+    }
+  };
+
   const renderStepContent = (step: number) => {
     // Nếu booking đã hoàn thành, hiển thị thông tin booking
     if (bookingCompleted) {
@@ -1023,14 +1498,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
                                     formik.setFieldTouched('showtimeId', true, false);
                                   }}
                                   onClick={(e) => {
-                                    // Đảm bảo onClick không ngăn chặn bubbling lên ListItem
-                                    e.stopPropagation(); // Ngăn chặn bubbling để tránh double-click
-
-                                    console.log("[DEBUG Radio] Clicked:", `${showtime.scheduleId}-${showtime.roomId}`);
-                                    const showtimeId = `${showtime.scheduleId}-${showtime.roomId}`;
-                                    setSelectedShowtime(showtimeId);
-                                    formik.setFieldValue('showtimeId', showtimeId);
-                                    formik.setFieldTouched('showtimeId', true, false);
+                                    // Stop propagation to prevent double click and double state updates
+                                    e.stopPropagation();
                                   }}
                                   sx={{mr: 1}} 
                                 />
@@ -1076,6 +1545,17 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
                 </Button>
               </Box>
             )}
+            
+            {/* Thêm BookingSummaryBar nếu đã chọn showtime */}
+            {(formik.values.showtimeId || selectedShowtime) && formik.values.seatIds.length > 0 && (
+              <BookingSummaryBar
+                seatIds={formik.values.seatIds}
+                seatLayout={seatLayout}
+                foodItems={formik.values.foodItems}
+                availableFoodItems={availableFoodItems}
+                calculateTotalPrice={calculateTotalPrice}
+              />
+            )}
           </Box>
         );
       case 1:
@@ -1084,6 +1564,35 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
             <Typography variant="h5" gutterBottom sx={{ mb: 2, textAlign: 'center' }}>
               {t('booking.selectSeats')}
             </Typography>
+            
+            {/* WebSocket connection status */}
+            <Box sx={{ width: '100%', mb: 2, display: 'flex', justifyContent: 'center' }}>
+              <Tooltip title={isSocketConnected ? 'Kết nối thời gian thực đang hoạt động' : 'Không có kết nối thời gian thực'}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  borderRadius: '12px',
+                  px: 2,
+                  py: 0.5,
+                  backgroundColor: isSocketConnected ? alpha(theme.palette.success.main, 0.1) : alpha(theme.palette.error.main, 0.1),
+                  border: `1px solid ${isSocketConnected ? theme.palette.success.main : theme.palette.error.main}`
+                }}>
+                  <Box
+                    sx={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      backgroundColor: isSocketConnected ? theme.palette.success.main : theme.palette.error.main,
+                      mr: 1
+                    }}
+                  />
+                  <Typography variant="caption" color={isSocketConnected ? 'success.main' : 'error.main'}>
+                    {isSocketConnected ? 'Đồng bộ thời gian thực' : 'Không có đồng bộ thời gian thực'}
+                  </Typography>
+                </Box>
+              </Tooltip>
+            </Box>
+            
             {/* Screen Line */}
             <Box 
               sx={{ 
@@ -1118,20 +1627,31 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
                       const isSelected = formik.values.seatIds.includes(seat.id);
                       const seatColor = getSeatColors(seat, isSelected);
                       const isDisabled = seat.status === SeatStatus.Booked || seat.status === SeatStatus.Unavailable;
+                      const isTemporaryReserved = temporaryReservedSeats.some(
+                        s => s.seatId === seat.id && s.userId !== userId.current
+                      );
 
                       return (
                         <Tooltip 
-                          title={isDisabled ? t(`booking.seatStatus.${seat.status.toLowerCase()}`) : `${t(`booking.seatType.${seat.type?.toLowerCase() || 'regular'}`)} - ${seat.price.toLocaleString('vi-VN')}đ`} 
+                          title={
+                            isTemporaryReserved 
+                              ? 'Ghế đang được người khác chọn'
+                              : isDisabled 
+                                ? t(`booking.seatStatus.${seat.status.toLowerCase()}`) 
+                                : `${t(`booking.seatType.${seat.type?.toLowerCase() || 'regular'}`)} - ${seat.price.toLocaleString('vi-VN')}đ`
+                          } 
                           key={seat.id}
                           arrow
                           placement="top"
                         >
                           <Box
-                            onClick={() => !isDisabled && formik.setFieldValue('seatIds', 
-                              isSelected 
-                                ? formik.values.seatIds.filter(id => id !== seat.id) 
-                                : [...formik.values.seatIds, seat.id]
-                            )}
+                            onClick={() => {
+                              if (!isDisabled && !isTemporaryReserved) {
+                                handleSeatSelection(seat, isSelected);
+                              } else if (isTemporaryReserved) {
+                                toast.error(`Ghế ${seat.row}${seat.number} đang được người khác chọn`);
+                              }
+                            }}
                             sx={{
                               width: { xs: 28, sm: 32, md: 36 },
                               height: { xs: 28, sm: 32, md: 36 },
@@ -1142,17 +1662,25 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
                               alignItems: 'center',
                               justifyContent: 'center',
                               borderRadius: '4px',
-                              cursor: isDisabled ? 'not-allowed' : 'pointer',
+                              cursor: isDisabled || isTemporaryReserved ? 'not-allowed' : 'pointer',
                               opacity: isDisabled ? 0.6 : 1,
                               fontSize: { xs: '0.7rem', sm: '0.75rem' },
                               fontWeight: 'bold',
                               transition: 'transform 0.1s ease-in-out, background-color 0.2s',
                               '&:hover': {
-                                transform: !isDisabled ? 'scale(1.1)' : 'none',
-                                boxShadow: !isDisabled ? theme.shadows[3] : 'none',
+                                transform: !isDisabled && !isTemporaryReserved ? 'scale(1.1)' : 'none',
+                                boxShadow: !isDisabled && !isTemporaryReserved ? theme.shadows[3] : 'none',
                               },
+                              // Thêm hiệu ứng nhấp nháy cho ghế đang được người khác chọn
+                              ...(isTemporaryReserved && {
+                                animation: 'pulseSeat 1.5s infinite',
+                                '@keyframes pulseSeat': {
+                                  '0%': { opacity: 1 },
+                                  '50%': { opacity: 0.6 },
+                                  '100%': { opacity: 1 },
+                                },
+                              }),
                               // Add specific icons or shapes for different seat types if needed
-                              // Example: border radius for couple seats, or an icon
                               ...(seat.type === 'COUPLE' && { 
                                 // Could be wider, or have a specific icon/style
                                 // width: { xs: 56, sm: 64, md: 72 }, 
@@ -1181,7 +1709,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
                 { type: 'VIP', label: t('booking.seatType.vip') || 'VIP', status: SeatStatus.Available },
                 { type: 'COUPLE', label: t('booking.seatType.couple') || 'Couple', status: SeatStatus.Available },
                 { type: 'SWEETBOX', label: t('booking.seatType.sweetbox') || 'Sweetbox', status: SeatStatus.Available },
-                { type: 'SELECTED', label: t('booking.seatStatus.selected') || 'Selected', status: SeatStatus.Selected }, // Special case for legend
+                { type: 'SELECTED', label: t('booking.seatStatus.selected') || 'Selected', status: SeatStatus.Selected },
+                { type: 'TEMPORARY', label: 'Đang được chọn bởi người khác', status: SeatStatus.Available, isTemporary: true }, // Thêm loại này
                 { type: 'BOOKED', label: t('booking.seatStatus.booked') || 'Booked', status: SeatStatus.Booked },
                 { type: 'UNAVAILABLE', label: t('booking.seatStatus.unavailable') || 'Unavailable', status: SeatStatus.Unavailable },
               ].map(item => (
@@ -1190,10 +1719,18 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
                     sx={{ 
                       width: 20, 
                       height: 20, 
-                      backgroundColor: getSeatColors({ type: item.type, status: item.status } as Seat, item.status === SeatStatus.Selected), 
+                      backgroundColor: item.isTemporary ? theme.palette.warning.main : getSeatColors({ type: item.type, status: item.status } as Seat, item.status === SeatStatus.Selected), 
                       mr: 1, 
                       borderRadius: '3px',
                       border: item.type === 'AISLE' ? `1px dashed ${theme.palette.grey[400]}` : 'none', // Consistent with AISLE style
+                      ...(item.isTemporary && {
+                        animation: 'pulseSeat 1.5s infinite',
+                        '@keyframes pulseSeat': {
+                          '0%': { opacity: 1 },
+                          '50%': { opacity: 0.6 },
+                          '100%': { opacity: 1 },
+                        },
+                      }),
                     }} 
                   />
                   <Typography variant="caption">{item.label}</Typography>
@@ -1227,6 +1764,17 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
               >
                 {friendlyError}
               </Alert>
+            )}
+            
+            {/* Thêm BookingSummaryBar */}
+            {formik.values.seatIds.length > 0 && (
+              <BookingSummaryBar
+                seatIds={formik.values.seatIds}
+                seatLayout={seatLayout}
+                foodItems={formik.values.foodItems}
+                availableFoodItems={availableFoodItems}
+                calculateTotalPrice={calculateTotalPrice}
+              />
             )}
           </Box>
         );
@@ -1313,6 +1861,15 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
                 })}
               </Grid>
             )}
+            
+            {/* Thêm BookingSummaryBar */}
+            <BookingSummaryBar
+              seatIds={formik.values.seatIds}
+              seatLayout={seatLayout}
+              foodItems={formik.values.foodItems}
+              availableFoodItems={availableFoodItems}
+              calculateTotalPrice={calculateTotalPrice}
+            />
           </Box>
         );
       case 3:
@@ -1388,6 +1945,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
                 onChange={(event) => formik.setFieldValue('paymentMethod', event.target.value)}
                 row
               >
+                <FormControlLabel value="QR_MOMO" control={<Radio />} label={t('booking.summary.qrMomo', 'Thanh toán MoMo')} />
+                <FormControlLabel value="QR_SEPAY" control={<Radio />} label={t('booking.summary.qrSePay', 'Thanh toán VietQR/Banking')} />
                 <FormControlLabel value="creditCard" control={<Radio />} label={t('booking.summary.creditCard', 'Credit Card (Mock)')} />
                 <FormControlLabel value="paypal" control={<Radio />} label={t('booking.summary.paypal', 'PayPal (Mock)')} />
               </RadioGroup>
@@ -1399,6 +1958,19 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
         return <Typography>Unknown step</Typography>;
     }
   };
+
+  // Add useEffect to handle direct seat selection
+  useEffect(() => {
+    // If showtimeId is provided, set it in formik and state
+    if (showtimeId) {
+      console.log("[Direct Seat Selection] Using provided showtimeId:", showtimeId);
+      setSelectedShowtime(showtimeId);
+      formik.setFieldValue('showtimeId', showtimeId);
+      
+      // Make sure we're on the seat selection step
+      setActiveStep(1);
+    }
+  }, [showtimeId]);
 
   return (
     <Box sx={{ width: '100%', p: directBooking ? 0 : 3 }}>
@@ -1497,6 +2069,17 @@ const BookingForm: React.FC<BookingFormProps> = ({ movieId, cinemaId, directBook
             {debugResult}
           </pre>
         </Paper>
+      )}
+      {showQrModal && bookingId && (
+        <QrPaymentModal
+          open={showQrModal}
+          onClose={() => setShowQrModal(false)}
+          bookingData={getBookingData()}
+          bookingId={bookingId}
+          totalAmount={calculateTotalPrice()}
+          onPaymentCompleted={handlePaymentCompleted}
+          onPaymentExpired={handlePaymentExpired}
+        />
       )}
     </Box>
   );

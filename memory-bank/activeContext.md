@@ -1,7 +1,11 @@
 # Active Context
 
 ## Current Focus
-**The "Người dùng đã xem phim có thể bình luận" (Users who have watched a movie can comment/review) feature has been implemented. This included backend logic for checking eligibility (paid booking, past showtime), creating reviews, and frontend integration on the `MovieDetails.tsx` page. A key bug related to querying `Showtime.startTime` (which doesn't exist directly on `Showtime`) was resolved by querying `Schedule.date` and `Schedule.timeStart` separately.**
+**Đã triển khai tính năng đồng bộ thời gian thực (WebSocket) cho quá trình chọn ghế trong đặt vé. Tính năng này giúp người dùng thấy được ghế đang được chọn bởi người khác theo thời gian thực, tránh tình trạng nhiều người cùng chọn một ghế và tranh chấp khi thanh toán. Ngoài ra đã thêm thanh thông tin tổng hợp ở cuối mỗi bước đặt vé hiển thị số ghế đã chọn, đồ ăn đã chọn và tổng tiền.**
+
+**The "Thanh toán bằng mã QR tích hợp SePay" (QR code payment with SePay integration) feature has been implemented. This feature allows users to make payments using QR codes, with a 5-minute countdown timer, clear payment information display, and automatic status updates. The implementation includes both backend APIs and frontend components for generating QR codes, displaying booking information, and handling payment flow.**
+
+**Previously, the "Người dùng đã xem phim có thể bình luận" (Users who have watched a movie can comment/review) feature was implemented. This included backend logic for checking eligibility (paid booking, past showtime), creating reviews, and frontend integration on the `MovieDetails.tsx` page. A key bug related to querying `Showtime.startTime` (which doesn't exist directly on `Showtime`) was resolved by querying `Schedule.date` and `Schedule.timeStart` separately.**
 
 **Two other key features have also been implemented:**
 1. **"Đồng bộ trạng thái ghế và khoá pessimistic lock" (Synchronize seat status and pessimistic lock)**: Implemented pessimistic locking for seat selection using `@Lock(LockModeType.PESSIMISTIC_WRITE)` to prevent race conditions during booking.
@@ -35,6 +39,48 @@ The previous focus on "Admin Panel API Integration" and "MoMo-Inspired Booking F
   - Kiểm tra và cập nhật các TypeScript interface/types để phản ánh cấu trúc dữ liệu thực tế từ API
 
 ## Key Active Issues & Workarounds
+
+### QR Payment Integration (Latest)
+- **Feature Implementation**: Integrated QR code payment functionality with SePay and MoMo options
+- **Components Added**:
+  1. **Backend**:
+     - `QrCodeResponse.java`: Response DTO for QR code data
+     - `PaymentRequest.java`: Request DTO for payment creation
+     - `PaymentService.java`: Service interface for payment operations
+     - `PaymentServiceImpl.java`: Implementation with QR generation logic
+     - `PaymentController.java`: REST endpoints for payment operations
+     - Security configuration updates to allow payment API access
+  2. **Frontend**:
+     - `QrPaymentModal.tsx`: Component to display QR code with countdown timer
+     - `BookingForm.tsx` updates to integrate QR payment flow
+     - Type definitions and translations for QR payment feature
+- **Key Features**:
+  - 5-minute countdown timer for payment completion
+  - Display of booking details alongside QR code
+  - Warning message that tickets cannot be canceled after payment
+  - Auto-redirect after payment timeout
+  - Status checking for payment completion
+  - Support for multiple payment providers (SePay, MoMo)
+- **Implementation Challenges**:
+  - Fixed multiple TypeScript errors in component integration
+  - Resolved infinite render loops in React components using useCallback and useEffect
+  - Created proper type definitions for all data structures
+  - Ensured responsive design for payment modal on different screen sizes
+
+### Too Many Re-renders Bug Fix
+- **Problem**: Implemented QR Payment feature caused infinite render loops with error: "Too many re-renders. React limits the number of renders to prevent an infinite loop"
+- **Root Causes**:
+  1. `getSelectedShowtimeDetails` function was directly updating state during rendering
+  2. Functions being passed to child components were recreated on every render
+  3. Event handlers in seat selection were causing cascading state updates
+- **Solution Implemented**:
+  1. Refactored `getSelectedShowtimeDetails` to be a pure function without state updates
+  2. Used `useCallback` for event handler functions and component methods
+  3. Moved state updates to useEffect hooks with proper dependencies
+  4. Fixed seat selection handlers to prevent double state updates
+  5. Added type declarations for react-hot-toast library
+  6. Improved data flow between parent and child components
+- **Outcome**: Fixed all infinite render issues, ensuring stable component rendering and state management throughout the booking flow, particularly in the QR payment process.
 
 ### Pessimistic Locking for Seat Booking (Implemented)
 - **Problem**: During the booking process, multiple users could try to book the same seats simultaneously, leading to race conditions and duplicate bookings.

@@ -1,41 +1,40 @@
 export interface ApiResponse<T> {
+  status: string;
+  message: string;
   result?: T;
   data?: T;
-  status?: string;
-  message?: string;
-  code?: number;
 }
 
 export interface ShowtimeDetail {
   scheduleId: number;
-  scheduleTime: string;
   roomId: number;
   roomName: string;
   roomType: string;
-  status: string;
-  date: string;
+  scheduleTime: string; 
   scheduleDate?: string;
-  scheduleEndTime?: string;
+  status?: string;
+  date?: string;
 }
 
 export interface BranchWithShowtimes {
   branchId: number;
   branchName: string;
+  showtimes: ShowtimeDetail[];
   address?: string;
   hotline?: string;
+  branchAddress?: string;
   imageUrl?: string;
-  showtimes: ShowtimeDetail[];
 }
 
 export interface MovieShowtimesResponse {
   movieId: number;
   movieName: string;
+  branches: BranchWithShowtimes[];
   imageUrl?: string;
   duration?: number;
   summary?: string;
   director?: string;
   ageLimit?: number;
-  branches: BranchWithShowtimes[];
 }
 
 export interface Showtime {

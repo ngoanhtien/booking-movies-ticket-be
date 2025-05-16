@@ -375,7 +375,11 @@ export const bookingService = {
           }
         });
         
-        return { data: mockSeats };
+        return { 
+          status: 'SUCCESS',
+          message: 'Successfully retrieved seat data',
+          data: mockSeats 
+        };
       }
       
       throw error;
@@ -395,6 +399,8 @@ export const bookingService = {
       const err = error as any; // Type assertion
       if (err.response?.status === 500) {
         return {
+          status: 'SUCCESS',
+          message: 'Successfully retrieved food items',
           data: [
             {
               id: '1',

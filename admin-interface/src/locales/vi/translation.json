@@ -111,7 +111,9 @@
       "total": "Tổng Cộng",
       "paymentMethod": "Phương Thức Thanh Toán",
       "creditCard": "Thẻ Tín Dụng (Mẫu)",
-      "paypal": "PayPal (Mẫu)"
+      "paypal": "PayPal (Mẫu)",
+      "qrMomo": "Thanh toán MoMo",
+      "qrSePay": "Thanh toán VietQR/Banking"
     },
     "bookingSuccess": "Đặt vé thành công!",
     "bookingDetails": "Chi tiết đặt vé",
@@ -122,7 +124,23 @@
     "totalAmount": "Tổng tiền",
     "noFoodSelected": "Không có đồ ăn hoặc thức uống nào được chọn",
     "printTicket": "In Vé",
-    "backToHome": "Về Trang Chủ"
+    "backToHome": "Về Trang Chủ",
+    "payment": {
+      "qrPaymentTitle": "Thanh toán bằng mã QR",
+      "bookingInfo": "Thông tin đặt vé",
+      "showtime": "Thời gian",
+      "cinema": "Rạp",
+      "room": "Phòng chiếu",
+      "seats": "Ghế",
+      "foodItems": "Thức ăn & Đồ uống",
+      "totalAmount": "Tổng tiền",
+      "scanMoMoQr": "Quét mã QR bằng MoMo để thanh toán",
+      "scanSePayQr": "Quét mã QR để thanh toán",
+      "noCancel": "Đã thanh toán sẽ không được huỷ vé, vui lòng kiểm tra lại thông tin vé",
+      "timeRemaining": "Thời gian còn lại",
+      "momoInstructions": "Sử dụng App MoMo hoặc ứng dụng Camera hỗ trợ để quét mã.",
+      "sePayInstructions": "Sử dụng ứng dụng ngân hàng để quét mã VietQR."
+    }
   },
   "cinemaSelection": {
     "title": "Chọn Rạp Chiếu Phim",

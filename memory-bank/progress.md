@@ -4,6 +4,17 @@
 - Project initialization with React and TypeScript
 - Material-UI theme configuration
 - Basic routing structure
+- **WebSocket Integration for Seat Selection (LATEST)**:
+  - Triển khai đồng bộ hóa trạng thái ghế theo thời gian thực sử dụng WebSocket
+  - Hiển thị ghế đang được người dùng khác chọn với màu khác và hiệu ứng nhấp nháy
+  - Ngăn chặn việc người dùng chọn ghế đang được người khác chọn
+  - Thông báo và tự động cập nhật khi có người khác đặt ghế mà người dùng đang chọn
+  - Hiển thị trạng thái kết nối WebSocket để người dùng biết có đang đồng bộ hay không
+- **Booking Flow Enhancement (LATEST)**:
+  - Thêm thanh thông tin tổng hợp ở dưới mỗi bước trong quá trình đặt vé
+  - Hiển thị số ghế đã chọn, danh sách mã ghế và tổng tiền ghế
+  - Hiển thị số lượng đồ ăn đã chọn, danh sách món và tổng tiền đồ ăn
+  - Hiển thị tổng tiền phải thanh toán tại mỗi bước đặt vé
 - **User Role Upgrade to ADMIN**:
   - Xác định được thông tin kết nối database trong file application.yml
   - Nâng cấp tài khoản người dùng mrrdavidd1 từ USER lên ADMIN thông qua SQL query
@@ -74,6 +85,15 @@
     - Added API endpoints for submitting and retrieving reviews
     - Integrated review functionality into the MovieDetails.tsx page
     - Handled proper error cases for ineligible users and duplicate reviews
+  - **QR Payment Integration (LATEST)**:
+    - Added backend API for generating QR codes with SePay/MoMo integration
+    - Created frontend QR payment modal component with countdown timer
+    - Implemented payment status checking mechanism
+    - Designed responsive UI displaying booking details with QR code
+    - Added translations for all payment-related content
+    - Fixed "Too many re-renders" issues in React components
+    - Created proper type definitions for all data structures
+    - Implemented automatic redirection after payment timeout
 
 ## What's Left to Build
 1. Frontend Features
@@ -128,6 +148,7 @@
      - [x] Export functionality
      - [x] Search and filtering
      - [x] API integration
+     - [x] Real-time seat synchronization with WebSocket
    - [x] Reports and analytics
      - [x] Sales reports
      - [x] Attendance reports
@@ -180,27 +201,14 @@
      - [x] Add Vietnamese translations for all UI elements
      - [x] Update routes to include movie browsing as the homepage
      - [x] Add movie review and rating functionality
-   - [x] Ticket booking flow (Initial UI with mock data complete, API integration for core booking done)
-     - [ ] **Implement Standalone Cinema/Theater Selection step**
-        - [ ] Allow filtering by city/region.
-        - [ ] Display different prices based on cinema, day of the week, and showtime.
-     - [x] Implement Showtime Selection step in `BookingForm.tsx` (UI with mock data, API integrated).
-     - [x] Implement Seat Selection step in `BookingForm.tsx` (interactive map with mock data, API integrated).
-     - [ ] **Upgrade Seat Selection UI**
-        - [ ] Clearly differentiate seat types (e.g., regular, VIP, couple/sweetbox).
-        - [ ] Show varying prices per seat type directly on the seat map or legend.
-        - [ ] Improve visual cues for selected, booked, and unavailable seats.
-     - [x] Implement Food & Drinks step in `BookingForm.tsx` (UI with mock data, API integrated).
-     - [ ] **Develop Enhanced Food & Drink Selection**
-        - [ ] Offer options for different sizes (e.g., Small, Medium, Large for drinks/popcorn).
-        - [ ] Provide flavor choices where applicable.
-        - [ ] Showcase popular combos with clear pricing and contents.
-     - [x] Implement Confirm & Pay step in `BookingForm.tsx` (summary, payment placeholder, API integrated).
-     - [ ] **Refine Confirmation & Payment UI**
-        - [ ] Provide a very clear and itemized booking summary before payment.
-        - [ ] Integrate/mock multiple payment methods (e.g., MoMo, ZaloPay, Credit Card, Bank Transfer placeholders).
-     - [x] Integrate API calls for all booking steps.
-     - [x] Implement symbolic payment process (no actual payment gateway integration).
+   - [x] Ticket booking flow (UI and API integration complete)
+     - [x] Implement Showtime Selection step with API integration
+     - [x] Implement Seat Selection step with interactive map
+     - [x] Real-time seat synchronization with WebSocket
+     - [x] Booking summary bar at each step showing selections and total price
+     - [x] Implement Food & Drinks step with quantity controls
+     - [x] Implement Confirm & Pay step with payment options
+     - [x] Add QR payment functionality with SePay/MoMo integration
    - [x] User profile
      - [x] Personal information display and editing
      - [x] Avatar upload and preview
