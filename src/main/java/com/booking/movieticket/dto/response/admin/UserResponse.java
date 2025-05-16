@@ -1,10 +1,6 @@
 package com.booking.movieticket.dto.response.admin;
 
-import com.booking.movieticket.entity.Role;
 import com.booking.movieticket.entity.enums.MembershipLevel;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Past;
-import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -8,7 +8,6 @@ import com.booking.movieticket.dto.response.admin.BranchResponse;
 import com.booking.movieticket.dto.response.admin.create.BranchCreatedResponse;
 import com.booking.movieticket.entity.Branch;
 import com.booking.movieticket.entity.Cinema;
-import com.booking.movieticket.entity.User;
 import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.exception.ErrorCode;
 import com.booking.movieticket.mapper.BranchMapper;
@@ -32,7 +31,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -48,7 +46,7 @@ public class BranchServiceImpl implements BranchService {
     @Override
     public BranchResponse getBranchById(Long id) {
         if (id == null) {
-            throw new AppException(ErrorCode.BAD_REQUEST, "Branch ID cannot be null");
+            throw new AppException(ErrorCode.BRANCH_NOT_FOUND);
         }
         return branchMapper.convertEntityToBranchResponse(branchRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.BRANCH_NOT_FOUND)));
@@ -137,8 +135,6 @@ public class BranchServiceImpl implements BranchService {
         return branchMapper.convertEntitiesToBranchLocationDTOs(branches);
     }
 
-    // Helper methods
-
     private void validateImages(MultipartFile imageUrl, BindingResult bindingResult) {
         if (imageUrl == null || imageUrl.isEmpty()) {
             bindingResult.rejectValue("imageUrl", "branch.imageUrl.required", "Branch image is required");
@@ -160,7 +156,7 @@ public class BranchServiceImpl implements BranchService {
                 .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST, "Branch not found"));
 
         if (Objects.equals(branch.getIsDeleted(), isDeleted)) {
-            return; // Already in desired state
+            return;
         }
 
         branch.setIsDeleted(isDeleted);
