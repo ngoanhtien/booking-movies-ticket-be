@@ -1,8 +1,8 @@
 package com.booking.movieticket.controller;
 
 import com.booking.movieticket.dto.criteria.CinemaCriteria;
-import com.booking.movieticket.dto.request.admin.update.CinemaForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.CinemaForCreateRequest;
+import com.booking.movieticket.dto.request.admin.update.CinemaForUpdateRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.dto.response.admin.CinemaResponse;
 import com.booking.movieticket.dto.response.admin.create.CinemaCreatedResponse;
@@ -80,5 +80,12 @@ public class CinemaController {
         cinemaService.deactivateCinema(id);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ApiResponse<>("Cinema deactivated successfully."));
+    }
+
+    @GetMapping("/name")
+    public ResponseEntity<ApiResponse<List<String>>> getAllActiveCinemaName() {
+        List<String> names = cinemaService.getAllActiveCinemaName();
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ApiResponse<>("List cinema name fetched successfully.", names));
     }
 }

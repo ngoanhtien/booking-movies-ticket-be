@@ -25,6 +25,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -94,6 +95,11 @@ public class CinemaServiceImpl implements CinemaService {
     @Override
     public void deactivateCinema(Long id) {
         updateCinemaStatus(id, true);
+    }
+
+    @Override
+    public List<String> getAllActiveCinemaName() {
+        return cinemaRepository.findActiveCinemaNames();
     }
 
     private void validateImages(MultipartFile logoUrl, BindingResult bindingResult) {
