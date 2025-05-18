@@ -7,7 +7,7 @@ import org.springframework.util.StringUtils;
 
 public class ActorSpecificationBuilder {
     public static Specification<Actor> findByCriteria(ActorCriteria criteria) {
-        Specification<Actor> spec = Specification.where(notDeleted());
+        Specification<Actor> spec = Specification.where(null);
         if (criteria != null && StringUtils.hasText(criteria.getName())) {
             spec = spec.and(hasNameLike(criteria.getName()));
         }

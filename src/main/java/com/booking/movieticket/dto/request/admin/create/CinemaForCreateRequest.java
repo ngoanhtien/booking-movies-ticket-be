@@ -21,4 +21,6 @@ public class CinemaForCreateRequest {
     private String hotline;
 
     private String description;
+
+    private String address;
 }

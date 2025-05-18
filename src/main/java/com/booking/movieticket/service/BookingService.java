@@ -6,6 +6,8 @@ import com.booking.movieticket.dto.response.BookingHistoryResponse;
 
 import java.util.List;
 
+import java.util.List;
+
 public interface BookingService {
     /**
      * Tạo một đơn đặt vé mới với các ghế và đồ ăn đã chọn
@@ -14,6 +16,13 @@ public interface BookingService {
      * @return Thông tin đơn đặt vé với mã QR thanh toán
      */
     BookingResponse createBooking(Long userId, BookingRequest bookingRequest);
+
+    /**
+     * Get booking history for a specific user
+     * @param userId ID of the user
+     * @return List of booking responses
+     */
+    List<BookingResponse> getUserBookingHistory(Long userId);
 
     /**
      * Lấy thông tin đơn đặt vé

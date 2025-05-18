@@ -7,7 +7,7 @@ import org.springframework.util.StringUtils;
 
 public class CinemaSpecificationBuilder {
     public static Specification<Cinema> findByCriteria(CinemaCriteria criteria) {
-        Specification<Cinema> spec = Specification.where(notDeleted());
+        Specification<Cinema> spec = Specification.where(null);
         if (criteria != null && StringUtils.hasText(criteria.getName())) {
             spec = spec.and(hasName(criteria.getName()));
         }

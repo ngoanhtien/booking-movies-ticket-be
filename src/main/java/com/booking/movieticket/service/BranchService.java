@@ -3,7 +3,6 @@ package com.booking.movieticket.service;
 import com.booking.movieticket.dto.criteria.BranchCriteria;
 import com.booking.movieticket.dto.request.admin.create.BranchForCreateRequest;
 import com.booking.movieticket.dto.request.admin.update.BranchForUpdateRequest;
-import com.booking.movieticket.dto.response.admin.BranchLocationDTO;
 import com.booking.movieticket.dto.response.admin.BranchResponse;
 import com.booking.movieticket.dto.response.admin.create.BranchCreatedResponse;
 import org.springframework.data.domain.Page;
@@ -18,7 +17,7 @@ public interface BranchService {
 
     BranchResponse getBranchById(Long id);
 
-    Page<BranchResponse> getAllBranchByCinemaId(BranchCriteria branchCriteria, Pageable pageable);
+    Page<BranchResponse> getAllBranch(BranchCriteria branchCriteria, Pageable pageable);
 
     BranchCreatedResponse createBranch(BranchForCreateRequest branchRequest, MultipartFile imageUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
 
@@ -27,8 +26,4 @@ public interface BranchService {
     void activateBranch(Long id);
 
     void deactivateBranch(Long id);
-
-    List<BranchLocationDTO> getBranches();
-
-    List<BranchLocationDTO> getBranchesByCinemaId(Long cinemaId);
 }

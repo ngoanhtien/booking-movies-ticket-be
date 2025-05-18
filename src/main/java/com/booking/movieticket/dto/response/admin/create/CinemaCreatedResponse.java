@@ -13,4 +13,5 @@ public class CinemaCreatedResponse {
     private String name;
     private String hotline;
     private String description;
+    private String address;
 }

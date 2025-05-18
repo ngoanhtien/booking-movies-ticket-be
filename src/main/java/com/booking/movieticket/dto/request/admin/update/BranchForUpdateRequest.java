@@ -20,8 +20,6 @@ public class BranchForUpdateRequest {
     @Size(min = 2, max = 100, message = "Branch name must be between 2 and 100 characters.")
     private String name;
 
-    private String imageUrl;
-
     @NotBlank(message = "Branch address must not be blank.")
     @Size(max = 500, message = "Address cannot exceed 500 characters.")
     private String address;

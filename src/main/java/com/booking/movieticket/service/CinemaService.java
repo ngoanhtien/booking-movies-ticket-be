@@ -12,6 +12,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 public interface CinemaService {
 
     CinemaResponse getCinemaById(Long id);
@@ -25,4 +27,6 @@ public interface CinemaService {
     void activateCinema(Long id);
 
     void deactivateCinema(Long id);
+
+    List<String> getAllActiveCinemaName();
 }

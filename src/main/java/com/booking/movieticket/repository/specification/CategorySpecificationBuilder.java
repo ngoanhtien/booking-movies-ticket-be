@@ -7,7 +7,7 @@ import org.springframework.util.StringUtils;
 
 public class CategorySpecificationBuilder {
     public static Specification<Category> findByCriteria(CategoryCriteria criteria) {
-        Specification<Category> spec = Specification.where(notDeleted());
+        Specification<Category> spec = Specification.where(null);
         if (criteria != null && StringUtils.hasText(criteria.getName())) {
             spec = spec.and(hasName(criteria.getName()));
         }

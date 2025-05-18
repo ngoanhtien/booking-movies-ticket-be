@@ -7,7 +7,7 @@ import org.springframework.util.StringUtils;
 
 public class UserSpecificationBuilder {
     public static Specification<User> findByCriteria(UserCriteria criteria) {
-        Specification<User> spec = Specification.where(notDeleted());
+        Specification<User> spec = Specification.where(null);
         if (criteria != null && StringUtils.hasText(criteria.getName())) {
             spec = spec.and(hasUserName(criteria.getName()));
         }

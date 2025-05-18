@@ -33,6 +33,9 @@ public enum ErrorCode {
     SEAT_ALREADY_BOOKED(1205, "Seat already booked or not available", HttpStatus.CONFLICT),
     USER_ALREADY_REVIEWED_MOVIE(1206, "User has already reviewed this movie", HttpStatus.CONFLICT),
     USER_NOT_ELIGIBLE_TO_REVIEW(1207, "User is not eligible to review this movie", HttpStatus.FORBIDDEN),
+    ROOM_NOT_FOUND(1208, "Room not found", HttpStatus.NOT_FOUND),
+    ROOM_IS_UNASSIGNED(1209, "Room can not be status updated . Only accept AVAILABLE and MAINTENANCE status.", HttpStatus.NOT_FOUND),
+    ROOM_IS_NOT_UNASSIGNED(1210, "Room can not be removed. Only accept delete for UNASSIGNED status.", HttpStatus.NOT_FOUND),
 
     // Transaction Errors (1300-1399)
     BILL_NOT_FOUND(1300, "Bill not found", HttpStatus.NOT_FOUND),

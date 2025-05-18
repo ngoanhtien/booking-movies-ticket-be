@@ -27,6 +27,4 @@ public class UserForUpdateRequest {
     private String signupDevice;
 
     private MembershipLevel membershipLevel;
-
-    private Long roleId;
 }

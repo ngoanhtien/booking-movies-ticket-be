@@ -1,13 +1,11 @@
 package com.booking.movieticket.controller;
 
 import com.booking.movieticket.dto.criteria.CinemaCriteria;
-import com.booking.movieticket.dto.request.admin.update.CinemaForUpdateRequest;
 import com.booking.movieticket.dto.request.admin.create.CinemaForCreateRequest;
+import com.booking.movieticket.dto.request.admin.update.CinemaForUpdateRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
-import com.booking.movieticket.dto.response.admin.BranchLocationDTO;
 import com.booking.movieticket.dto.response.admin.CinemaResponse;
 import com.booking.movieticket.dto.response.admin.create.CinemaCreatedResponse;
-import com.booking.movieticket.entity.Cinema;
 import com.booking.movieticket.service.BranchService;
 import com.booking.movieticket.service.CinemaService;
 import jakarta.validation.Valid;
@@ -55,14 +53,14 @@ public class CinemaController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<CinemaCreatedResponse>> createCinema(@Valid @RequestPart CinemaForCreateRequest cinemaRequest,
+    public ResponseEntity<ApiResponse<CinemaCreatedResponse>> createCinema(@Valid @RequestPart("cinema") CinemaForCreateRequest cinemaRequest,
                                                                            @RequestPart(value = "logoUrl", required = false) MultipartFile logoUrl,
                                                                            BindingResult bindingResult) throws MethodArgumentNotValidException {
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Cinema created successfully.", cinemaService.createCinema(cinemaRequest, logoUrl, bindingResult)));
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<String>> updateCinema(@Valid @RequestPart CinemaForUpdateRequest cinemaRequest,
+    public ResponseEntity<ApiResponse<String>> updateCinema(@Valid @RequestPart("cinema") CinemaForUpdateRequest cinemaRequest,
                                                             @RequestPart(value = "logoUrl", required = false) MultipartFile logoUrl,
                                                             BindingResult bindingResult) throws MethodArgumentNotValidException {
         cinemaService.updateCinema(cinemaRequest, logoUrl, bindingResult);
@@ -84,15 +82,10 @@ public class CinemaController {
                 .body(new ApiResponse<>("Cinema deactivated successfully."));
     }
 
-    @GetMapping("/branch/locations")
-    public ResponseEntity<ApiResponse<?>> getBranchLocations() {
-        List<BranchLocationDTO> branches = branchService.getBranches();
-        return ResponseEntity.ok(new ApiResponse<>("Successfully retrieved branches for cinema", branches));
-    }
-
-    @GetMapping("/branch/location/{id}")
-    public ResponseEntity<ApiResponse<?>> getBranchLocationsByCinemaId(@PathVariable("id") Long cinemaId) {
-        List<BranchLocationDTO> branches = branchService.getBranchesByCinemaId(cinemaId);
-        return ResponseEntity.ok(new ApiResponse<>("Successfully retrieved branches for cinema", branches));
+    @GetMapping("/name")
+    public ResponseEntity<ApiResponse<List<String>>> getAllActiveCinemaName() {
+        List<String> names = cinemaService.getAllActiveCinemaName();
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ApiResponse<>("List cinema name fetched successfully.", names));
     }
 }
