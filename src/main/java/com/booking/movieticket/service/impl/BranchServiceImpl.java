@@ -115,6 +115,11 @@ public class BranchServiceImpl implements BranchService {
         updateBranchStatus(id, true);
     }
 
+    @Override
+    public List<String> getAllActiveBranchByCinemaId(Long cinemaId) {
+        return branchRepository.findActiveBranchNames(cinemaId);
+    }
+
     private void validateImages(MultipartFile imageUrl, BindingResult bindingResult) {
         if (imageUrl == null || imageUrl.isEmpty()) {
             bindingResult.rejectValue("imageUrl", "branch.imageUrl.required", "Branch image is required");

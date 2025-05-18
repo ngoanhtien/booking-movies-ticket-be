@@ -26,4 +26,6 @@ public interface BranchService {
     void activateBranch(Long id);
 
     void deactivateBranch(Long id);
+
+    List<String> getAllActiveBranchByCinemaId(Long cinemaId);
 }

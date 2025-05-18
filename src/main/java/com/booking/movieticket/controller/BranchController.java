@@ -25,6 +25,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/branch")
 @RequiredArgsConstructor
@@ -79,4 +81,9 @@ public class BranchController {
                 .body(new ApiResponse<>("Branch deactivated successfully."));
     }
 
+    @GetMapping("/name/{cinemaId}")
+    public ResponseEntity<ApiResponse<List<String>>> getAllActiveBranchByCinemaId(@PathVariable("cinemaId") Long cinemaId) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ApiResponse<>("Branches fetched successfully.", branchService.getAllActiveBranchByCinemaId(cinemaId)));
+    }
 }
