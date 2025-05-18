@@ -53,7 +53,7 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public Page<RoomDetailResponse> getAllRoomByBranchId(RoomCriteria roomCriteria, Pageable pageable) {
+    public Page<RoomDetailResponse> getAllRoom(RoomCriteria roomCriteria, Pageable pageable) {
         Page<Room> rooms = roomRepository.findAll(RoomSpecificationBuilder.findByCriteria(roomCriteria), pageable);
         return rooms.map(room -> {
             if (room.getRoomStatus() != RoomStatus.UNASSIGNED) {
@@ -95,10 +95,10 @@ public class RoomServiceImpl implements RoomService {
             }
         }
 
-        int colScreenLabelCount = 0;
-
+        int colScreenLabelCount;
         Boolean skipNextSeat = false;
         for (int row = 0; row < room.getSeatRowNumbers(); row++) {
+            colScreenLabelCount = 0;
             for (int col = 0; col < room.getSeatColumnNumbers(); col++) {
                 if (skipNextSeat) {
                     skipNextSeat = false;
@@ -108,29 +108,30 @@ public class RoomServiceImpl implements RoomService {
                 seat.setRowName(generateRowName(row));
                 seat.setColumnName(String.valueOf(col + 1));
                 seat.setRowScreenLabel(generateRowName(row));
-                String key = row + "-" + col;
+                String colKey = String.valueOf(col + 1);
+                String key = generateRowName(row) + "-" + colKey ;
                 if (customSeatsMap.containsKey(key)) {
                     CustomSeatDTO customSeat = customSeatsMap.get(key);
                     seat.setTypeSeat(customSeat.getTypeSeat());
-
                 } else {
                     seat.setTypeSeat(TypeSeat.NORMAL);
                 }
                 if (seat.getTypeSeat() == TypeSeat.HIDDEN) {
                     seat.setColumnScreenLabel("9999");
                 } else if (seat.getTypeSeat() == TypeSeat.DOUBLE) {
-                    colScreenLabelCount += 2;
-                    seat.setColumnScreenLabel(String.valueOf(colScreenLabelCount));
+                    seat.setColumnScreenLabel(String.valueOf(++colScreenLabelCount));
                     if (col + 1 < room.getSeatColumnNumbers()) {
                         Seat nextSeat = new Seat();
                         nextSeat.setRowName(generateRowName(row));
                         nextSeat.setColumnName(String.valueOf(col + 2));
                         nextSeat.setRowScreenLabel(generateRowName(row));
                         nextSeat.setTypeSeat(TypeSeat.DOUBLE);
-                        nextSeat.setColumnScreenLabel("9999");
+                        nextSeat.setColumnScreenLabel(String.valueOf(++colScreenLabelCount));
                         nextSeat.setRoom(room);
                         seats.add(nextSeat);
                         skipNextSeat = true;
+                    } else {
+                        seat.setTypeSeat(TypeSeat.NORMAL);
                     }
                 } else {
                     seat.setColumnScreenLabel(String.valueOf(++colScreenLabelCount));
@@ -155,7 +156,6 @@ public class RoomServiceImpl implements RoomService {
     public void createCompletedRoom(RoomHasSeatsRequest roomRequest) {
         Room room = roomMapper.convertCompletedRequestToRoom(roomRequest);
         room.setIsDeleted(false);
-        room.setRoomStatus(RoomStatus.AVAILABLE);
         if (!room.getSeats().isEmpty()) {
             seatRepository.deleteAllByRoomId(room.getId());
             room.getSeats().clear();
@@ -164,17 +164,17 @@ public class RoomServiceImpl implements RoomService {
         List<Seat> seats = new ArrayList<>();
 
         Map<String, CustomSeatDTO> customSeatsMap = new HashMap<>();
-        if (roomRequest.getGenerateSeatsRequest().getCustomSeats() != null) {
-            for (CustomSeatDTO customSeat : roomRequest.getGenerateSeatsRequest().getCustomSeats()) {
+        if (roomRequest.getGenerateSeatsCompletedRequest().getCustomSeats() != null) {
+            for (CustomSeatDTO customSeat : roomRequest.getGenerateSeatsCompletedRequest().getCustomSeats()) {
                 String key = customSeat.getRow() + "-" + customSeat.getColumn();
                 customSeatsMap.put(key, customSeat);
             }
         }
 
-        int colScreenLabelCount = 0;
-
+        int colScreenLabelCount;
         Boolean skipNextSeat = false;
         for (int row = 0; row < room.getSeatRowNumbers(); row++) {
+            colScreenLabelCount = 0;
             for (int col = 0; col < room.getSeatColumnNumbers(); col++) {
                 if (skipNextSeat) {
                     skipNextSeat = false;
@@ -184,29 +184,30 @@ public class RoomServiceImpl implements RoomService {
                 seat.setRowName(generateRowName(row));
                 seat.setColumnName(String.valueOf(col + 1));
                 seat.setRowScreenLabel(generateRowName(row));
-                String key = row + "-" + col;
+                String colKey = String.valueOf(col + 1);
+                String key = generateRowName(row) + "-" + colKey ;
                 if (customSeatsMap.containsKey(key)) {
                     CustomSeatDTO customSeat = customSeatsMap.get(key);
                     seat.setTypeSeat(customSeat.getTypeSeat());
-
                 } else {
                     seat.setTypeSeat(TypeSeat.NORMAL);
                 }
                 if (seat.getTypeSeat() == TypeSeat.HIDDEN) {
                     seat.setColumnScreenLabel("9999");
                 } else if (seat.getTypeSeat() == TypeSeat.DOUBLE) {
-                    colScreenLabelCount += 2;
-                    seat.setColumnScreenLabel(String.valueOf(colScreenLabelCount));
+                    seat.setColumnScreenLabel(String.valueOf(++colScreenLabelCount));
                     if (col + 1 < room.getSeatColumnNumbers()) {
                         Seat nextSeat = new Seat();
                         nextSeat.setRowName(generateRowName(row));
                         nextSeat.setColumnName(String.valueOf(col + 2));
                         nextSeat.setRowScreenLabel(generateRowName(row));
                         nextSeat.setTypeSeat(TypeSeat.DOUBLE);
-                        nextSeat.setColumnScreenLabel("9999");
+                        nextSeat.setColumnScreenLabel(String.valueOf(++colScreenLabelCount));
                         nextSeat.setRoom(room);
                         seats.add(nextSeat);
                         skipNextSeat = true;
+                    } else {
+                        seat.setTypeSeat(TypeSeat.NORMAL);
                     }
                 } else {
                     seat.setColumnScreenLabel(String.valueOf(++colScreenLabelCount));
@@ -248,6 +249,8 @@ public class RoomServiceImpl implements RoomService {
         Room room = roomRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.ROOM_NOT_FOUND));
         if (room.getRoomStatus() == RoomStatus.UNASSIGNED) {
             roomRepository.delete(room);
+        } else {
+            throw new AppException(ErrorCode.ROOM_IS_NOT_UNASSIGNED);
         }
     }
 
@@ -259,6 +262,9 @@ public class RoomServiceImpl implements RoomService {
     private void updateRoomStatus(Long id, RoomStatus roomStatus) {
         if (id == null) {
             throw new AppException(ErrorCode.ROOM_NOT_FOUND);
+        }
+        if (roomStatus == RoomStatus.UNASSIGNED) {
+            throw new AppException(ErrorCode.ROOM_IS_UNASSIGNED);
         }
         Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ROOM_NOT_FOUND));

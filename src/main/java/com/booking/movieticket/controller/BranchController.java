@@ -39,10 +39,10 @@ public class BranchController {
     BranchService branchService;
 
     @GetMapping("")
-    public ResponseEntity<ApiResponse<Page<BranchResponse>>> getAllBranchByCinemaId(BranchCriteria branchCriteria,
+    public ResponseEntity<ApiResponse<Page<BranchResponse>>> getAllBranch(BranchCriteria branchCriteria,
                                                                                     @PageableDefault(size = 20, sort = "cinemaId", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new ApiResponse<>("Branches fetched successfully.", branchService.getAllBranchByCinemaId(branchCriteria, pageable)));
+                .body(new ApiResponse<>("Branches fetched successfully.", branchService.getAllBranch(branchCriteria, pageable)));
     }
 
     @GetMapping("/{id}")

@@ -16,7 +16,7 @@ public interface RoomService {
 
     RoomDetailResponse getRoomById(Long id);
 
-    Page<RoomDetailResponse> getAllRoomByBranchId(RoomCriteria roomCriteria, Pageable pageable);
+    Page<RoomDetailResponse> getAllRoom(RoomCriteria roomCriteria, Pageable pageable);
 
     RoomNotCompletedCreatedResponse createNotCompletedRoom(RoomInformationRequest roomRequest);
 

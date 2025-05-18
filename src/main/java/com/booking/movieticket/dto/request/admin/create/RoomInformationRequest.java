@@ -24,9 +24,6 @@ public class RoomInformationRequest {
     @NotNull(message = "Room type must not be null.")
     private RoomType roomType;
 
-    @NotNull(message = "Room status must not be null.")
-    private RoomStatus roomStatus;
-
     private Integer seatRowNumbers;
     private Integer seatColumnNumbers;
     private Integer aislePosition;

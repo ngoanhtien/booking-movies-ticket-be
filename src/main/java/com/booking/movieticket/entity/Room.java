@@ -63,7 +63,7 @@ public class Room extends BaseEntity {
     @JoinColumn(name = "branch_id", referencedColumnName = "branch_id")
     private Branch branch;
 
-    @OneToMany(mappedBy = "room")
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)
     private Set<Seat> seats = new HashSet<>();
 
     @OneToMany(mappedBy = "room")

@@ -8,8 +8,10 @@ import com.booking.movieticket.entity.enums.RoomType;
 import com.booking.movieticket.entity.enums.ScreenSize;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import lombok.Getter;
 import lombok.Setter;
 
+@Getter
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(value = RoomInformationResponse.class, name = "information"), @JsonSubTypes.Type(value = RoomHasSeatsResponse.class, name = "hasSeats")})
@@ -25,7 +27,6 @@ public class RoomDetailResponse extends BaseResponse {
     private Integer aislePosition;
     private Integer aisleWidth;
     private Integer aisleHeight;
-    private Integer doubleSeatRowNumbers;
     private Long branchId;
     private String branchName;
 }
