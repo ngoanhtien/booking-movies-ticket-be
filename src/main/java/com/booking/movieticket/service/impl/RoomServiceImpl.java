@@ -8,7 +8,6 @@ import com.booking.movieticket.dto.request.admin.create.RoomInformationRequest;
 import com.booking.movieticket.dto.request.admin.update.RoomForUpdateRequest;
 import com.booking.movieticket.dto.response.admin.create.RoomDetailResponse;
 import com.booking.movieticket.dto.response.admin.create.RoomNotCompletedCreatedResponse;
-import com.booking.movieticket.entity.Category;
 import com.booking.movieticket.entity.Room;
 import com.booking.movieticket.entity.Seat;
 import com.booking.movieticket.entity.enums.RoomStatus;
@@ -250,6 +249,11 @@ public class RoomServiceImpl implements RoomService {
         if (room.getRoomStatus() == RoomStatus.UNASSIGNED) {
             roomRepository.delete(room);
         }
+    }
+
+    @Override
+    public List<String> getAllActiveRoomByCinemaId(Long cinemaId) {
+        return roomRepository.findActiveRoomNames(cinemaId);
     }
 
     private void updateRoomStatus(Long id, RoomStatus roomStatus) {

@@ -10,6 +10,8 @@ import com.booking.movieticket.dto.response.admin.create.RoomNotCompletedCreated
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 public interface RoomService {
 
     RoomDetailResponse getRoomById(Long id);
@@ -29,4 +31,6 @@ public interface RoomService {
     void deactivateRoom(Long id);
 
     void removeRoomHasNoSeats(Long id);
+
+    List<String> getAllActiveRoomByCinemaId(Long cinemaId);
 }

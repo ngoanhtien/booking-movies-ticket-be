@@ -24,6 +24,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/room")
 @RequiredArgsConstructor
@@ -91,5 +93,11 @@ public class RoomController {
         roomService.removeRoomHasNoSeats(id);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ApiResponse<>("Room removed successfully."));
+    }
+
+    @GetMapping("/name/{branchId}")
+    public ResponseEntity<ApiResponse<List<String>>> getAllActiveRoomByCinemaId(@PathVariable("branchId") Long branchId) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ApiResponse<>("Branches fetched successfully.", roomService.getAllActiveRoomByCinemaId(branchId)));
     }
 }
