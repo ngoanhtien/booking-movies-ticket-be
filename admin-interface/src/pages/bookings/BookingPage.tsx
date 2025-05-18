@@ -47,11 +47,39 @@ const BookingPage: React.FC<BookingPageProps> = ({ directBooking = false, direct
     // Get movie name if movieId exists
     if (movieId) {
       fetchMovieDetails();
+      
+      // Nếu có showtimeId, điều hướng trực tiếp đến trang chọn ghế
+      if (selectedShowtimeId) {
+        navigate(`/bookings/seat-selection/${selectedShowtimeId}`, {
+          state: {
+            branchId: branchId,
+            showtimeId: selectedShowtimeId,
+            roomType: roomType || '2D',
+            selectedDate: selectedDate,
+            movieId: movieId
+          },
+          replace: true // Thay thế lịch sử điều hướng để người dùng không bị quay lại trang trung gian khi nhấn nút Back
+        });
+        return;
+      }
     } else if (directSeatSelection && selectedShowtimeId) {
       // For direct seat selection, try to get movie info from the showtime ID
       fetchShowtimeDetails();
+      
+      // Điều hướng trực tiếp đến trang chọn ghế
+      navigate(`/bookings/seat-selection/${selectedShowtimeId}`, {
+        state: {
+          branchId: branchId,
+          showtimeId: selectedShowtimeId,
+          roomType: roomType || '2D',
+          selectedDate: selectedDate,
+          movieId: movieId
+        },
+        replace: true // Thay thế lịch sử điều hướng
+      });
+      return;
     }
-  }, [movieId, directSeatSelection, selectedShowtimeId]);
+  }, [movieId, directSeatSelection, selectedShowtimeId, navigate, branchId, roomType, selectedDate]);
   
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   

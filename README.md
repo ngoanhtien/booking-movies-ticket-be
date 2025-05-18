@@ -205,6 +205,7 @@ Frontend sẽ chạy tại địa chỉ: http://localhost:3000
 # Tạo lịch chiếu cho các phim đang hoạt động
 curl -X POST http://localhost:8080/api/v1/showtime/public/add-showtimes-for-active-movies
 ```
+Invoke-WebRequest -Method POST -Uri "http://localhost:8080/api/v1/showtime/public/add-showtimes-for-active-movies"
 
 ## API Documentation
 

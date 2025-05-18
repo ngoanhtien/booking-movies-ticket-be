@@ -69,6 +69,8 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/v1/showtime/*/*/detail").permitAll()
                         .requestMatchers("/api/v1/showtime/public/**").permitAll()
                         .requestMatchers("/user/me").authenticated()
+                        .requestMatchers("/user/bookings").authenticated()
+                        .requestMatchers("/bookings/create").authenticated()
                         .requestMatchers("/user/**").hasRole("ADMIN")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/reports/**").hasRole("ADMIN")

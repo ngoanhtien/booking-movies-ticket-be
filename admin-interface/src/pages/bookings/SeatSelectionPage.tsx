@@ -75,6 +75,41 @@ const SeatSelectionPage: React.FC = () => {
   // Get authentication state
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
+  // Thêm hàm để lưu ghế đã đặt vào localStorage
+  const saveBookedSeats = (seatsToSave: string[]) => {
+    try {
+      // Lấy dữ liệu đã lưu trước đó (nếu có)
+      const savedBookingsString = localStorage.getItem('bookedSeats');
+      let savedBookings: Record<string, string[]> = {};
+      
+      if (savedBookingsString) {
+        savedBookings = JSON.parse(savedBookingsString);
+      }
+      
+      // Lưu thông tin ghế đã đặt theo showtimeId
+      savedBookings[showtimeId as string] = seatsToSave;
+      localStorage.setItem('bookedSeats', JSON.stringify(savedBookings));
+      
+      console.log(`Đã lưu ${seatsToSave.length} ghế cho showtime ${showtimeId}`);
+    } catch (err) {
+      console.error('Lỗi khi lưu thông tin ghế đã đặt:', err);
+    }
+  };
+  
+  // Thêm hàm để lấy ghế đã đặt từ localStorage
+  const getBookedSeats = (): string[] => {
+    try {
+      const savedBookingsString = localStorage.getItem('bookedSeats');
+      if (!savedBookingsString) return [];
+      
+      const savedBookings: Record<string, string[]> = JSON.parse(savedBookingsString);
+      return savedBookings[showtimeId as string] || [];
+    } catch (err) {
+      console.error('Lỗi khi lấy thông tin ghế đã đặt:', err);
+      return [];
+    }
+  };
+
   // Handle back button click
   const handleBack = () => {
     // Navigate back to the movie details page if we have a movieId
@@ -98,39 +133,85 @@ const SeatSelectionPage: React.FC = () => {
       try {
         setLoading(true);
         
-        // Fetch showtime info first
-        const showtimeResponse = await axiosInstance.get(`/api/v1/showtimes/${showtimeId}`);
-        const showtimeData = showtimeResponse.data?.result || showtimeResponse.data;
-        
-        if (showtimeData) {
+        // Sử dụng dữ liệu từ location.state thay vì gọi API bị lỗi
+        if (location.state) {
+          // Kiểm tra xem tất cả thuộc tính cần thiết có tồn tại không
+          if (!location.state.branchName || !location.state.movieName) {
+            console.warn("Missing required state properties. Using fallback values.");
+          }
+          
           setShowtimeInfo({
             scheduleId: parseInt(showtimeId),
-            roomId: showtimeData.roomId || 0,
-            roomName: showtimeData.roomName || "Phòng chiếu",
-            branchName: showtimeData.branchName || "Rạp chiếu",
-            movieName: showtimeData.movieName || "Phim",
-            scheduleTime: showtimeData.scheduleTime || "",
-            scheduleDate: showtimeData.scheduleDate || selectedDate || ""
+            roomId: location.state.roomId || 0,
+            roomName: location.state.roomName || "Phòng chiếu",
+            branchName: location.state.branchName || "Rạp chiếu",
+            movieName: location.state.movieName || "Phim",
+            scheduleTime: location.state.scheduleTime || "",
+            scheduleDate: location.state.selectedDate || selectedDate || ""
+          });
+          
+          console.log("Using showtime info from location state:", {
+            branchName: location.state.branchName,
+            movieName: location.state.movieName,
+            roomName: location.state.roomName,
+            scheduleTime: location.state.scheduleTime
+          });
+        } else {
+          console.warn("No location state available. Using default values.");
+          setShowtimeInfo({
+            scheduleId: parseInt(showtimeId),
+            roomId: 0,
+            roomName: "Phòng chiếu",
+            branchName: "Rạp chiếu",
+            movieName: "Phim",
+            scheduleTime: "",
+            scheduleDate: selectedDate || ""
           });
         }
         
+        // Lấy danh sách ghế đã đặt từ localStorage
+        const previouslyBookedSeats = getBookedSeats();
+        console.log(`Đã tìm thấy ${previouslyBookedSeats.length} ghế đã đặt trước đó cho showtime ${showtimeId}`);
+        
         // *** MOCK SEAT LAYOUT DATA WITH TYPES AND PRICES ***
-        // In a real scenario, this data would come from an API endpoint
+        // Hàm tạo số ngẫu nhiên giả định từ seed (showtimeId) để đảm bảo tính ổn định
+        const seededRandom = (min: number, max: number, seed: number, index: number) => {
+          const seedValue = seed * (index + 1);
+          // Tạo số ngẫu nhiên giả định từ seedValue
+          const x = Math.sin(seedValue) * 10000;
+          const random = x - Math.floor(x);
+          // Map to range
+          return min + random * (max - min);
+        };
+        
+        const showtimeIdNum = parseInt(showtimeId);
         const mockSeatsFromAPI: Seat[] = [];
         const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
         const seatsPerRow = 12;
         let idCounter = 1;
 
-        rows.forEach(row => {
+        // Danh sách ID ghế mới tạo để so sánh với ghế đã đặt trước đó
+        const newSeatIds: string[] = [];
+
+        rows.forEach((row, rowIndex) => {
           for (let i = 1; i <= seatsPerRow; i++) {
+            const seatIndex = (rowIndex * seatsPerRow) + i;
             let status = SeatStatus.Available;
             let type: Seat['type'] = 'REGULAR';
             let price = 70000; // Default price
 
-            // Randomly assign some booked seats
-            if (Math.random() < 0.2) status = SeatStatus.Booked;
-            // Randomly assign some unavailable seats (e.g., for lối đi, hỏng)
-            if (Math.random() < 0.05 && status === SeatStatus.Available) status = SeatStatus.Unavailable;
+            // Tạo ID ghế
+            const seatId = `seat-${row}${i}-${idCounter++}`;
+            newSeatIds.push(seatId);
+
+            // Xác định trạng thái ghế một cách ổn định dựa trên showtimeId và vị trí ghế
+            const randomValue1 = seededRandom(0, 1, showtimeIdNum, seatIndex);
+            const randomValue2 = seededRandom(0, 1, showtimeIdNum, seatIndex + 100);
+            
+            // Đảm bảo một số ghế đã được đặt trước
+            if (randomValue1 < 0.2) status = SeatStatus.Booked;
+            // Đảm bảo một số ghế không khả dụng (ví dụ: lối đi, ghế hỏng)
+            if (randomValue2 < 0.05 && status === SeatStatus.Available) status = SeatStatus.Unavailable;
 
             // Assign types and adjust prices based on type and row
             if (row === 'G' || row === 'H') {
@@ -149,9 +230,14 @@ const SeatSelectionPage: React.FC = () => {
                 status = SeatStatus.Unavailable;
                 type = 'AISLE'; // Custom type for aisle
             }
+            
+            // Nếu ghế này có trong danh sách đã đặt trước đó, cập nhật trạng thái
+            if (previouslyBookedSeats.includes(seatId)) {
+              status = SeatStatus.Booked;
+            }
 
             mockSeatsFromAPI.push({
-              id: `seat-${row}${i}-${idCounter++}`,
+              id: seatId,
               row,
               number: i,
               status,
@@ -160,6 +246,12 @@ const SeatSelectionPage: React.FC = () => {
             });
           }
         });
+
+        // Cập nhật danh sách ghế đã đặt để loại bỏ những ID không còn tồn tại
+        const validBookedSeats = previouslyBookedSeats.filter(id => newSeatIds.includes(id));
+        if (validBookedSeats.length !== previouslyBookedSeats.length) {
+          saveBookedSeats(validBookedSeats);
+        }
 
         // Organize seats by row
         const rowMap = new Map<string, Seat[]>();
@@ -261,6 +353,9 @@ const SeatSelectionPage: React.FC = () => {
       return "";
     }).filter(label => label !== "");
 
+    // Lưu ghế đã chọn vào localStorage để duy trì trạng thái
+    saveBookedSeats(selectedSeats);
+    
     // Here we would navigate to the payment page
     // For now, just show a success message
     toast.success('Đặt ghế thành công: ' + seatLabels.join(', '));

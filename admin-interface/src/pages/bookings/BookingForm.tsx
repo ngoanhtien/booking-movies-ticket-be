@@ -33,7 +33,8 @@ import {
   Seat,
   SeatStatus,
   FoodItem,
-  FoodSelection
+  FoodSelection,
+  BookingRequest
 } from '../../services/bookingService';
 import { useTheme } from '@mui/material/styles';
 import axiosInstance from '../../utils/axios';
@@ -46,6 +47,9 @@ import { BookingData, FoodItemInfo, MovieInfo, CinemaInfo, PaymentData } from '.
 // Thêm import cho WebSocket
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { toast as toastifyToast } from 'react-toastify';
+import jwtDecode from 'jwt-decode';
 
 // Định nghĩa interface cho WebSocket message
 interface SeatUpdateMessage {
@@ -220,6 +224,15 @@ const BookingSummaryBar = ({
   );
 };
 
+// Endpoints for booking operations
+const BOOKING_ENDPOINTS = {
+  CREATE: '/api/v1/payment/sepay-webhook',
+  CREATE_ALT: '/api/v1/payment/bookings/create',
+  SIMULATE_PAYMENT: '/api/v1/payment/simulate',
+  GET_DETAILS: '/api/v1/payment',
+  TEST: '/api/v1/payment/test-booking'
+};
+
 const BookingForm: React.FC<BookingFormProps> = ({ 
   movieId, 
   cinemaId, 
@@ -263,6 +276,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   // Thêm state quản lý modal QR
   const [showQrModal, setShowQrModal] = useState(false);
   const [bookingId, setBookingId] = useState<number | null>(null);
+  const [totalPriceForQr, setTotalPriceForQr] = useState<number>(0); // Added state for QR total price
 
   // Add new state variables to track selected data
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -271,175 +285,328 @@ const BookingForm: React.FC<BookingFormProps> = ({
   // Add a reference to store if we're in direct booking mode with showtimeId
   const isDirectSeatSelection = useRef(!!showtimeId);
 
-  const validationSchema = Yup.object().shape({
-    // Define Yup validation based on activeStep
-    showtimeId: activeStep === 0 ? Yup.string().required('Showtime is required') : Yup.string(),
-    seatIds: activeStep === 1 ? Yup.array().min(1, 'Please select at least one seat.').required('Please select at least one seat.') : Yup.array(),
-    foodItems: activeStep === 2 ? Yup.array().of(
-      Yup.object().shape({
-        itemId: Yup.string().required(),
-        quantity: Yup.number().min(1).required()
-      })
-    ) : Yup.array(),
-    paymentMethod: activeStep === 3 ? Yup.string().required('Payment method is required') : Yup.string(),
-  });
+  // Thêm state cho việc refresh seat layout
+  const [refreshSeatTrigger, setRefreshSeatTrigger] = useState<number>(0);
 
+  // Thêm hàm refresh seat layout
+  const refreshSeatLayout = useCallback(() => {
+    setRefreshSeatTrigger(prev => prev + 1);
+  }, []);
+
+  // Move formik initialization here before any useCallbacks that depend on it
   const formik = useFormik<{
     showtimeId: string;
-    seatIds: string[]; // Explicitly type seatIds
-    foodItems: FoodSelection[]; // Updated to FoodSelection[]
+    seatIds: string[];
+    foodItems: FoodSelection[];
     paymentMethod: string;
-  }> ({
+  }>({
     initialValues: {
-      showtimeId: '',
+      showtimeId: showtimeId || '',
       seatIds: [],
       foodItems: [],
       paymentMethod: 'QR_MOMO',
     },
-    validationSchema,
+    validationSchema: Yup.object().shape({
+      showtimeId: Yup.string().when((_, schema) => activeStep === 0 ? schema.required('Showtime is required') : schema),
+      seatIds: Yup.array().when((_, schema) => activeStep === 1 ? schema.min(1, 'Please select at least one seat.').required('Please select at least one seat.') : schema),
+      foodItems: Yup.array().when((_, schema) => activeStep === 2 ? schema.of(
+        Yup.object().shape({
+          itemId: Yup.string().required(),
+          quantity: Yup.number().min(1).required()
+        })
+      ) : schema),
+      paymentMethod: Yup.string().when((_, schema) => activeStep === 3 ? schema.required('Payment method is required') : schema),
+    }),
     onSubmit: async (values) => {
       try {
         setLoading(true);
         setError(null);
         setFriendlyError(null);
+        console.log("📊 SUBMIT DEBUG: Form submission started with values:", values);
+        setDebugResult("📊 SUBMIT DEBUG: Form submission started");
         
-        // Tìm thông tin showtime chi tiết
+        const showtimeDetails = getSelectedShowtimeDetails();
+        if (!showtimeDetails) {
+          console.error("📊 SUBMIT DEBUG: No showtime selected!");
+          throw new Error('No showtime selected. Please select a showtime and try again.');
+        }
+        
+        console.log("📊 SUBMIT DEBUG: Selected showtime details:", showtimeDetails);
+        setDebugResult(prev => prev + "\n- Selected showtime: " + 
+          JSON.stringify({
+            scheduleId: showtimeDetails.scheduleId,
+            roomId: showtimeDetails.roomId,
+            movie: currentMovieInfo.name,
+            time: showtimeDetails.scheduleTime
+          })
+        );
+        
+        // Force verify seat availability one more time before completing booking
         const selectedShowtime = getSelectedShowtimeDetails();
         if (!selectedShowtime) {
-          setError('Không tìm thấy thông tin suất chiếu.');
+          setError('Không tìm thấy thông tin suất chiếu đã chọn. Vui lòng chọn lại.');
+          toast.error('Không tìm thấy thông tin suất chiếu đã chọn. Vui lòng chọn lại.');
+          setLoading(false);
           return;
         }
         
-        // Tạo booking request
-        const bookingRequest = {
-          scheduleId: selectedShowtime.scheduleId,
-          roomId: selectedShowtime.roomId,
+        console.log("Verifying seat availability one last time before booking...");
+        try {
+          // Request fresh seat data with explicit cache busting
+          const timestamp = Date.now();
+          const response = await bookingService.getSeatLayout(
+            selectedShowtime.scheduleId, 
+            selectedShowtime.roomId
+          );
+          
+          if (response && response.data) {
+            // Check if any seats we're trying to book are already booked
+            const bookedSeatIds: string[] = []; // Add explicit type
+            for (const seatId of values.seatIds) {
+              const seat = response.data?.find((s: Seat) => s.id === seatId);
+              if (seat && seat.status === SeatStatus.Booked) {
+                bookedSeatIds.push(seatId);
+                console.log(`Seat ${seatId} status=${seat.status} - already booked!`);
+              } else if (seat) {
+                console.log(`Seat ${seatId} status=${seat.status} - available for booking`);
+              } else {
+                console.log(`Warning: Seat ${seatId} not found in latest data`);
+              }
+            }
+            
+            if (bookedSeatIds.length > 0) {
+              const message = `${bookedSeatIds.length} ghế bạn đã chọn vừa được người khác đặt. Vui lòng chọn ghế khác.`;
+              setError(message);
+              toast.error(message);
+              
+              // Update formik values to remove booked seats
+              const updatedSeatIds = values.seatIds.filter(id => !bookedSeatIds.includes(id));
+              formik.setFieldValue('seatIds', updatedSeatIds);
+              
+              // Refresh seat layout
+              setActiveStep(1); // Go back to seat selection
+              refreshSeatLayout();
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (error) {
+          // If verification fails, proceed with booking but log the error
+          console.error("Error verifying seat availability:", error);
+          // Don't block booking process on verification error
+        }
+        
+        // Create the booking request object
+        const bookingRequest: BookingRequest = {
+          scheduleId: showtimeDetails.scheduleId,
+          roomId: showtimeDetails.roomId,
           seatIds: values.seatIds,
           foodItems: values.foodItems.map(item => ({
-            foodId: parseInt(item.itemId),
+            foodId: parseInt(item.itemId), 
             quantity: item.quantity
           })),
           paymentMethod: values.paymentMethod
         };
         
-        console.log("Đang gửi yêu cầu đặt vé:", bookingRequest);
+        console.log("📊 SUBMIT DEBUG: Creating booking with request:", bookingRequest);
+        setDebugResult(prev => prev + "\n- Booking request: " + JSON.stringify(bookingRequest));
         
-        let bookingData: BookingData;
-        
+        // Use the bookingService to create the booking
         try {
-          // Cập nhật endpoint với tiền tố /api/v1/
-          const response = await axiosInstance.post<BookingResponse>('/api/v1/bookings/create', bookingRequest);
-          const data = response.data?.result || response.data?.data;
-          if (!data) {
-            throw new Error('Invalid booking response format');
-          }
-          bookingData = data;
-        } catch (error: any) {
-          console.error("Lỗi khi gọi API đặt vé:", error);
+          console.log("📊 SUBMIT DEBUG: Calling bookingService.createBooking with endpoint:", BOOKING_ENDPOINTS?.CREATE || "Unknown endpoint");
+          setDebugResult(prev => prev + "\n- Calling API endpoint: " + (BOOKING_ENDPOINTS?.CREATE || "Unknown endpoint"));
           
-          try {
-            // Thử endpoint thay thế với tiền tố /api/v1/
-            const altResponse = await axiosInstance.post<BookingResponse>(
-              '/api/v1/payment/sepay-webhook',
-              bookingRequest
-            );
-            const data = altResponse.data?.result || altResponse.data?.data;
-            if (!data) {
-              throw new Error('Invalid booking response format from alternative endpoint');
-            }
-            bookingData = data;
-          } catch (altError: any) {
-            console.error("Tất cả API đặt vé đều lỗi. Tạo mock response để tiếp tục quy trình:", altError);
+          const bookingResponse = await bookingService.createBooking(bookingRequest);
+          
+          console.log("📊 SUBMIT DEBUG: Booking API response:", bookingResponse);
+          setDebugResult(prev => prev + "\n- Booking API response received: " + JSON.stringify(bookingResponse).substring(0, 200) + "...");
+          
+          // Extract booking details from the response
+          const bookingCreationResult = bookingResponse?.result || bookingResponse;
+
+          if (!bookingCreationResult || !bookingCreationResult.bookingId) {
+            console.error("📊 SUBMIT DEBUG: Failed to create booking - missing bookingId", bookingResponse);
+            setDebugResult(prev => prev + "\n- ERROR: Failed to create booking - missing bookingId");
+            throw new Error('Failed to create booking or bookingId is missing from response.');
+          }
+          
+          const actualBookingId = bookingCreationResult.bookingId;
+          const actualTotalAmount = bookingCreationResult.totalAmount || calculateTotalPrice(); 
+
+          console.log(`📊 SUBMIT DEBUG: Booking created successfully. Booking ID: ${actualBookingId}, Total Amount: ${actualTotalAmount}`);
+          setDebugResult(prev => prev + `\n- SUCCESS: Booking created with ID: ${actualBookingId}`);
+          
+          setBookingId(actualBookingId);
+          setTotalPriceForQr(actualTotalAmount);
+
+          if (values.paymentMethod.startsWith('QR_')) {
+            console.log("📊 SUBMIT DEBUG: QR_PAYMENT selected, showing QR modal");
+            setDebugResult(prev => prev + "\n- QR payment selected, showing modal");
+            setShowQrModal(true);
+          } else {
+            // For non-QR payment methods
+            console.log("📊 SUBMIT DEBUG: Non-QR payment method selected:", values.paymentMethod);
+            setDebugResult(prev => prev + "\n- Non-QR payment selected: " + values.paymentMethod);
             
-            // Tạo mock booking data để người dùng có thể tiếp tục
-            bookingData = {
-              bookingId: Math.floor(Math.random() * 10000) + 1,
-              status: "PENDING",
-              movie: {
-                movieId: selectedShowtime.movieId || 1,
-                movieName: selectedShowtime.movieName || currentMovieInfo.name || "Selected Movie",
-                date: new Date().toISOString().split('T')[0],
-                startTime: selectedShowtime.time || "Unknown",
-                endTime: "Unknown",
-                time: selectedShowtime.time || "Unknown"
-              },
-              cinema: {
-                cinemaName: selectedShowtime.branchName || "Cinema",
-                roomName: selectedShowtime.roomName || "Unknown Room",
-                address: "Unknown Address"
-              },
-              seats: values.seatIds,
-              totalAmount: calculateTotalPrice(),
-              foodItems: getSelectedFoodItemsDetails()
-            };
+            try {
+              // Gọi API simulation payment thay vì tạo mock data
+              console.log("📊 SUBMIT DEBUG: Simulating payment for booking ID:", actualBookingId);
+              setDebugResult(prev => prev + "\n- Simulating payment for booking ID: " + actualBookingId);
+              
+              const paymentData = {
+                bookingId: actualBookingId,
+                paymentMethod: values.paymentMethod,
+                amount: actualTotalAmount,
+                status: 'SUCCESS'
+              };
+              
+              console.log("📊 SUBMIT DEBUG: Sending payment data to API:", paymentData);
+              setDebugResult(prev => prev + "\n- Payment data: " + JSON.stringify(paymentData));
+              console.log("📊 SUBMIT DEBUG: Calling payment endpoint:", BOOKING_ENDPOINTS?.SIMULATE_PAYMENT || "Unknown endpoint");
+              setDebugResult(prev => prev + "\n- Calling payment API: " + (BOOKING_ENDPOINTS?.SIMULATE_PAYMENT || "Unknown endpoint"));
+              
+              // Gọi API simulation
+              const paymentResponse = await bookingService.simulatePayment(paymentData);
+              console.log("📊 SUBMIT DEBUG: Payment simulation response:", paymentResponse);
+              setDebugResult(prev => prev + "\n- Payment response: " + JSON.stringify(paymentResponse).substring(0, 200));
+              
+              // Xác nhận thanh toán thành công
+              const paymentResult = paymentResponse?.result || paymentResponse;
+              if (!paymentResult) {
+                console.error("📊 SUBMIT DEBUG: Payment simulation failed - empty response");
+                setDebugResult(prev => prev + "\n- ERROR: Payment simulation failed - empty response");
+                throw new Error('Payment simulation failed or returned empty response');
+              }
+              
+              console.log("📊 SUBMIT DEBUG: Payment successful, creating booking details");
+              setDebugResult(prev => prev + "\n- Payment successful, finalizing booking");
+              
+              // Tạo booking details từ kết quả API thực tế
+              const finalBookingDetails: FinalBookingDetails = {
+                bookingId: actualBookingId,
+                status: bookingCreationResult.status || "CONFIRMED",
+                bookingCode: bookingCreationResult.bookingCode || `B${actualBookingId}`,
+                movie: bookingCreationResult.movie || { 
+                  movieId: showtimeDetails.movieId || currentMovieInfo.id || 0,
+                  movieName: showtimeDetails.movieName || currentMovieInfo.name || "Selected Movie",
+                  date: showtimeDetails.date || new Date().toISOString().split('T')[0],
+                  startTime: showtimeDetails.scheduleTime || "Unknown",
+                  endTime: "Unknown",
+                  time: showtimeDetails.scheduleTime || "Unknown"
+                },
+                cinema: bookingCreationResult.cinema || { 
+                  cinemaName: showtimeDetails.branchName || "Cinema",
+                  roomName: showtimeDetails.roomName || "Unknown Room",
+                  address: showtimeDetails.branchAddress || "Unknown Address"
+                },
+                seats: bookingCreationResult.seats || values.seatIds,
+                totalAmount: actualTotalAmount,
+                paymentStatus: "PAID", 
+                paymentId: paymentResult.transactionId || Date.now(), 
+                foodItems: bookingCreationResult.foodItems || getSelectedFoodItemsDetails()
+              };
+              
+              console.log("📊 SUBMIT DEBUG: Final booking details:", finalBookingDetails);
+              setDebugResult(prev => prev + "\n- SUCCESS: Booking finalized with details");
+              
+              // Update the UI to show booking completion
+              setBookingDetails(finalBookingDetails);
+              setBookingCompleted(true);
+              setSuccessMessage('Đặt vé thành công!');
+              
+              // Clear any cached seat data
+              console.log(`📊 SUBMIT DEBUG: Booking successful! Clearing all cached seat data.`);
+              setDebugResult(prev => prev + "\n- Clearing cached seat data");
+              sessionStorage.removeItem(`seatLayout-${showtimeDetails.scheduleId}-${showtimeDetails.roomId}`);
+            } catch (error) {
+              console.error("📊 SUBMIT DEBUG: Payment simulation error:", error);
+              setDebugResult(prev => prev + "\n- ERROR in payment: " + (error instanceof Error ? error.message : 'Unknown error'));
+              setError(`Lỗi xử lý thanh toán: ${error instanceof Error ? error.message : 'Không xác định'}`);
+              toast.error('Không thể hoàn tất thanh toán. Vui lòng thử lại sau.');
+            } finally {
+              setLoading(false);
+            }
           }
-        }
-        
-        // Process payment (có thể bị lỗi tương tự)
-        let paymentResult: PaymentData;
-        
-        try {
-          const paymentData = {
-            bookingId: bookingData.bookingId,
-            paymentMethod: values.paymentMethod,
-            amount: calculateTotalPrice(),
-            status: 'SUCCESS'
-          };
-
-          const response = await axiosInstance.post<PaymentResponse>('/api/v1/payments/simulate', paymentData);
-          const data = response.data?.result || response.data?.data;
-          if (!data) {
-            throw new Error('Invalid payment response format');
-          }
-          paymentResult = data;
-        } catch (error) {
-          console.error("Lỗi khi xử lý thanh toán, tạo mock payment result:", error);
-          
-          // Tạo mock payment result
-          paymentResult = {
-            paymentId: Math.floor(Math.random() * 10000) + 1,
-            status: "SUCCESS",
-            amount: calculateTotalPrice()
-          };
-        }
-        
-        // Tạo final booking details
-        const finalBookingDetails: FinalBookingDetails = {
-          bookingId: bookingData.bookingId,
-          status: bookingData.status,
-          bookingCode: `B${bookingData.bookingId}`,
-          movie: bookingData.movie,
-          cinema: bookingData.cinema,
-          seats: bookingData.seats,
-          totalAmount: calculateTotalPrice(),
-          paymentStatus: paymentResult.status,
-          paymentId: paymentResult.paymentId,
-          foodItems: getSelectedFoodItemsDetails()
-        };
-        
-        console.log("Chi tiết đặt vé đã tạo:", JSON.stringify(finalBookingDetails));
-        
-        // Update state and show success message
-        setBookingDetails(finalBookingDetails);
-        setBookingCompleted(true);
-        setSuccessMessage('Đặt vé thành công!');
-
-        // Lưu bookingId để sử dụng trong QR modal
-        setBookingId(bookingData.bookingId);
-        
-        if (values.paymentMethod.startsWith('QR_')) {
-          // Hiển thị QR modal nếu chọn phương thức thanh toán QR
-          setShowQrModal(true);
+        } catch (err: any) {
+          console.error("📊 SUBMIT DEBUG: Form submission error:", err);
+          setDebugResult(prev => prev + "\n- CRITICAL ERROR: " + (err instanceof Error ? err.message : JSON.stringify(err)));
+          handleAPIError(err, 'xử lý đặt vé');
           setLoading(false);
         }
       } catch (err: any) {
-        console.error('Lỗi đặt vé:', err);
-        handleAPIError(err, 'đặt vé');
-      } finally {
+        console.error('Lỗi xử lý đặt vé:', err);
+        handleAPIError(err, 'xử lý đặt vé');
         setLoading(false);
       }
     },
   });
+
+  // Now keep all the useCallbacks that depend on formik
+  const calculateTotalPrice = useCallback(() => {
+    let total = 0;
+    // Calculate seat price
+    formik.values.seatIds.forEach(seatId => {
+      for (const row of seatLayout) {
+        const seat = row.find(s => s.id === seatId);
+        if (seat) {
+          total += seat.price;
+          break;
+        }
+      }
+    });
+    // Calculate food price
+    formik.values.foodItems.forEach(item => {
+      const foodInfo = availableFoodItems.find(fi => fi.id === item.itemId);
+      if (foodInfo) {
+        total += foodInfo.price * item.quantity;
+      }
+    });
+    return total;
+  }, [formik.values.seatIds, formik.values.foodItems, seatLayout, availableFoodItems]);
+
+  // Update getSelectedShowtimeDetails as useCallback with correct return type and properties
+  const getSelectedShowtimeDetails = useCallback(() => {
+    if (!formik.values.showtimeId) return null;
+    for (const branch of showtimeBranches) {
+      const foundShowtime = branch.showtimes.find(
+        st => `${st.scheduleId}-${st.roomId}` === formik.values.showtimeId || st.scheduleId === parseInt(formik.values.showtimeId, 10)
+      );
+      if (foundShowtime) {
+        return { 
+          ...foundShowtime, 
+          branchName: branch.branchName, 
+          branchAddress: branch.address, 
+          movieName: currentMovieInfo.name, // Add movieName from currentMovieInfo
+          movieId: currentMovieInfo.id, // Add movieId from currentMovieInfo
+          date: foundShowtime.scheduleDate, // Ensure date is correctly mapped if needed by this name
+          time: foundShowtime.scheduleTime, // Map scheduleTime to time property
+          startTime: foundShowtime.scheduleTime, // Map scheduleTime to startTime property
+          endTime: foundShowtime.scheduleTime // Map scheduleTime to endTime property
+        };
+      }
+    }
+    return null;
+  }, [formik.values.showtimeId, showtimeBranches, currentMovieInfo]);
+
+  const getSelectedFoodItemsDetails = useCallback((): FoodItemInfo[] => {
+    if (formik.values.foodItems.length === 0 || availableFoodItems.length === 0) return [];
+    return formik.values.foodItems
+      .map(selection => {
+        const itemDetails = availableFoodItems.find(food => food.id === selection.itemId);
+        if (itemDetails) {
+          return {
+            id: itemDetails.id,
+            name: itemDetails.name,
+            price: itemDetails.price,
+            quantity: selection.quantity,
+            subtotal: itemDetails.price * selection.quantity,
+            imageUrl: itemDetails.imageUrl
+          };
+        }
+        return null;
+      })
+      .filter(item => item !== null) as FoodItemInfo[];
+  }, [formik.values.foodItems, availableFoodItems]);
 
   const handleNext = () => {
     // Trigger validation for the current step before proceeding
@@ -458,6 +625,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
           formik.setFieldValue('showtimeId', selectedShowtime);
         }
         setActiveStep((prevActiveStep) => prevActiveStep + 1);
+        // Reset seat selections when moving to seat selection step
+        formik.setFieldValue('seatIds', []);
+        setSelectedSeats([]);
       } else {
         console.log("[DEBUG handleNext] Validation failed: No showtime selected");
         formik.setErrors({ showtimeId: t('booking.error.showtimeRequired', 'Please select a showtime') });
@@ -522,100 +692,59 @@ const BookingForm: React.FC<BookingFormProps> = ({
   }, [movieId]); // Bỏ cinemaId khỏi dependencies nếu getShowtimesByMovie không dùng nó
   // Nếu getShowtimesByMovieAndCinema được dùng dựa trên cinemaId, thì cinemaId cần ở lại dependencies.
 
+  // Replace mock seat layout with real API calls
   // Fetch seat layout when showtimeId changes and we are on the seat selection step
   useEffect(() => {
     const fetchSeatLayout = async () => {
       if (formik.values.showtimeId && activeStep === 1) {
         try {
           setLoading(true);
-          // Cần tìm đúng ShowtimeDetail từ showtimeBranches
-          let selectedShowtimeDetail: ShowtimeDetail | null = null;
-          let selectedBranchName: string | null = null; // Để lấy thông tin giá nếu cần
+          setError(null);
+          
+          // Parse the showtime ID to get scheduleId and roomId
+          let scheduleId: number;
+          let roomId: number;
+          
+          // Check if the showtimeId is in the format "scheduleId-roomId"
+          if (formik.values.showtimeId.includes('-')) {
+            const parts = formik.values.showtimeId.split('-');
+            scheduleId = parseInt(parts[0], 10);
+            roomId = parseInt(parts[1], 10);
+          } else {
+            // If not in the expected format, try to find it in showtimeBranches
+            let selectedShowtimeDetail: ShowtimeDetail | null = null;
 
-          for (const branch of showtimeBranches) {
-            const foundShowtime = branch.showtimes.find(
-              // Giả sử formik.values.showtimeId lưu trữ một ID duy nhất, ví dụ: `${scheduleId}-${roomId}`
-              // Hoặc nếu showtimeId chỉ là scheduleId, cần đảm bảo nó là duy nhất trong context này
-              // Hiện tại, API response không có 'id' trực tiếp trên ShowtimeDetail.
-              // Chúng ta cần quyết định formik.values.showtimeId sẽ lưu gì.
-              // Ví dụ, nếu nó lưu scheduleId (là number):
-              // st => st.scheduleId === parseInt(formik.values.showtimeId, 10) 
-              // Hoặc nếu nó là một string kết hợp:
-              st => `${st.scheduleId}-${st.roomId}` === formik.values.showtimeId
-            );
-            if (foundShowtime) {
-              selectedShowtimeDetail = foundShowtime;
-              selectedBranchName = branch.branchName; // Ví dụ
-              break;
+            for (const branch of showtimeBranches) {
+              const foundShowtime = branch.showtimes.find(
+                st => st.scheduleId === parseInt(formik.values.showtimeId, 10)
+              );
+              if (foundShowtime) {
+                selectedShowtimeDetail = foundShowtime;
+                break;
+              }
             }
+            
+            if (!selectedShowtimeDetail) {
+              throw new Error('Không tìm thấy thông tin suất chiếu đã chọn trong dữ liệu đã tải.');
+            }
+            
+            scheduleId = selectedShowtimeDetail.scheduleId;
+            roomId = selectedShowtimeDetail.roomId;
           }
           
-          if (!selectedShowtimeDetail) {
-            throw new Error('Không tìm thấy thông tin suất chiếu đã chọn trong dữ liệu đã tải.');
+          console.log(`Fetching NEW seat layout for scheduleId: ${scheduleId}, roomId: ${roomId}, timestamp: ${new Date().toISOString()}`);
+          
+          // Call the API to get the real seat layout
+          const response = await bookingService.getSeatLayout(scheduleId, roomId);
+          
+          if (!response || !response.data) {
+            throw new Error('Không thể lấy dữ liệu sơ đồ ghế từ máy chủ.');
           }
-
-          // *** MOCK SEAT LAYOUT DATA WITH TYPES AND PRICES ***
-          // In a real scenario, this data would come from bookingService.getSeatLayout
-          const mockSeatsFromAPI: Seat[] = [];
-          const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-          const seatsPerRow = 12;
-          let idCounter = 1;
-
-          rows.forEach(row => {
-            for (let i = 1; i <= seatsPerRow; i++) {
-              let status = SeatStatus.Available;
-              let type: Seat['type'] = 'REGULAR';
-              let price = 70000; // Ví dụ giá cố định, vì ShowtimeDetail không có giá trực tiếp
-
-              // Randomly assign some booked seats
-              if (Math.random() < 0.2) status = SeatStatus.Booked;
-              // Randomly assign some unavailable seats (e.g., for lối đi, hỏng)
-              if (Math.random() < 0.05 && status === SeatStatus.Available) status = SeatStatus.Unavailable;
-
-
-              // Assign types and adjust prices based on type and row
-              if (row === 'G' || row === 'H') {
-                type = 'VIP';
-                price += 30000; // VIP price increase
-              } else if ((row === 'E' || row === 'F') && (i >= 5 && i <= 8)) {
-                type = 'COUPLE';
-                price += 50000; // Couple seat price (per seat, often sold as pair)
-              } else if (row === 'A' && (i === 1 || i === seatsPerRow)) {
-                  type = 'SWEETBOX'; // Example for another type
-                  price += 40000;
-              }
-
-              // Some seats might be unavailable regardless of booking status
-              if ((row === 'D' && i === 6) || (row === 'D' && i === 7)) { // e.g. lối đi
-                  status = SeatStatus.Unavailable;
-                  type = 'AISLE'; // Custom type for aisle
-              }
-              
-              // Ensure unavailable seats don't get a price for selection
-              if (status === SeatStatus.Unavailable || status === SeatStatus.Booked) {
-                  // No specific price adjustment needed here for UI, as they are not selectable
-              }
-
-              mockSeatsFromAPI.push({
-                id: `seat-${row}${i}-${idCounter++}`,
-                row,
-                number: i,
-                status,
-                type,
-                price
-              });
-            }
-          });
-          // *** END OF MOCK SEAT LAYOUT DATA ***
-
-          // const response = await bookingService.getSeatLayout(
-          //   selectedShowtime.scheduleId, 
-          //   selectedShowtime.roomId
-          // );
-          // if (response?.data) { // Using mock data for now
-          // const seats = response.data; 
-          const seats = mockSeatsFromAPI; // Use mocked data
-
+          
+          const seats = response.data;
+          console.log(`Retrieved ${seats.length} seats from API. Booked seats: ${seats.filter(s => s.status === SeatStatus.Booked).length}`);
+          
+          // Organize seats into rows
           const rowMap = new Map<string, Seat[]>();
           seats.forEach((seat: Seat) => {
             if (!rowMap.has(seat.row)) {
@@ -628,12 +757,47 @@ const BookingForm: React.FC<BookingFormProps> = ({
           layout.sort((a, b) => a[0].row.localeCompare(b[0].row));
           layout.forEach(row => row.sort((a, b) => a.number - b.number));
           
+          // Kiểm tra và xóa các ghế đã đặt khỏi selection
+          const selectedSeatIds = formik.values.seatIds;
+          const bookedSelectedSeats = selectedSeatIds.filter(seatId => {
+            for (const row of layout) {
+              const seat = row.find(s => s.id === seatId);
+              if (seat && seat.status === SeatStatus.Booked) {
+                return true;
+              }
+            }
+            return false;
+          });
+          
+          if (bookedSelectedSeats.length > 0) {
+            console.log(`Found ${bookedSelectedSeats.length} previously selected seats that are now booked`);
+            const updatedSelectedSeats = selectedSeatIds.filter(id => !bookedSelectedSeats.includes(id));
+            formik.setFieldValue('seatIds', updatedSelectedSeats);
+            setSelectedSeats(prev => prev.filter(seat => 
+              !bookedSelectedSeats.some(id => {
+                // Find the seat with this id and get its row/number
+                for (const rowSeats of layout) {
+                  const bookedSeat = rowSeats.find(s => s.id === id);
+                  if (bookedSeat) {
+                    return seat.code === `${bookedSeat.row}${bookedSeat.number}`;
+                  }
+                }
+                return false;
+              })
+            ));
+            toast.error(`Có ${bookedSelectedSeats.length} ghế bạn đã chọn vừa được người khác đặt. Vui lòng chọn ghế khác.`);
+          }
+          
           setSeatLayout(layout);
-          formik.setFieldValue('seatIds', []);
-          // }
         } catch (err: any) {
           console.error('Error fetching seat layout:', err);
           setError(err.message || 'Error fetching seat layout');
+          
+          // In case of API failure, use a minimal fallback to prevent complete UI breakdown
+          if (err.response?.status === 404 || err.response?.status >= 500) {
+            toast.error(`Không thể lấy dữ liệu ghế: ${err.message}`);
+            setFriendlyError('Hệ thống không thể lấy được sơ đồ ghế hiện tại. Vui lòng thử lại sau.');
+          }
         } finally {
           setLoading(false);
         }
@@ -641,32 +805,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     };
 
     fetchSeatLayout();
-  }, [formik.values.showtimeId, activeStep, showtimeBranches]); // Ensure all dependencies are listed
-
-  // Effect to load food/drink items when entering step 2
-  useEffect(() => {
-    const fetchFoodItems = async () => {
-      if (activeStep === 2) {
-        try {
-          setLoading(true);
-          
-          // Gọi API lấy danh sách đồ ăn/uống
-          const response = await bookingService.getFoodItems();
-          
-          if (response?.data) {
-            setAvailableFoodItems(response.data);
-          }
-        } catch (err: any) {
-          console.error('Error fetching food items:', err);
-          setError(err.message || 'Error fetching food and drinks');
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-    
-    fetchFoodItems();
-  }, [activeStep]);
+  }, [formik.values.showtimeId, activeStep, showtimeBranches, refreshSeatTrigger]);
 
   // Update the useEffect for selectedShowtime synchronization
   useEffect(() => {
@@ -685,34 +824,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
     return formik.values.showtimeId === showtimeId || selectedShowtime === showtimeId;
   }, [formik.values.showtimeId, selectedShowtime]);
 
-  // Update getSelectedShowtimeDetails to be a pure function without state updates
-  const getSelectedShowtimeDetails = () => {
-    if (!formik.values.showtimeId || showtimeBranches.length === 0) return null;
-    
-    for (const branch of showtimeBranches) {
-      const showtime = branch.showtimes.find(
-        st => `${st.scheduleId}-${st.roomId}` === formik.values.showtimeId
-      );
-      if (showtime) {
-        // Return the data without updating state
-        return {
-          scheduleId: showtime.scheduleId,
-          roomId: showtime.roomId,
-          roomName: showtime.roomName,
-          time: showtime.scheduleTime, 
-          movieName: currentMovieInfo.name,
-          movieId: currentMovieInfo.id,
-          branchName: branch.branchName,
-          branchAddress: branch.address || branch.branchName,
-          startTime: showtime.scheduleTime,
-          endTime: showtime.scheduleTime,
-          scheduleDate: showtime.scheduleDate,
-        };
-      }
-    }
-    return null;
-  };
-
   // Add effect to update cinema and date when showtime changes
   useEffect(() => {
     const showtimeDetails = getSelectedShowtimeDetails();
@@ -730,359 +841,86 @@ const BookingForm: React.FC<BookingFormProps> = ({
     }
   }, [formik.values.showtimeId, showtimeBranches]);
 
-  // Helper function to get details of selected food items
-  const getSelectedFoodItemsDetails = (): FoodItemInfo[] => {
-    if (formik.values.foodItems.length === 0 || availableFoodItems.length === 0) return [];
-    return formik.values.foodItems
-      .map(selection => {
-        const itemDetails = availableFoodItems.find(food => food.id === selection.itemId);
-        if (!itemDetails) return null;
-        return {
-          id: itemDetails.id,
-          name: itemDetails.name,
-          quantity: selection.quantity,
-          price: itemDetails.price,
-          subtotal: itemDetails.price * selection.quantity
-        };
-      })
-      .filter((item): item is FoodItemInfo => item !== null);
-  };
-  
-  const getSeatColors = (seat: Seat, isSelected: boolean) => {
-    // Kiểm tra xem ghế có đang được người khác chọn không
-    const isTemporaryReserved = temporaryReservedSeats.some(
-      s => s.seatId === seat.id && s.userId !== userId.current
-    );
-    
-    if (isTemporaryReserved) {
-      return theme.palette.warning.main; // Màu cam/vàng cho ghế đang được người khác chọn
-    }
-    
-    if (isSelected) return theme.palette.success.main; // Màu xanh lá cho ghế đang chọn
-
-    switch (seat.status) {
-      case SeatStatus.Booked:
-        return theme.palette.grey[700]; // Màu xám đậm cho ghế đã đặt
-      case SeatStatus.Unavailable:
-        return theme.palette.grey[400]; // Màu xám nhạt cho ghế không khả dụng (lối đi, hỏng)
-      case SeatStatus.Available:
-        switch (seat.type) {
-          case 'VIP':
-            return theme.palette.secondary.main; // Màu tím cho VIP
-          case 'COUPLE':
-            return theme.palette.error.light; // Màu hồng/đỏ nhạt cho Couple
-          case 'SWEETBOX':
-              return '#ff9800'; // Orange for Sweetbox
-          case 'REGULAR':
-          default:
-            return theme.palette.primary.main; // Màu xanh dương cho ghế thường
-        }
-      default:
-        return theme.palette.grey[500]; // Fallback
-    }
-  };
-
-  // Calculate total price
-  const calculateTotalPrice = () => {
-    let total = 0;
-    const currentShowtime = showtimeBranches.length > 0 ? 
-      showtimeBranches.find(b => b.showtimes.some(s => `${s.scheduleId}-${s.roomId}` === formik.values.showtimeId))
-      : null;
-
-    // Calculate seat price
-    formik.values.seatIds.forEach(seatId => {
-      for (const row of seatLayout) {
-        const seat = row.find(s => s.id === seatId);
-        if (seat) {
-          total += seat.price; // Use the individual seat price
-          break; 
-        }
-      }
-    });
-
-    // Calculate food price
-    formik.values.foodItems.forEach(item => {
-      const foodInfo = availableFoodItems.find(fi => fi.id === item.itemId);
-      if (foodInfo) {
-        total += foodInfo.price * item.quantity;
-      }
-    });
-    return total;
-  };
-
-  // Hàm kiểm tra token
-  const checkToken = () => {
-    const token = localStorage.getItem('token');
-    setDebugResult(`Token exists: ${!!token}\n${token ? `Token preview: ${token.substring(0, 20)}...` : 'No token'}`);
-    
-    // Kiểm tra token bằng XMLHttpRequest thuần túy
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', '/user/me', true);
-    if (token) {
-      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-    }
-    xhr.onload = function() {
-      if (xhr.status === 200) {
-        setDebugResult(prev => prev + '\n\nToken valid! Response: ' + xhr.responseText.substring(0, 100) + '...');
-      } else {
-        setDebugResult(prev => prev + '\n\nToken invalid! Status: ' + xhr.status + ' Response: ' + xhr.responseText);
-      }
-    };
-    xhr.onerror = function() {
-      setDebugResult(prev => prev + '\n\nXHR Error when validating token');
-    };
-    xhr.send();
-  };
-  
-  // Hàm gửi request đặt vé đơn giản
-  const simplifiedBooking = () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setDebugResult('Cannot book: No token found');
-      return;
-    }
-    
-    // Xác định thông tin cơ bản
-    const selectedShowtime = getSelectedShowtimeDetails();
-    if (!selectedShowtime) {
-      setDebugResult('Cannot book: No showtime selected');
-      return;
-    }
-    
-    // Kiểm tra xem có ghế nào được chọn không
-    if (formik.values.seatIds.length === 0) {
-      setDebugResult('Cannot book: No seats selected');
-      return;
-    }
-    
-    // Tạo booking request
-    const bookingRequest = {
-      scheduleId: selectedShowtime.scheduleId,
-      roomId: selectedShowtime.roomId,
-      seatIds: formik.values.seatIds,
-      foodItems: formik.values.foodItems.map(item => ({
-        foodId: parseInt(item.itemId),
-        quantity: item.quantity
-      })),
-      paymentMethod: formik.values.paymentMethod
-    };
-    
-    setDebugResult(`Sending booking request with XMLHttpRequest...\nRequest data: ${JSON.stringify(bookingRequest)}`);
-    
-    // Gửi request đặt vé với XMLHttpRequest
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/bookings/create', true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-    
-    xhr.onload = function() {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        setDebugResult(prev => prev + '\n\nBooking success! Response: ' + xhr.responseText.substring(0, 100) + '...');
-        // Tiếp tục với bước thanh toán
-        processPayment(JSON.parse(xhr.responseText));
-      } else {
-        setDebugResult(prev => prev + '\n\nBooking failed! Status: ' + xhr.status + ' Response: ' + xhr.responseText);
-        
-        // Thử endpoint thay thế
-        tryAlternativeEndpoint();
-      }
-    };
-    
-    xhr.onerror = function() {
-      setDebugResult(prev => prev + '\n\nXHR Error when booking');
-      // Thử endpoint thay thế
-      tryAlternativeEndpoint();
-    };
-    
-    xhr.send(JSON.stringify(bookingRequest));
-    
-    // Hàm thử endpoint thay thế
-    function tryAlternativeEndpoint() {
-      setDebugResult(prev => prev + '\n\nTrying alternative endpoint...');
-      
-      const altXhr = new XMLHttpRequest();
-      altXhr.open('POST', '/payment/sepay-webhook', true);
-      altXhr.setRequestHeader('Content-Type', 'application/json');
-      altXhr.setRequestHeader('Authorization', `Bearer ${token}`);
-      
-      altXhr.onload = function() {
-        if (altXhr.status >= 200 && altXhr.status < 300) {
-          setDebugResult(prev => prev + '\n\nBooking success with alternative endpoint! Response: ' + altXhr.responseText.substring(0, 100) + '...');
-          // Tiếp tục với bước thanh toán
-          processPayment(JSON.parse(altXhr.responseText));
-        } else {
-          setDebugResult(prev => prev + '\n\nBooking failed with alternative endpoint! Status: ' + altXhr.status + ' Response: ' + altXhr.responseText);
-        }
-      };
-      
-      altXhr.onerror = function() {
-        setDebugResult(prev => prev + '\n\nXHR Error when booking with alternative endpoint');
-      };
-      
-      altXhr.send(JSON.stringify(bookingRequest));
-    }
-  };
-  
-  // Hàm xử lý thanh toán
-  const processPayment = (bookingResponse: any) => {
-    // Xác định bookingId
-    let bookingId = null;
-    if (bookingResponse?.data?.bookingId) {
-      bookingId = bookingResponse.data.bookingId;
-    } else if (bookingResponse?.bookingId) {
-      bookingId = bookingResponse.bookingId;
-    } else if (bookingResponse?.result?.bookingId) {
-      bookingId = bookingResponse.result.bookingId;
-    } else {
-      const responseStr = JSON.stringify(bookingResponse);
-      const match = responseStr.match(/"bookingId":\s*(\d+)/);
-      if (match && match[1]) {
-        bookingId = parseInt(match[1]);
-      }
-    }
-    
-    if (!bookingId) {
-      setDebugResult(prev => prev + '\n\nCannot process payment: No booking ID found');
-      return;
-    }
-    
-    setDebugResult(prev => prev + `\n\nStarting payment for booking ID: ${bookingId}`);
-    
-    const token = localStorage.getItem('token');
-    const paymentData = {
-      bookingId,
-      paymentMethod: formik.values.paymentMethod,
-      amount: 0,
-      status: 'SUCCESS'
-    };
-    
-    // Gửi request thanh toán
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/payments/simulate', true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-    
-    xhr.onload = function() {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        setDebugResult(prev => prev + '\n\nPayment success! Response: ' + xhr.responseText.substring(0, 100) + '...');
-        finalizeBooking(bookingId);
-      } else {
-        setDebugResult(prev => prev + '\n\nPayment failed! Status: ' + xhr.status + ' Response: ' + xhr.responseText);
-        
-        // Thử endpoint thay thế
-        const altXhr = new XMLHttpRequest();
-        altXhr.open('POST', '/payment/process', true);
-        altXhr.setRequestHeader('Content-Type', 'application/json');
-        altXhr.setRequestHeader('Authorization', `Bearer ${token}`);
-        
-        altXhr.onload = function() {
-          if (altXhr.status >= 200 && altXhr.status < 300) {
-            setDebugResult(prev => prev + '\n\nPayment success with alternative endpoint! Response: ' + altXhr.responseText.substring(0, 100) + '...');
-            finalizeBooking(bookingId);
-          } else {
-            setDebugResult(prev => prev + '\n\nPayment failed with alternative endpoint! Status: ' + altXhr.status + ' Response: ' + altXhr.responseText);
-            // Vẫn hoàn tất booking vì đã có booking ID
-            finalizeBooking(bookingId);
-          }
-        };
-        
-        altXhr.onerror = function() {
-          setDebugResult(prev => prev + '\n\nXHR Error when paying with alternative endpoint');
-          // Vẫn hoàn tất booking vì đã có booking ID
-          finalizeBooking(bookingId);
-        };
-        
-        altXhr.send(JSON.stringify(paymentData));
-      }
-    };
-    
-    xhr.onerror = function() {
-      setDebugResult(prev => prev + '\n\nXHR Error when paying');
-    };
-    
-    xhr.send(JSON.stringify(paymentData));
-  };
-  
-  // Hoàn tất booking và hiển thị thông tin
-  const finalizeBooking = (bookingId: number) => {
-    setDebugResult(prev => prev + '\n\nFinalizing booking...');
-    
-    // Tạo thông tin booking từ dữ liệu có sẵn
-    const selectedShowtime = getSelectedShowtimeDetails();
-    const bookingDetails = {
-      bookingId: bookingId,
-      bookingCode: `B${bookingId}`,
-      movie: {
-        movieId: selectedShowtime?.movieId || 0,
-        movieName: selectedShowtime?.movieName || 'Unknown',
-        date: new Date().toISOString(),
-        startTime: selectedShowtime?.time || 'Unknown',
-        endTime: "N/A"
-      },
-      cinema: {
-        cinemaName: "N/A",
-        roomName: selectedShowtime?.roomName || 'Unknown',
-        address: "N/A"
-      },
-      seats: formik.values.seatIds,
-      totalAmount: calculateTotalPrice(),
-      foodItems: getSelectedFoodItemsDetails(),
-      status: 'CONFIRMED',
-      paymentStatus: 'PAID',
-      paymentId: Date.now(),
-    };
-    
-    // Cập nhật state và hiển thị thông báo thành công
-    setBookingDetails(bookingDetails);
-    setBookingCompleted(true);
-    setSuccessMessage('Đặt vé thành công!');
-    setDebugResult(prev => prev + '\n\nBooking completed!');
-  };
-
-  // Hàm xử lý lỗi API một cách thân thiện
   const handleAPIError = (error: any, context: string) => {
     console.error(`Lỗi ${context}:`, error);
-    
-    // Đối với lỗi 500, hiển thị thông báo thân thiện
+    const message = error.response?.data?.message || error.message || `Đã xảy ra lỗi khi ${context}. Vui lòng thử lại.`;
     if (error.response?.status === 500) {
       setFriendlyError(`Hệ thống đang gặp sự cố khi ${context}. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.`);
     } else {
-      setError(error.message || `Đã xảy ra lỗi khi ${context}. Vui lòng thử lại.`);
+      setError(message);
     }
+    toast.error(message);
   };
 
-  // Thêm các hàm xử lý cho QR modal
   const handlePaymentCompleted = useCallback(() => {
-    // Đóng modal QR
     setShowQrModal(false);
+    setLoading(true); 
+
+    const selectedShowtimeDetails = getSelectedShowtimeDetails();
+    const currentFoodItems = getSelectedFoodItemsDetails();
+    const finalBookingDetails: FinalBookingDetails = {
+      bookingId: bookingId!,
+      status: "CONFIRMED", 
+      bookingCode: `B${bookingId!}`,
+      movie: {
+        movieId: selectedShowtimeDetails?.movieId || currentMovieInfo.id || 0,
+        movieName: selectedShowtimeDetails?.movieName || currentMovieInfo.name || "Movie",
+        date: selectedShowtimeDetails?.date || new Date().toISOString().split('T')[0],
+        startTime: selectedShowtimeDetails?.scheduleTime || "N/A",
+        endTime: "N/A", 
+        time: selectedShowtimeDetails?.scheduleTime || "N/A"
+      },
+      cinema: {
+        cinemaName: selectedShowtimeDetails?.branchName || "Cinema",
+        roomName: selectedShowtimeDetails?.roomName || "Room",
+        address: selectedShowtimeDetails?.branchAddress || "Address" 
+      },
+      seats: formik.values.seatIds,
+      totalAmount: totalPriceForQr, 
+      paymentStatus: "PAID",
+      paymentId: Date.now(), 
+      foodItems: currentFoodItems
+    };
     
-    // Chuyển đến màn hình thành công
+    setBookingDetails(finalBookingDetails);
     setBookingCompleted(true);
-    setSuccessMessage('Đặt vé thành công!');
-  }, []);
+    setSuccessMessage('Đặt vé và thanh toán thành công!');
+    toast.success('Thanh toán thành công!');
+    
+    // Force clear any cached seat data
+    if (selectedShowtimeDetails) {
+      console.log(`Clearing cached seat data for scheduleId: ${selectedShowtimeDetails.scheduleId}, roomId: ${selectedShowtimeDetails.roomId}`);
+    }
+    
+    // Completely reset form and selections
+    formik.resetForm();
+    setSelectedSeats([]);
+    setSeatLayout([]);
+    
+    setLoading(false);
+  }, [bookingId, totalPriceForQr, currentMovieInfo, getSelectedShowtimeDetails, formik.values.seatIds, getSelectedFoodItemsDetails, setLoading, setShowQrModal, setBookingDetails, setBookingCompleted, setSuccessMessage]);
 
   const handlePaymentExpired = useCallback(() => {
-    // Đóng modal QR
     setShowQrModal(false);
-    
-    // Hiển thị thông báo hết hạn và chuyển về trang chi tiết phim
-    toast.error('Quá thời hạn thanh toán', {
-      position: 'top-right',
-      duration: 3000 // Use duration instead of autoClose
-    });
-    
-    // Chuyển về trang chi tiết phim
-    if (movieId) {
-      navigate(`/movie/${movieId}`);
+    toast.error('Quá thời hạn thanh toán. Vui lòng thử lại.');
+    if (movieId) { 
+        navigate(`/movie/${movieId}`);
     }
-  }, [movieId, navigate]);
+    setActiveStep(0);
+    formik.resetForm();
+  }, [movieId, navigate, setActiveStep, formik, setShowQrModal]);
 
-  // Update when a seat is selected/deselected
   const handleSeatSelection = (seat: Seat, isSelected: boolean) => {
     // Kiểm tra xem ghế có đang được người khác chọn không
     const isTemporaryReserved = temporaryReservedSeats.some(
       s => s.seatId === seat.id && s.userId !== userId.current
     );
+    
+    // Kiểm tra xem ghế có bị đặt rồi không
+    if (seat.status === SeatStatus.Booked) {
+      toast.error(`Ghế ${seat.row}${seat.number} đã được đặt`);
+      return;
+    }
     
     // Nếu ghế đang được người khác chọn, hiển thị thông báo và không cho chọn
     if (!isSelected && isTemporaryReserved) {
@@ -1131,8 +969,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
         movieId: currentMovieInfo.id || 0,
         movieName: currentMovieInfo.name || '',
         date: selectedDate,
-        startTime: showtimeDetails?.startTime || '',
-        endTime: showtimeDetails?.endTime || ''
+        startTime: showtimeDetails?.scheduleTime || '',
+        endTime: showtimeDetails?.scheduleTime || ''
       },
       cinema: {
         cinemaName: selectedCinema?.cinemaName || selectedCinema?.name || '',
@@ -1151,8 +989,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
       if (activeStep !== 1 || !formik.values.showtimeId) return;
       
       try {
-        // Tạo một token ngẫu nhiên để định danh client
-        const sessionId = localStorage.getItem('token') || userId.current;
+        // Tạo một token ngẫu nhiên để định danh client nếu không có token
+        const sessionToken = localStorage.getItem('token') || userId.current;
         
         // Khởi tạo SockJS và STOMP client
         const socket = new SockJS('/api/v1/websocket'); // Endpoint WebSocket ở backend
@@ -1311,29 +1149,44 @@ const BookingForm: React.FC<BookingFormProps> = ({
     }
     
     try {
-      // Lấy roomId và scheduleId từ showtimeId
-      const [scheduleId, roomId] = formik.values.showtimeId.split('-');
+      // Lấy roomId và scheduleId từ formik.values.showtimeId (e.g., "123-45")
+      const showtimeIdParts = formik.values.showtimeId.split('-');
+      const scheduleId = showtimeIdParts[0];
+      const roomId = showtimeIdParts[1];
+
+      if (!roomId || !scheduleId) {
+        console.error('RoomId or ScheduleId is missing from showtimeId:', formik.values.showtimeId);
+        toast.error('Lỗi: Không thể xác định phòng hoặc lịch chiếu.');
+        return;
+      }
       
-      const message: SeatUpdateMessage = {
+      const messageBody: Omit<SeatUpdateMessage, 'roomId' | 'scheduleId'> & {roomId?: string, scheduleId?: string} = {
         seatId: seatId,
-        status: isSelected ? SeatStatus.Available : SeatStatus.Selected, // Ngược lại vì chúng ta gửi trạng thái MỚI
+        status: isSelected ? SeatStatus.Available : SeatStatus.Selected, 
         userId: userId.current,
-        roomId: roomId,
-        scheduleId: scheduleId, 
+        // roomId and scheduleId are in the path, but can be in body too if SeatUpdateMessage includes them
+        // For strictness with backend SeatReservationRequest which might not have them, we can omit or make them optional
         timestamp: Date.now()
       };
       
+      // If SeatUpdateMessage type *requires* roomId and scheduleId, add them:
+      // messageBody.roomId = roomId;
+      // messageBody.scheduleId = scheduleId;
+
+      const destinationPath = `/app/seats/reserve/${roomId}/${scheduleId}`;
+      
       stompClient.current.publish({
-        destination: '/app/seat/update',
-        body: JSON.stringify(message),
+        destination: destinationPath,
+        body: JSON.stringify(messageBody),
         headers: {
           'X-User-Id': userId.current
         }
       });
       
-      console.log('Sent seat update:', message);
+      console.log('Sent seat update to:', destinationPath, messageBody);
     } catch (error) {
       console.error('Error sending seat update:', error);
+      toast.error('Lỗi khi gửi cập nhật trạng thái ghế.');
     }
   };
 
@@ -1537,6 +1390,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
                       formik.setFieldValue('showtimeId', selectedShowtime);
                     }
                     setActiveStep((prevActiveStep) => prevActiveStep + 1);
+                    // Reset seat selections when moving to seat selection step
+                    formik.setFieldValue('seatIds', []);
+                    setSelectedSeats([]);
                   }}
                   startIcon={<i className="fas fa-arrow-right" />}
                   sx={{ px: 4, py: 1 }}
@@ -1609,6 +1465,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
             >
               <Typography variant="caption" color="textSecondary">{t('booking.screen') || 'SCREEN'}</Typography>
             </Box>
+
+            {/* Thêm nút refresh */}
+            {renderRefreshButton()}
 
             {loading ? (
               <CircularProgress />
@@ -1972,6 +1831,340 @@ const BookingForm: React.FC<BookingFormProps> = ({
     }
   }, [showtimeId]);
 
+  const getSeatColors = (seat: Seat, isSelected: boolean) => {
+    // Kiểm tra xem ghế có đang được người khác chọn không
+    const isTemporaryReserved = temporaryReservedSeats.some(
+      s => s.seatId === seat.id && s.userId !== userId.current
+    );
+    
+    if (isTemporaryReserved) {
+      return theme.palette.warning.main; // Màu cam/vàng cho ghế đang được người khác chọn
+    }
+    
+    if (isSelected) return theme.palette.success.main; // Màu xanh lá cho ghế đang chọn
+
+    switch (seat.status) {
+      case SeatStatus.Booked:
+        return theme.palette.grey[700]; // Màu xám đậm cho ghế đã đặt
+      case SeatStatus.Unavailable:
+        return theme.palette.grey[400]; // Màu xám nhạt cho ghế không khả dụng (lối đi, hỏng)
+      case SeatStatus.Available:
+        switch (seat.type) {
+          case 'VIP':
+            return theme.palette.secondary.main; // Màu tím cho VIP
+          case 'COUPLE':
+            return theme.palette.error.light; // Màu hồng/đỏ nhạt cho Couple
+          case 'SWEETBOX':
+              return '#ff9800'; // Orange for Sweetbox
+          case 'REGULAR':
+          default:
+            return theme.palette.primary.main; // Màu xanh dương cho ghế thường
+        }
+      default:
+        return theme.palette.grey[500]; // Fallback
+    }
+  };
+
+  // Hàm kiểm tra token
+  const checkToken = () => {
+    const token = localStorage.getItem('token');
+    setDebugResult(`Token exists: ${!!token}\n${token ? `Token preview: ${token.substring(0, 20)}...` : 'No token'}`);
+    
+    // Kiểm tra token bằng XMLHttpRequest thuần túy
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', '/user/me', true);
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
+    xhr.onload = function() {
+      if (xhr.status === 200) {
+        setDebugResult(prev => prev + '\n\nToken valid! Response: ' + xhr.responseText.substring(0, 100) + '...');
+      } else {
+        setDebugResult(prev => prev + '\n\nToken invalid! Status: ' + xhr.status + ' Response: ' + xhr.responseText);
+      }
+    };
+    xhr.onerror = function() {
+      setDebugResult(prev => prev + '\n\nXHR Error when validating token');
+    };
+    xhr.send();
+  };
+  
+  // Hàm gửi request đặt vé đơn giản
+  const simplifiedBooking = () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setDebugResult('Cannot book: No token found');
+      return;
+    }
+    
+    // Xác định thông tin cơ bản
+    const selectedShowtime = getSelectedShowtimeDetails();
+    if (!selectedShowtime) {
+      setDebugResult('Cannot book: No showtime selected');
+      return;
+    }
+    
+    // Kiểm tra xem có ghế nào được chọn không
+    if (formik.values.seatIds.length === 0) {
+      setDebugResult('Cannot book: No seats selected');
+      return;
+    }
+    
+    // Tạo booking request
+    const bookingRequest = {
+      scheduleId: selectedShowtime.scheduleId,
+      roomId: selectedShowtime.roomId,
+      seatIds: formik.values.seatIds,
+      foodItems: formik.values.foodItems.map(item => ({
+        foodId: parseInt(item.itemId),
+        quantity: item.quantity
+      })),
+      paymentMethod: formik.values.paymentMethod
+    };
+    
+    setDebugResult(`Sending booking request with XMLHttpRequest...\nRequest data: ${JSON.stringify(bookingRequest)}`);
+    
+    // Gửi request đặt vé với XMLHttpRequest
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/bookings/create', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    
+    xhr.onload = function() {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        setDebugResult(prev => prev + '\n\nBooking success! Response: ' + xhr.responseText.substring(0, 100) + '...');
+        // Tiếp tục với bước thanh toán
+        processPayment(JSON.parse(xhr.responseText));
+      } else {
+        setDebugResult(prev => prev + '\n\nBooking failed! Status: ' + xhr.status + ' Response: ' + xhr.responseText);
+        
+        // Thử endpoint thay thế
+        tryAlternativeEndpoint();
+      }
+    };
+    
+    xhr.onerror = function() {
+      setDebugResult(prev => prev + '\n\nXHR Error when booking');
+      // Thử endpoint thay thế
+      tryAlternativeEndpoint();
+    };
+    
+    xhr.send(JSON.stringify(bookingRequest));
+    
+    // Hàm thử endpoint thay thế
+    function tryAlternativeEndpoint() {
+      setDebugResult(prev => prev + '\n\nTrying alternative endpoint...');
+      
+      const altXhr = new XMLHttpRequest();
+      altXhr.open('POST', '/api/v1/payment/sepay-webhook', true);
+      altXhr.setRequestHeader('Content-Type', 'application/json');
+      altXhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      
+      altXhr.onload = function() {
+        if (altXhr.status >= 200 && altXhr.status < 300) {
+          setDebugResult(prev => prev + '\n\nBooking success with alternative endpoint! Response: ' + altXhr.responseText.substring(0, 100) + '...');
+          // Tiếp tục với bước thanh toán
+          processPayment(JSON.parse(altXhr.responseText));
+        } else {
+          setDebugResult(prev => prev + '\n\nBooking failed with alternative endpoint! Status: ' + altXhr.status + ' Response: ' + altXhr.responseText);
+        }
+      };
+      
+      altXhr.onerror = function() {
+        setDebugResult(prev => prev + '\n\nXHR Error when booking with alternative endpoint');
+      };
+      
+      altXhr.send(JSON.stringify(bookingRequest));
+    }
+  };
+  
+  // Hàm xử lý thanh toán
+  const processPayment = (bookingResponse: any) => {
+    // Xác định bookingId
+    let bookingId = null;
+    if (bookingResponse?.data?.bookingId) {
+      bookingId = bookingResponse.data.bookingId;
+    } else if (bookingResponse?.bookingId) {
+      bookingId = bookingResponse.bookingId;
+    } else if (bookingResponse?.result?.bookingId) {
+      bookingId = bookingResponse.result.bookingId;
+    } else {
+      const responseStr = JSON.stringify(bookingResponse);
+      const match = responseStr.match(/"bookingId":\s*(\d+)/);
+      if (match && match[1]) {
+        bookingId = parseInt(match[1]);
+      }
+    }
+    
+    if (!bookingId) {
+      setDebugResult(prev => prev + '\n\nCannot process payment: No booking ID found');
+      return;
+    }
+    
+    setDebugResult(prev => prev + `\n\nStarting payment for booking ID: ${bookingId}`);
+    
+    const token = localStorage.getItem('token');
+    const paymentData = {
+      bookingId,
+      paymentMethod: formik.values.paymentMethod,
+      amount: 0,
+      status: 'SUCCESS'
+    };
+    
+    // Gửi request thanh toán
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/v1/payment/simulate', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    
+    xhr.onload = function() {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        setDebugResult(prev => prev + '\n\nPayment success! Response: ' + xhr.responseText.substring(0, 100) + '...');
+        finalizeBooking(bookingId);
+      } else {
+        setDebugResult(prev => prev + '\n\nPayment failed! Status: ' + xhr.status + ' Response: ' + xhr.responseText);
+        
+        // Thử endpoint thay thế
+        const altXhr = new XMLHttpRequest();
+        altXhr.open('POST', '/api/v1/payment/process', true);
+        altXhr.setRequestHeader('Content-Type', 'application/json');
+        altXhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        
+        altXhr.onload = function() {
+          if (altXhr.status >= 200 && altXhr.status < 300) {
+            setDebugResult(prev => prev + '\n\nPayment success with alternative endpoint! Response: ' + altXhr.responseText.substring(0, 100) + '...');
+            finalizeBooking(bookingId);
+          } else {
+            setDebugResult(prev => prev + '\n\nPayment failed with alternative endpoint! Status: ' + altXhr.status + ' Response: ' + altXhr.responseText);
+            // Vẫn hoàn tất booking vì đã có booking ID
+            finalizeBooking(bookingId);
+          }
+        };
+        
+        altXhr.onerror = function() {
+          setDebugResult(prev => prev + '\n\nXHR Error when paying with alternative endpoint');
+          // Vẫn hoàn tất booking vì đã có booking ID
+          finalizeBooking(bookingId);
+        };
+        
+        altXhr.send(JSON.stringify(paymentData));
+      }
+    };
+    
+    xhr.onerror = function() {
+      setDebugResult(prev => prev + '\n\nXHR Error when paying');
+    };
+    
+    xhr.send(JSON.stringify(paymentData));
+  };
+  
+  // Hoàn tất booking và hiển thị thông tin
+  const finalizeBooking = (bookingId: number) => {
+    setDebugResult(prev => prev + '\n\nFinalizing booking...');
+    
+    // Tạo thông tin booking từ dữ liệu có sẵn
+    const selectedShowtime = getSelectedShowtimeDetails();
+    const bookingDetails = {
+      bookingId: bookingId,
+      bookingCode: `B${bookingId}`,
+      movie: {
+        movieId: selectedShowtime?.movieId || 0,
+        movieName: selectedShowtime?.movieName || 'Unknown',
+        date: new Date().toISOString(),
+        startTime: selectedShowtime?.scheduleTime || 'Unknown',
+        endTime: "N/A"
+      },
+      cinema: {
+        cinemaName: "N/A",
+        roomName: selectedShowtime?.roomName || 'Unknown',
+        address: "N/A"
+      },
+      seats: formik.values.seatIds,
+      totalAmount: calculateTotalPrice(),
+      foodItems: getSelectedFoodItemsDetails(),
+      status: 'CONFIRMED',
+      paymentStatus: 'PAID',
+      paymentId: Date.now(),
+    };
+    
+    // Cập nhật state và hiển thị thông báo thành công
+    setBookingDetails(bookingDetails);
+    setBookingCompleted(true);
+    setSuccessMessage('Đặt vé thành công!');
+    setDebugResult(prev => prev + '\n\nBooking completed!');
+  };
+
+  // Update the food items fetch function to use the real API
+  useEffect(() => {
+    const fetchFoodItems = async () => {
+      if (activeStep === 2) {
+        try {
+          setLoading(true);
+          setError(null);
+          
+          // Call the API to get real food items
+          const response = await bookingService.getFoodItems();
+          
+          if (response?.data) {
+            setAvailableFoodItems(response.data);
+            console.log("Fetched food items:", response.data);
+          } else {
+            setAvailableFoodItems([]);
+            setFriendlyError('Không thể tải danh sách đồ ăn và thức uống. Vui lòng thử lại sau.');
+          }
+        } catch (err: any) {
+          console.error('Error fetching food items:', err);
+          setError(err.message || 'Error fetching food and drinks');
+          
+          // Provide a better user experience with friendly error messages
+          if (err.response?.status >= 500) {
+            setFriendlyError('Hệ thống không thể lấy thông tin đồ ăn và thức uống. Bạn vẫn có thể tiếp tục đặt vé mà không cần chọn đồ ăn.');
+          }
+          
+          // Set empty array to allow continuing without food items
+          setAvailableFoodItems([]);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    
+    fetchFoodItems();
+  }, [activeStep]);
+
+  // Thêm nút refresh vào giao diện chọn ghế
+  const renderRefreshButton = () => {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={refreshSeatLayout}
+          startIcon={<i className="fas fa-sync-alt" />}
+          disabled={loading}
+        >
+          {loading ? 'Đang cập nhật...' : 'Cập nhật sơ đồ ghế'}
+        </Button>
+      </Box>
+    );
+  };
+
+  // Thêm cleanup effect để reset sơ đồ ghế khi unmounting component
+  useEffect(() => {
+    return () => {
+      setSeatLayout([]);
+      formik.setFieldValue('seatIds', []);
+      setSelectedSeats([]);
+    };
+  }, []);
+
+  // Cập nhật effect để refresh sơ đồ ghế khi chuyển bước
+  useEffect(() => {
+    if (activeStep === 1) {
+      refreshSeatLayout();
+    }
+  }, [activeStep, refreshSeatLayout]);
+
   return (
     <Box sx={{ width: '100%', p: directBooking ? 0 : 3 }}>
       {!directBooking && (
@@ -1997,90 +2190,123 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 <CircularProgress />
               </Box>
             )}
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </Alert>
-            )}
-            
+            {error && <Alert severity="error" sx={{my:2}}>{error}</Alert>}
+            {friendlyError && <Alert severity="warning" sx={{my:2}}>{friendlyError}</Alert>}
+
             {renderStepContent(activeStep)}
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-              <Button
-                disabled={activeStep === 0}
-                onClick={handleBack}
-              >
-                {t('common.back', 'Quay lại')}
-              </Button>
-              <Button 
-                variant="contained" 
-                type={activeStep === steps.length - 1 ? 'submit' : 'button'}
-                onClick={activeStep === steps.length - 1 ? undefined : handleNext} // Use undefined for submit to let formik handle
-                disabled={loading || (activeStep === 1 && formik.values.seatIds.length === 0)}
-              >
-                {activeStep === steps.length - 1 
-                  ? t('common.confirmPay', 'Tiếp tục') 
-                  : t('common.next', 'Tiếp tục')}
-              </Button>
-            </Box>
+            {!bookingCompleted && activeStep < steps.length -1 && !directBooking &&(
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+                <Button disabled={activeStep === 0} onClick={handleBack} sx={{ mr: 1 }}>
+                  {t('common.back')}
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleNext}
+                  disabled={loading}
+                >
+                  {t('common.next')}
+                </Button>
+              </Box>
+            )}
+            {!bookingCompleted && activeStep === steps.length - 1 && !directBooking && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+                <Button disabled={loading} onClick={handleBack} sx={{ mr: 1 }}>
+                  {t('common.back')}
+                </Button>
+                <Button type="submit" variant="contained" color="primary" disabled={loading || !formik.isValid}>
+                  {t('booking.confirmAndPay', 'Confirm & Pay')}
+                </Button>
+              </Box>
+            )}
+             {/* Direct booking actions (simplified flow) */}
+            {!bookingCompleted && directBooking && activeStep === steps.length -1 && (
+                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+                    <Button disabled={loading} onClick={handleBack} sx={{ mr: 1 }}>
+                        {t('common.back')}
+                    </Button>
+                    <Button type="submit" variant="contained" color="primary" disabled={loading || !formik.isValid}>
+                        {t('booking.confirmAndPay', 'Confirm & Pay')}
+                    </Button>
+                </Box>
+            )}
+            
+            {showQrModal && bookingId && (
+              <QrPaymentModal
+                open={showQrModal}
+                onClose={() => {
+                  setShowQrModal(false);
+                  toast.success("Đã đóng cửa sổ thanh toán QR.")
+                }}
+                bookingData={{
+                  bookingId: bookingId,
+                  status: "PENDING_PAYMENT",
+                  movie: {
+                      movieId: getSelectedShowtimeDetails()?.movieId || currentMovieInfo.id || 0,
+                      movieName: getSelectedShowtimeDetails()?.movieName || currentMovieInfo.name || "Movie",
+                      date: getSelectedShowtimeDetails()?.date || new Date().toISOString().split('T')[0],
+                      startTime: getSelectedShowtimeDetails()?.scheduleTime || "N/A",
+                      endTime: "N/A",
+                      time: getSelectedShowtimeDetails()?.scheduleTime || "N/A"
+                  },
+                  cinema: {
+                      cinemaName: getSelectedShowtimeDetails()?.branchName || "Cinema",
+                      roomName: getSelectedShowtimeDetails()?.roomName || "Room",
+                      address: getSelectedShowtimeDetails()?.branchAddress || "Address"
+                  },
+                  seats: formik.values.seatIds,
+                  foodItems: getSelectedFoodItemsDetails(),
+                  totalAmount: totalPriceForQr,
+                }}
+                bookingId={bookingId} 
+                totalAmount={totalPriceForQr} 
+                onPaymentCompleted={handlePaymentCompleted}
+                onPaymentExpired={handlePaymentExpired}
+              />
+            )}
+
+            {bookingCompleted && bookingDetails && (
+              <Box sx={{ textAlign: 'center', mt: 4 }}>
+                <CheckCircleIcon sx={{ fontSize: 80, color: theme.palette.success.main, mb: 2 }} />
+                <Typography variant="h5" gutterBottom>{successMessage || t('booking.successTitle', 'Booking Successful!')}</Typography>
+                <Typography variant="body1" sx={{mb:1}}>{t('booking.successMessage.bookingCode', 'Your booking code is:')} <strong>{bookingDetails.bookingCode}</strong></Typography>
+                <Typography variant="body1" sx={{mb:1}}>{t('booking.successMessage.movie', 'Movie:')} {bookingDetails.movie.movieName}</Typography>
+                <Typography variant="body1" sx={{mb:1}}>{t('booking.successMessage.time', 'Time:')} {bookingDetails.movie.startTime} - {bookingDetails.movie.date}</Typography>
+                <Typography variant="body1" sx={{mb:1}}>{t('booking.successMessage.cinema', 'Cinema:')} {bookingDetails.cinema.cinemaName} - {bookingDetails.cinema.roomName}</Typography>
+                <Typography variant="body1" sx={{mb:1}}>{t('booking.successMessage.seats', 'Seats:')} {bookingDetails.seats.join(', ')}</Typography>
+                {bookingDetails.foodItems && bookingDetails.foodItems.length > 0 && (
+                  <Typography variant="body1" sx={{mb:1}}>
+                    {t('booking.successMessage.foodItems', 'Food & Drinks:')} {bookingDetails.foodItems.map(item => `${item.name} x${item.quantity}`).join(', ')}
+                  </Typography>
+                )}
+                <Typography variant="h6" sx={{mt:2, mb:3}}>{t('booking.successMessage.totalAmount', 'Total Amount:')} {bookingDetails.totalAmount.toLocaleString('vi-VN')}đ</Typography>
+                <Button variant="contained" onClick={() => navigate('/movies')} sx={{mr:2}}>{t('booking.backToMovies')}</Button>
+                <Button variant="outlined" onClick={() => navigate('/booking-history')}>{t('booking.viewBookingHistory')}</Button>
+              </Box>
+            )}
           </form>
         ) : (
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="h5" color="success.main" gutterBottom>
-              {successMessage || t('booking.successTitle', 'Booking Successful!')}
-            </Typography>
-            {bookingDetails && (
-              <Paper sx={{ p: 2, mt: 2, textAlign: 'left', backgroundColor: theme.palette.grey[50] }} variant="outlined">
-                <Typography variant="h6" gutterBottom>{t('booking.summary.title', 'Booking Summary')}</Typography>
-                <Typography><strong>{t('booking.summary.bookingCode', 'Booking Code')}:</strong> {bookingDetails.bookingCode}</Typography>
-                <Divider sx={{my:1}}/>
-                <Typography><strong>{t('booking.summary.movie', 'Movie')}:</strong> {bookingDetails.movie.movieName}</Typography>
-                <Typography><strong>{t('booking.summary.cinema', 'Cinema')}:</strong> {bookingDetails.cinema.cinemaName} - {bookingDetails.cinema.roomName}</Typography>
-                <Typography><strong>{t('booking.summary.time', 'Time')}:</strong> {bookingDetails.movie.date} {bookingDetails.movie.startTime}</Typography>
-                <Typography><strong>{t('booking.summary.seats', 'Seats')}:</strong> {bookingDetails.seats.join(', ')}</Typography>
-                {bookingDetails.foodItems && bookingDetails.foodItems.length > 0 && (
-                  <Box mt={1}>
-                    <Typography><strong>{t('booking.summary.foodDrinks', 'Food & Drinks')}:</strong></Typography>
-                    <List dense disablePadding>
-                      {bookingDetails.foodItems.map(item => (
-                        <ListItem key={item.id} disableGutters sx={{pl:2}}>
-                          <ListItemText primary={`${item.name} (x${item.quantity})`} secondary={`${t('common.price', 'Price')}: ${item.subtotal.toLocaleString()} VND`} />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Box>
+           bookingDetails && (
+            <Box sx={{ textAlign: 'center', mt: 4 }}>
+                <CheckCircleIcon sx={{ fontSize: 80, color: theme.palette.success.main, mb: 2 }} />
+                <Typography variant="h5" gutterBottom>{successMessage || t('booking.successTitle', 'Booking Successful!')}</Typography>
+                <Typography variant="body1" sx={{mb:1}}>{t('booking.successMessage.bookingCode', 'Your booking code is:')} <strong>{bookingDetails.bookingCode}</strong></Typography>
+                <Typography variant="body1" sx={{mb:1}}>{t('booking.successMessage.movie', 'Movie:')} {bookingDetails.movie.movieName}</Typography>
+                <Typography variant="body1" sx={{mb:1}}>{t('booking.successMessage.time', 'Time:')} {bookingDetails.movie.startTime} - {bookingDetails.movie.date}</Typography>
+                <Typography variant="body1" sx={{mb:1}}>{t('booking.successMessage.cinema', 'Cinema:')} {bookingDetails.cinema.cinemaName} - {bookingDetails.cinema.roomName}</Typography>
+                <Typography variant="body1" sx={{mb:1}}>{t('booking.successMessage.seats', 'Seats:')} {bookingDetails.seats.join(', ')}</Typography>
+                 {bookingDetails.foodItems && bookingDetails.foodItems.length > 0 && (
+                  <Typography variant="body1" sx={{mb:1}}>
+                    {t('booking.successMessage.foodItems', 'Food & Drinks:')} {bookingDetails.foodItems.map(item => `${item.name} x${item.quantity}`).join(', ')}
+                  </Typography>
                 )}
-                <Divider sx={{my:1}}/>
-                <Typography variant="subtitle1" sx={{fontWeight: 'bold'}}><strong>{t('booking.summary.totalAmount', 'Total Amount')}:</strong> {bookingDetails.totalAmount.toLocaleString()} VND</Typography>
-                <Typography><strong>{t('booking.summary.paymentStatus', 'Payment Status')}:</strong> {bookingDetails.paymentStatus}</Typography>
-              </Paper>
-            )}
-            <Button variant="contained" onClick={() => { /* Reset or navigate away */ setActiveStep(0); setBookingCompleted(false); formik.resetForm(); }} sx={{ mt: 3 }}>
-              {t('booking.bookAnother', 'Book Another Ticket')}
-            </Button>
-          </Box>
+                <Typography variant="h6" sx={{mt:2, mb:3}}>{t('booking.successMessage.totalAmount', 'Total Amount:')} {bookingDetails.totalAmount.toLocaleString('vi-VN')}đ</Typography>
+                <Button variant="contained" onClick={() => navigate('/movies')} sx={{mr:2}}>{t('booking.backToMovies')}</Button>
+                <Button variant="outlined" onClick={() => navigate('/booking-history')}>{t('booking.viewBookingHistory')}</Button>
+            </Box>
+           )
         )}
       </Paper>
-      {/* Phần debug để hiển thị kết quả */} 
-      {debugResult && (
-        <Paper sx={{ p: 2, mt: 2, backgroundColor: theme.palette.grey[100] }}>
-          <Typography variant="h6">Debug Output:</Typography>
-          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-            {debugResult}
-          </pre>
-        </Paper>
-      )}
-      {showQrModal && bookingId && (
-        <QrPaymentModal
-          open={showQrModal}
-          onClose={() => setShowQrModal(false)}
-          bookingData={getBookingData()}
-          bookingId={bookingId}
-          totalAmount={calculateTotalPrice()}
-          onPaymentCompleted={handlePaymentCompleted}
-          onPaymentExpired={handlePaymentExpired}
-        />
-      )}
     </Box>
   );
 };

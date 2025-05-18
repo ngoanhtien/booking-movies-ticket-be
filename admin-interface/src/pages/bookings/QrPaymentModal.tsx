@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Typography, 
-  Paper, Grid, Divider, CircularProgress, styled, Alert 
+  Paper, Grid, Divider, CircularProgress, styled, Alert, IconButton 
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import axiosInstance from '../../utils/axios';
 import { BookingData, FoodItemInfo } from '../../types/booking';
+import CloseIcon from '@mui/icons-material/Close';
 
 const QRImg = styled('img')({
   maxWidth: '100%',
@@ -71,21 +72,28 @@ const QrPaymentModal: React.FC<QrPaymentModalProps> = ({
       setError(null);
       
       try {
+        console.log("📱 QR DEBUG: Generating QR code for booking ID:", bookingId);
+        
         const response = await axiosInstance.post('/api/v1/payment/generate-qr', {
           bookingId: bookingId,
           paymentMethod: 'QR_MOMO', // Hoặc 'QR_SEPAY' tùy theo yêu cầu
           amount: totalAmount
         });
         
+        console.log("📱 QR DEBUG: QR API response:", response);
+        
         if (response.data?.result) {
+          console.log("📱 QR DEBUG: Using result from API response");
           setQrData(response.data.result);
         } else if (response.data?.data) {
+          console.log("📱 QR DEBUG: Using data from API response");
           setQrData(response.data.data);
         } else {
+          console.error("📱 QR DEBUG: Invalid response format", response.data);
           throw new Error('Invalid response format');
         }
       } catch (err: any) {
-        console.error('Error generating QR code:', err);
+        console.error('📱 QR DEBUG: Error generating QR code:', err);
         setError(err.message || 'Error generating QR code');
       } finally {
         setLoading(false);
@@ -120,14 +128,22 @@ const QrPaymentModal: React.FC<QrPaymentModalProps> = ({
     
     try {
       setChecking(true);
+      console.log("📱 QR DEBUG: Checking payment status for paymentId:", qrData.paymentId);
+      
       const response = await axiosInstance.get(`/api/v1/payment/status/${qrData.paymentId}`);
+      console.log("📱 QR DEBUG: Payment status response:", response.data);
+      
       const isPaid = response.data?.result?.paid || response.data?.data?.paid;
+      console.log("📱 QR DEBUG: Payment status - isPaid:", isPaid);
       
       if (isPaid) {
+        console.log("📱 QR DEBUG: Payment completed successfully, calling onPaymentCompleted()");
         onPaymentCompleted();
+      } else {
+        console.log("📱 QR DEBUG: Payment not completed yet, will check again");
       }
     } catch (err) {
-      console.error('Error checking payment status:', err);
+      console.error('📱 QR DEBUG: Error checking payment status:', err);
     } finally {
       setChecking(false);
     }
@@ -146,123 +162,104 @@ const QrPaymentModal: React.FC<QrPaymentModalProps> = ({
     return () => clearInterval(interval);
   }, [open, qrData, checking, checkPaymentStatus]);
   
-  return (
-    <Dialog 
-      open={open} 
-      onClose={timeLeft > 0 ? onClose : undefined}
-      maxWidth="md"
-      fullWidth
-    >
-      <DialogTitle>
-        {t('booking.payment.qrPaymentTitle', 'Thanh toán bằng mã QR')}
-      </DialogTitle>
+  // Cancel booking when modal is closed
+  const handleCancel = useCallback(async () => {
+    if (!bookingId) return;
+    
+    try {
+      console.log("📱 QR DEBUG: Cancelling booking ID:", bookingId);
+      setLoading(true);
       
+      // Call the cancellation API
+      const response = await axiosInstance.post('/api/v1/bookings/cancel', { bookingId });
+      console.log("📱 QR DEBUG: Cancel booking response:", response.data);
+      
+      // Close the modal
+      onClose();
+    } catch (err) {
+      console.error('📱 QR DEBUG: Error cancelling booking:', err);
+      // Still close the modal even if there's an error
+      onClose();
+    } finally {
+      setLoading(false);
+    }
+  }, [bookingId, onClose]);
+  
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>
+        Thanh toán đặt vé
+        <IconButton
+          aria-label="close"
+          onClick={onClose}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: (theme) => theme.palette.grey[500],
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
       <DialogContent>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+        {/* QR Code */}
+        <Box sx={{ textAlign: 'center', mb: 2 }}>
+          {loading ? (
             <CircularProgress />
-          </Box>
-        ) : error ? (
-          <Alert severity="error">{error}</Alert>
-        ) : qrData ? (
-          <Grid container spacing={3}>
-            {/* Cột bên trái: Thông tin đặt vé */}
-            <Grid item xs={12} md={6}>
-              <Paper elevation={0} sx={{ p: 2, bgcolor: '#f5f5f5' }}>
-                <Typography variant="h6" gutterBottom>
-                  {t('booking.payment.bookingInfo', 'Thông tin đặt vé')}
-                </Typography>
-                
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    <strong>{bookingData.movie?.movieName}</strong>
-                  </Typography>
-                  
-                  <Typography variant="body2" gutterBottom>
-                    <strong>{t('booking.payment.showtime', 'Thời gian')}:</strong> {bookingData.movie?.date?.toString()} {bookingData.movie?.startTime?.toString()}
-                  </Typography>
-                  
-                  <Typography variant="body2" gutterBottom>
-                    <strong>{t('booking.payment.cinema', 'Rạp')}:</strong> {bookingData.cinema?.cinemaName}
-                  </Typography>
-                  
-                  <Typography variant="body2" gutterBottom>
-                    <strong>{t('booking.payment.room', 'Phòng chiếu')}:</strong> {bookingData.cinema?.roomName}
-                  </Typography>
-                  
-                  <Typography variant="body2" gutterBottom>
-                    <strong>{t('booking.payment.seats', 'Ghế')}:</strong> {bookingData.seats?.join(', ')}
-                  </Typography>
-                </Box>
-                
-                <Divider sx={{ mb: 2 }} />
-                
-                {bookingData.foodItems && bookingData.foodItems.length > 0 && (
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      {t('booking.payment.foodItems', 'Thức ăn & Đồ uống')}:
-                    </Typography>
-                    
-                    {bookingData.foodItems.map((item: FoodItemInfo, index: number) => (
-                      <Typography key={index} variant="body2">
-                        {item.quantity} x {item.name} ({item.price.toLocaleString()} đ)
-                      </Typography>
-                    ))}
-                  </Box>
-                )}
-                
-                <Divider sx={{ mb: 2 }} />
-                
-                <Typography variant="h6" color="primary">
-                  {t('booking.payment.totalAmount', 'Tổng tiền')}: {totalAmount.toLocaleString()} đ
-                </Typography>
-              </Paper>
-            </Grid>
-            
-            {/* Cột bên phải: Mã QR và hướng dẫn */}
-            <Grid item xs={12} md={6}>
-              <Box sx={{ textAlign: 'center', mb: 2 }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
-                  {qrData.provider === 'MOMO' 
-                    ? t('booking.payment.scanMoMoQr', 'Quét mã QR bằng MoMo để thanh toán') 
-                    : t('booking.payment.scanSePayQr', 'Quét mã QR để thanh toán')}
-                </Typography>
-                
-                <QRImg 
-                  src={qrData.qrImageUrl} 
-                  alt="Payment QR Code" 
-                  sx={{ maxWidth: '250px', my: 2 }}
-                />
-                
-                <Alert severity="warning" sx={{ mb: 2, textAlign: 'left' }}>
-                  {t('booking.payment.noCancel', 'Đã thanh toán sẽ không được huỷ vé, vui lòng kiểm tra lại thông tin vé')}
-                </Alert>
-                
-                <TimerWrapper>
-                  <Typography variant="body1" sx={{ mr: 1 }}>
-                    {t('booking.payment.timeRemaining', 'Thời gian còn lại')}:
-                  </Typography>
-                  <CountdownText>
-                    {formatTime(timeLeft)}
-                  </CountdownText>
-                </TimerWrapper>
-                
-                <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
-                  {qrData.provider === 'MOMO' 
-                    ? t('booking.payment.momoInstructions', 'Sử dụng App MoMo hoặc ứng dụng Camera hỗ trợ để quét mã.') 
-                    : t('booking.payment.sePayInstructions', 'Sử dụng ứng dụng ngân hàng để quét mã VietQR.')}
-                </Typography>
-              </Box>
+          ) : error ? (
+            <Alert severity="error">{error}</Alert>
+          ) : qrData && qrData.qrImageUrl ? (
+            <Box>
+              <Box 
+                component="img" 
+                src={qrData.qrImageUrl}
+                alt="QR Code" 
+                sx={{ maxWidth: 240, mb: 2 }}
+              />
+              <Typography variant="h6">
+                Tổng tiền: {totalAmount.toLocaleString('vi-VN')} VND
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Vui lòng quét mã QR để thanh toán
+              </Typography>
+            </Box>
+          ) : (
+            <Alert severity="warning">Không thể tạo mã QR. Vui lòng thử lại sau.</Alert>
+          )}
+        </Box>
+        
+        {/* Timer */}
+        {timeLeft > 0 && (
+          <Grid container justifyContent="center" sx={{ mb: 2 }}>
+            <Grid item>
+              <Typography variant="body1" color={timeLeft < 60 ? "error" : "textPrimary"}>
+                Còn lại: {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+              </Typography>
             </Grid>
           </Grid>
-        ) : null}
+        )}
+        
+        {/* Modal actions */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+          <Button 
+            variant="outlined" 
+            color="error" 
+            onClick={handleCancel} 
+            disabled={loading}
+          >
+            Hủy đặt vé
+          </Button>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={checkPaymentStatus}
+            disabled={checking || loading}
+          >
+            {checking ? 'Đang kiểm tra...' : 'Kiểm tra thanh toán'}
+          </Button>
+        </Box>
       </DialogContent>
-      
-      <DialogActions>
-        <Button onClick={onClose} color="inherit" disabled={timeLeft <= 0}>
-          {t('common.cancel', 'Hủy')}
-        </Button>
-      </DialogActions>
     </Dialog>
   );
 };

@@ -44,6 +44,10 @@ public class Bill extends BaseEntity {
     @OneToMany(mappedBy = "bill")
     private Set<BillFood> billFoods = new HashSet<>();
 
+    @ManyToOne
+    @JoinColumn(name = "booking_id")
+    private Booking booking;
+
     @JsonManagedReference("bill-user")
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")

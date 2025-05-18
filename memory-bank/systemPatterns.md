@@ -37,6 +37,8 @@
    - Stale time and cache time settings
    - Error boundary implementation
    - Loading state patterns
+   - **Deterministic Random Generation Strategy**: Sử dụng kỹ thuật `seededRandom` để tạo ra các giá trị ngẫu nhiên có tính quyết định (deterministic) dựa trên một seed cố định (như ID của suất chiếu và vị trí ghế). Điều này đảm bảo tính nhất quán trong hiển thị dữ liệu mô phỏng ngẫu nhiên giữa các phiên làm việc khác nhau.
+   - **Local Storage State Persistence**: Sử dụng localStorage như một "database client-side" để lưu trữ và duy trì trạng thái quan trọng (ví dụ: ghế đã đặt) giữa các lần tải trang, cho phép mô phỏng các tính năng cần database/server thực sự trong giai đoạn phát triển.
 
 2. Backend
    - Spring Boot 3.x

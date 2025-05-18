@@ -2,6 +2,9 @@ package com.booking.movieticket.service;
 
 import com.booking.movieticket.dto.request.BookingRequest;
 import com.booking.movieticket.dto.response.BookingResponse;
+import com.booking.movieticket.dto.response.BookingHistoryResponse;
+
+import java.util.List;
 
 public interface BookingService {
     /**
@@ -18,4 +21,11 @@ public interface BookingService {
      * @return Thông tin đơn đặt vé
      */
     BookingResponse getBookingDetails(Long bookingId);
+    
+    /**
+     * Lấy lịch sử đặt vé của người dùng
+     * @param userId ID của người dùng
+     * @return Danh sách đơn đặt vé của người dùng
+     */
+    List<BookingHistoryResponse> getUserBookingHistory(Long userId);
 }

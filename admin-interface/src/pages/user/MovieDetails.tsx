@@ -67,10 +67,11 @@ interface ShowtimeSelectionProps {
   isLoading: boolean;
   date: string;
   onShowtimeSelect: (branchId: number, showtimeId: number, roomType: string) => void;
+  movieName?: string; // Thêm movie name
 }
 
 // New ShowtimeSelection component with proper types
-const ShowtimeSelection: React.FC<ShowtimeSelectionProps> = ({ branches, isLoading, date, onShowtimeSelect }) => {
+const ShowtimeSelection: React.FC<ShowtimeSelectionProps> = ({ branches, isLoading, date, onShowtimeSelect, movieName }) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const navigate = useNavigate();
@@ -80,6 +81,10 @@ const ShowtimeSelection: React.FC<ShowtimeSelectionProps> = ({ branches, isLoadi
     // Format the showtime ID for the BookingForm component
     const formattedShowtimeId = `${showtimeId}`;
     
+    // Tìm thông tin chi tiết về branch và showtime được chọn
+    const selectedBranch = branches.find(b => b.branchId === branchId);
+    const selectedShowtime = selectedBranch?.showtimes?.find(s => s.scheduleId === showtimeId);
+    
     // Navigate directly to seat selection with the selected showtime info
     navigate(`/bookings/seat-selection/${showtimeId}`, { 
       state: { 
@@ -87,7 +92,13 @@ const ShowtimeSelection: React.FC<ShowtimeSelectionProps> = ({ branches, isLoadi
         showtimeId: formattedShowtimeId, 
         roomType,
         selectedDate: date,
-        movieId // Include the movieId to enable navigation back
+        movieId, // Include the movieId to enable navigation back
+        // Thêm thông tin bổ sung để không cần gọi API
+        branchName: selectedBranch?.branchName || "",
+        roomName: selectedShowtime?.roomName || "",
+        roomId: selectedShowtime?.roomId || 0,
+        scheduleTime: selectedShowtime?.scheduleTime || "",
+        movieName: movieName || ""
       } 
     });
   };
@@ -492,7 +503,32 @@ const MovieDetails: React.FC = () => {
                       size="large"
                       fullWidth
                       startIcon={<LocalActivityIcon sx={{ fontSize: '1.3rem' }} />}
-                      onClick={() => navigate(`/book-tickets/${movie.id}`)}
+                      onClick={() => {
+                        // Lấy showtime đầu tiên (nếu có) để chuyển hướng trực tiếp đến trang chọn ghế
+                        const firstBranch = showtimesData?.branches?.[0];
+                        const firstShowtime = firstBranch?.showtimes?.[0];
+                        
+                        if (firstShowtime && firstBranch) {
+                          navigate(`/bookings/seat-selection/${firstShowtime.scheduleId}`, {
+                            state: {
+                              branchId: firstBranch.branchId,
+                              showtimeId: firstShowtime.scheduleId,
+                              roomType: firstShowtime.roomType || '2D',
+                              selectedDate: formattedSelectedDate,
+                              movieId: movie.id,
+                              // Thêm thông tin bổ sung để không cần gọi API
+                              branchName: firstBranch.branchName || "",
+                              roomName: firstShowtime.roomName || "",
+                              roomId: firstShowtime.roomId || 0,
+                              scheduleTime: firstShowtime.scheduleTime || "",
+                              movieName: movie.name || ""
+                            }
+                          });
+                        } else {
+                          // Nếu không có showtime, vẫn chuyển đến trang đặt vé
+                          navigate(`/book-tickets/${movie.id}`)
+                        }
+                      }}
                       sx={{ 
                         px: { xs: 3, sm: 6 },
                         py: 1.8,
@@ -1048,7 +1084,15 @@ const MovieDetails: React.FC = () => {
                               label={`${st.scheduleTime} (${st.roomName || t('common.unknown', 'Unknown')})`}
                               variant="outlined"
                               clickable
-                              onClick={() => navigate(`/book-tickets/${movie.id}?scheduleId=${st.scheduleId}&roomId=${st.roomId}&branchId=${branch.branchId}&date=${st.scheduleDate || formattedSelectedDate}&time=${st.scheduleTime}`)}
+                              onClick={() => navigate(`/bookings/seat-selection/${st.scheduleId}`, { 
+                                state: { 
+                                  branchId: branch.branchId,
+                                  showtimeId: st.scheduleId, 
+                                  roomType: st.roomType || st.roomName || '2D',
+                                  selectedDate: st.scheduleDate || formattedSelectedDate,
+                                  movieId: movie.id
+                                } 
+                              })}
                               sx={{
                                 borderColor: theme.palette.primary.light,
                                 color: theme.palette.primary.dark,
@@ -1092,7 +1136,32 @@ const MovieDetails: React.FC = () => {
                   color="primary"
                   size="large"
                   startIcon={<LocalActivityIcon sx={{ fontSize: '1.3rem' }} />}
-                  onClick={() => navigate(`/book-tickets/${movie.id}`)}
+                  onClick={() => {
+                    // Lấy showtime đầu tiên (nếu có) để chuyển hướng trực tiếp đến trang chọn ghế
+                    const firstBranch = showtimesData?.branches?.[0];
+                    const firstShowtime = firstBranch?.showtimes?.[0];
+                    
+                    if (firstShowtime && firstBranch) {
+                      navigate(`/bookings/seat-selection/${firstShowtime.scheduleId}`, {
+                        state: {
+                          branchId: firstBranch.branchId,
+                          showtimeId: firstShowtime.scheduleId,
+                          roomType: firstShowtime.roomType || '2D',
+                          selectedDate: formattedSelectedDate,
+                          movieId: movie.id,
+                          // Thêm thông tin bổ sung để không cần gọi API
+                          branchName: firstBranch.branchName || "",
+                          roomName: firstShowtime.roomName || "",
+                          roomId: firstShowtime.roomId || 0,
+                          scheduleTime: firstShowtime.scheduleTime || "",
+                          movieName: movie.name || ""
+                        }
+                      });
+                    } else {
+                      // Nếu không có showtime, vẫn chuyển đến trang đặt vé
+                      navigate(`/book-tickets/${movie.id}`)
+                    }
+                  }}
                   sx={{
                     px: 4, 
                     py: 1.5,
@@ -1205,43 +1274,42 @@ const MovieDetails: React.FC = () => {
       )}
 
       {/* Showtimes Section */}
-      {showShowtimesSection && (
-        <Box mt={5} id="showtimes-section">
-          <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-              <Typography variant="h5" component="h2" fontWeight="bold">
-                {t('showtimes.availableShowtimes')}
-              </Typography>
-              
-              {/* Date picker */}
-              <TextField
-                type="date"
-                value={formattedSelectedDate}
-                onChange={(e) => setSelectedDate(new Date(e.target.value))}
-                InputLabelProps={{ shrink: true }}
-                label={t('showtimes.selectDate')}
-              />
-            </Box>
-            
-            {/* Showtimes by theater with direct booking */}
-            <ShowtimeSelection 
-              branches={branches}
-              isLoading={isLoadingShowtimes}
-              date={formattedSelectedDate}
-              onShowtimeSelect={(branchId, showtimeId, roomType) => {
-                navigate(`/bookings/seat-selection/${showtimeId}`, { 
-                  state: { 
-                    branchId,
-                    showtimeId,
-                    roomType,
-                    selectedDate: formattedSelectedDate
-                  } 
-                });
+      <Box id="showtimes" sx={{ mt: 4, scrollMarginTop: '64px' }}>
+        <Typography variant="h5" fontWeight="bold" mb={2}>
+          {t('showtimes.title')}
+        </Typography>
+        <Box display="flex" flexDirection="column">
+          {/* Date selection */}
+          <Box mb={3}>
+            <Typography variant="subtitle1" mb={1}>
+              {t('showtimes.selectDate')}:
+            </Typography>
+            <TextField
+              type="date"
+              value={formattedSelectedDate}
+              onChange={(e) => {
+                const newDate = new Date(e.target.value);
+                setSelectedDate(newDate);
+                setShowShowtimesSection(true);
               }}
+              sx={{ width: { xs: '100%', sm: 'auto' } }}
             />
-          </Paper>
+          </Box>
+          
+          {/* Only show showtimes section if shown or direct booking requested */}
+          {(showShowtimesSection || directBooking) && (
+            <>
+              <ShowtimeSelection
+                branches={showtimesData?.branches || []}
+                isLoading={isLoadingShowtimes}
+                date={formattedSelectedDate}
+                onShowtimeSelect={() => {}} // We've refactored to use direct navigation
+                movieName={movie?.name} // Truyền tên phim qua props
+              />
+            </>
+          )}
         </Box>
-      )}
+      </Box>
     </Container>
   );
 };

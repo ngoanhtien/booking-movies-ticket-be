@@ -29,12 +29,15 @@ public class BookingController {
     public ResponseEntity<ApiResponse<?>> createBooking(
             @AuthenticationPrincipal DomainUserDetails userDetails,
             @RequestBody BookingRequest bookingRequest) {
-        log.info("Creating booking for user: {}", userDetails != null ? userDetails.getUserId() : "anonymous");
+        log.info("============== PAYMENT CONTROLLER (sepay-webhook) ==============");
+        log.info("Received booking request at /payment/sepay-webhook endpoint");
+        log.info("User details: {}", userDetails);
+        log.info("Booking request: {}", bookingRequest);
         
         // Nếu userDetails là null (có thể xảy ra nếu chưa đăng nhập), sử dụng ID mặc định
         Long userId = userDetails != null ? userDetails.getUserId() : 1L; // ID mặc định cho test  
         
-        log.info("Booking request: {}", bookingRequest);
+        log.info("Processing booking for user ID: {}", userId);
         BookingResponse bookingResponse = bookingService.createBooking(userId, bookingRequest);
         log.info("Booking created successfully with id: {}", bookingResponse.getBookingId());
         return ResponseEntity.ok(new ApiResponse<>("Booking created successfully", bookingResponse));
@@ -43,6 +46,7 @@ public class BookingController {
     @PostMapping("/process")
     public ResponseEntity<ApiResponse<?>> processPayment(
             @RequestBody Map<String, Object> paymentRequest) {
+        log.info("============== PAYMENT CONTROLLER (process) ==============");
         log.info("Processing payment: {}", paymentRequest);
         // Mô phỏng xử lý thanh toán thành công
         return ResponseEntity.ok(new ApiResponse<>("Payment processed successfully", 
@@ -53,6 +57,10 @@ public class BookingController {
     public ResponseEntity<ApiResponse<?>> createBookingAlternative(
             @AuthenticationPrincipal DomainUserDetails userDetails,
             @RequestBody BookingRequest bookingRequest) {
+        log.info("============== PAYMENT CONTROLLER (bookings/create) ==============");
+        log.info("Received booking request at /payment/bookings/create endpoint");
+        log.info("User details: {}", userDetails);
+        log.info("Booking request: {}", bookingRequest);
         return createBooking(userDetails, bookingRequest);
     }
 
@@ -64,6 +72,7 @@ public class BookingController {
      */
     @GetMapping("/{bookingId}")
     public ResponseEntity<ApiResponse<?>> getBookingDetails(@PathVariable Long bookingId) {
+        log.info("============== PAYMENT CONTROLLER (get booking) ==============");
         log.info("Getting details for booking: {}", bookingId);
         BookingResponse bookingResponse = bookingService.getBookingDetails(bookingId);
         return ResponseEntity.ok(new ApiResponse<>("Booking details retrieved successfully", bookingResponse));
@@ -71,6 +80,7 @@ public class BookingController {
 
     @GetMapping("/test-booking")
     public ResponseEntity<ApiResponse<?>> testBooking() {
+        log.info("============== PAYMENT CONTROLLER (test-booking) ==============");
         // Tạo một BookingResponse mẫu cho mục đích test
         BookingResponse mockResponse = new BookingResponse();
         mockResponse.setBookingId(999L); // ID mẫu
@@ -101,6 +111,7 @@ public class BookingController {
     
     @PostMapping("/simulate")
     public ResponseEntity<ApiResponse<?>> simulatePayment(@RequestBody Map<String, Object> paymentRequest) {
+        log.info("============== PAYMENT CONTROLLER (simulate) ==============");
         log.info("Simulating payment: {}", paymentRequest);
         // Mô phỏng xử lý thanh toán thành công
         return ResponseEntity.ok(new ApiResponse<>("Payment simulation successful", 

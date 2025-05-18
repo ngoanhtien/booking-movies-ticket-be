@@ -44,7 +44,15 @@ public enum ErrorCode {
 
     // General Errors (9000-9999)
     BAD_REQUEST(9000, "Bad request", HttpStatus.BAD_REQUEST),
-    UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR);
+    UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    // Booking related errors
+    BOOKING_NOT_FOUND(1310, "Booking not found", HttpStatus.NOT_FOUND),
+
+    // Review related errors
+    REVIEW_ALREADY_EXISTS(1311, "User has already reviewed this movie", HttpStatus.CONFLICT),
+    REVIEW_NOT_FOUND(1312, "Review not found", HttpStatus.NOT_FOUND),
+    INVALID_RATING(1313, "Rating must be between 1 and 5", HttpStatus.BAD_REQUEST);
 
 
     ErrorCode(String message) {

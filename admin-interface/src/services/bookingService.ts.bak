@@ -424,7 +424,7 @@ export const bookingService = {
     console.log('🔍 BOOKING DEBUG: Start createBooking with data:', bookingData);
     console.log('🔍 BOOKING DEBUG: Using endpoint:', BOOKING_ENDPOINTS.CREATE);
     
-    // Sử dụng axiosInstance thay vì fetch trực tiếp
+    // Sử dụng fetch trực tiếp để debug dễ dàng hơn
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -434,51 +434,87 @@ export const bookingService = {
       
       console.log('🔍 BOOKING DEBUG: Sending POST request to:', BOOKING_ENDPOINTS.CREATE);
       
-      try {
-        const response = await axiosInstance.post(BOOKING_ENDPOINTS.CREATE, bookingData);
+      const response = await fetch(BOOKING_ENDPOINTS.CREATE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(bookingData)
+      });
+      
+      console.log('🔍 BOOKING DEBUG: Response status:', response.status);
+      console.log('🔍 BOOKING DEBUG: Response status text:', response.statusText);
+      
+      // Hiển thị headers một cách an toàn hơn
+      const headersObj: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        headersObj[key] = value;
+      });
+      console.log('🔍 BOOKING DEBUG: Response headers:', headersObj);
+      
+      if (!response.ok) {
+        console.error('🔍 BOOKING DEBUG: API Error', response.status, response.statusText);
         
-        console.log('🔍 BOOKING DEBUG: Response status:', response.status);
-        console.log('🔍 BOOKING DEBUG: Response status text:', response.statusText);
-        console.log('🔍 BOOKING DEBUG: Response headers:', response.headers);
-        
-        const responseData = response.data;
-        console.log('🔍 BOOKING DEBUG: Success response data:', responseData);
-        
-        // Return the appropriate data structure based on the response
-        if (responseData?.result) {
-          console.log('🔍 BOOKING DEBUG: Returning result:', responseData.result);
-          return responseData.result;
+        let errorText = '';
+        try {
+          const errorData = await response.json();
+          errorText = JSON.stringify(errorData);
+          console.error('🔍 BOOKING DEBUG: Error details:', errorText);
+        } catch (e) {
+          errorText = 'Could not parse error response';
+          console.error('🔍 BOOKING DEBUG: Failed to parse error response');
         }
-        console.log('🔍 BOOKING DEBUG: Returning full response data');
-        return responseData;
-      } catch (error: any) {  // Type assertion for error
-        console.error('🔍 BOOKING DEBUG: Primary endpoint error:', error);
-        console.log('🔍 BOOKING DEBUG: Trying alternative endpoint:', BOOKING_ENDPOINTS.CREATE_ALT);
         
-        // Try the alternative endpoint
-        const response = await axiosInstance.post(BOOKING_ENDPOINTS.CREATE_ALT, bookingData);
+        console.log('🔍 BOOKING DEBUG: Trying alternative endpoint:', BOOKING_ENDPOINTS.CREATE_ALT);
+        // Proceed with alternative endpoint logic below...
+      }
+      
+      const responseData = await response.json();
+      console.log('🔍 BOOKING DEBUG: Success response data:', responseData);
+      
+      // Return the appropriate data structure based on the response
+      if (responseData?.result) {
+        console.log('🔍 BOOKING DEBUG: Returning result:', responseData.result);
+        return responseData.result;
+      }
+      console.log('🔍 BOOKING DEBUG: Returning full response data');
+      return responseData;
+    } catch (error) {
+      console.error('🔍 BOOKING DEBUG: Initial request failed:', error);
+      console.log('🔍 BOOKING DEBUG: Trying alternative endpoint:', BOOKING_ENDPOINTS.CREATE_ALT);
+      
+      try {
+        const token = localStorage.getItem('token');
+        console.log('🔍 BOOKING DEBUG: Sending request to alternative endpoint');
+        
+        const response = await fetch(BOOKING_ENDPOINTS.CREATE_ALT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(bookingData)
+        });
         
         console.log('🔍 BOOKING DEBUG: Alternative response status:', response.status);
         
-        const responseData = response.data;
+        if (!response.ok) {
+          console.error('🔍 BOOKING DEBUG: Alternative API error:', response.status, response.statusText);
+          throw new Error(`Alternative endpoint failed with status ${response.status}`);
+        }
+        
+        const responseData = await response.json();
         console.log('🔍 BOOKING DEBUG: Alternative success response:', responseData);
         
         if (responseData?.result) {
           return responseData.result;
         }
         return responseData;
+      } catch (altError) {
+        console.error('🔍 BOOKING DEBUG: All booking attempts failed:', altError);
+        throw new Error('Could not create booking. Please try again.');
       }
-    } catch (error: any) {  // Type assertion for error
-      console.error('🔍 BOOKING DEBUG: All booking attempts failed:', error);
-      
-      // If the error is from axios, extract the error message for better details
-      if (error.response) {
-        console.error('🔍 BOOKING DEBUG: Error response data:', error.response.data);
-        console.error('🔍 BOOKING DEBUG: Error response status:', error.response.status);
-        throw new Error(`Booking failed: ${error.response.data?.message || error.message}`);
-      }
-      
-      throw new Error('Could not create booking. Please try again.');
     }
   },
 
@@ -496,29 +532,39 @@ export const bookingService = {
       
       console.log('🔍 PAYMENT DEBUG: Sending POST request to:', BOOKING_ENDPOINTS.SIMULATE_PAYMENT);
       
-      const response = await axiosInstance.post(BOOKING_ENDPOINTS.SIMULATE_PAYMENT, paymentData);
+      const response = await fetch(BOOKING_ENDPOINTS.SIMULATE_PAYMENT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(paymentData)
+      });
       
       console.log('🔍 PAYMENT DEBUG: Response status:', response.status);
       console.log('🔍 PAYMENT DEBUG: Response status text:', response.statusText);
-      console.log('🔍 PAYMENT DEBUG: Response headers:', response.headers);
       
-      const responseData = response.data;
+      // Hiển thị headers một cách an toàn
+      const headersObj: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        headersObj[key] = value;
+      });
+      console.log('🔍 PAYMENT DEBUG: Response headers:', headersObj);
+      
+      if (!response.ok) {
+        console.error('🔍 PAYMENT DEBUG: Payment simulation failed with status:', response.status);
+        throw new Error(`Payment simulation failed with status ${response.status}`);
+      }
+      
+      const responseData = await response.json();
       console.log('🔍 PAYMENT DEBUG: Payment simulation response:', responseData);
       
       if (responseData?.result) {
         return responseData.result;
       }
       return responseData;
-    } catch (error: any) {  // Type assertion for error
+    } catch (error) {
       console.error('🔍 PAYMENT DEBUG: Payment simulation error:', error);
-      
-      // If the error is from axios, extract the error message for better details
-      if (error.response) {
-        console.error('🔍 PAYMENT DEBUG: Error response data:', error.response.data);
-        console.error('🔍 PAYMENT DEBUG: Error response status:', error.response.status);
-        throw new Error(`Payment simulation failed: ${error.response.data?.message || error.message}`);
-      }
-      
       throw new Error('Payment simulation failed. Please try again.');
     }
   },
@@ -536,17 +582,8 @@ export const bookingService = {
 
   // Lấy lịch sử đặt vé của người dùng
   getUserBookings: async () => {
-    try {
-      const response = await axiosInstance.get(`/user/bookings`);
-      console.log('🔍 BOOKING HISTORY DEBUG: Fetched user bookings:', response.data);
-      return response.data?.result || response.data;
-    } catch (error: any) {
-      console.error('🔍 BOOKING HISTORY DEBUG: Error fetching user bookings:', error);
-      if (error.response) {
-        console.error('🔍 BOOKING HISTORY DEBUG: Error response:', error.response.status, error.response.data);
-      }
-      throw new Error(`Could not fetch booking history: ${error.message}`);
-    }
+    const response = await axiosInstance.get(`/user/bookings`);
+    return response.data;
   },
 
   // Test booking flow
