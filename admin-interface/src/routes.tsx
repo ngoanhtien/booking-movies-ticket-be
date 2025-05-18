@@ -30,6 +30,8 @@ import MovieDetails from './pages/user/MovieDetails';
 import UserProfile from './pages/user/UserProfile';
 import BookingHistory from './pages/user/BookingHistory';
 import CinemaSelection from './pages/user/CinemaSelection';
+import SeatSelectionPage from './pages/bookings/SeatSelectionPage';
+import BookingConfirmationPage from './pages/bookings/BookingConfirmationPage';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -74,6 +76,18 @@ const AppRoutes: React.FC = () => {
         <Route path="book-tickets/:movieId" element={
           <ProtectedRoute>
             <BookingPage directBooking={true} />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="bookings/seat-selection/:showtimeId" element={
+          <ProtectedRoute>
+            <SeatSelectionPage />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="booking-confirmation/:showtimeId" element={
+          <ProtectedRoute>
+            <BookingConfirmationPage />
           </ProtectedRoute>
         } />
         

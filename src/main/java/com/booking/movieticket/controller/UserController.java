@@ -10,6 +10,8 @@ import com.booking.movieticket.dto.criteria.UserCriteria;
 import com.booking.movieticket.entity.User;
 import com.booking.movieticket.service.MailSendService;
 import com.booking.movieticket.service.UserService;
+import com.booking.movieticket.service.BookingService;
+import com.booking.movieticket.dto.response.BookingHistoryResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
@@ -33,6 +35,8 @@ import com.booking.movieticket.security.jwt.DomainUserDetails;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
@@ -43,7 +47,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public class UserController {
 
     UserService userService;
-
+    BookingService bookingService;
     MailSendService mailSendService;
 
     @GetMapping
@@ -135,5 +139,40 @@ public class UserController {
                            .body(new ApiResponse<>("Error processing user details.", null));
         }
     }
+    
+    /**
+     * Gets booking history for the currently authenticated user
+     * @return List of user's booking history
+     */
+    @GetMapping("/bookings")
+    public ResponseEntity<ApiResponse<List<BookingHistoryResponse>>> getUserBookings() {
+        log.info("Fetching booking history for current user");
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal() instanceof String && "anonymousUser".equals(authentication.getPrincipal())) {
+            log.warn("No authenticated user found when accessing booking history");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>("User not authenticated", null));
+        }
+
+        try {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof DomainUserDetails) {
+                DomainUserDetails userDetails = (DomainUserDetails) principal;
+                Long userId = userDetails.getUserId();
+                log.info("Fetching booking history for user ID: {}", userId);
+
+                List<BookingHistoryResponse> bookingHistory = bookingService.getUserBookingHistory(userId);
+                return ResponseEntity.ok(new ApiResponse<>("User booking history fetched successfully", bookingHistory));
+            } else {
+                log.error("Principal is not an instance of DomainUserDetails when fetching booking history. Type: {}", principal.getClass().getName());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(new ApiResponse<>("Error processing user details", null));
+            }
+        } catch (Exception e) {
+            log.error("Error fetching booking history: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Error fetching booking history: " + e.getMessage(), null));
+        }
+    }
 }

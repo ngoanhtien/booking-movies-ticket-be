@@ -84,11 +84,11 @@ export interface BookingResponse {
 
 // Correct endpoints based on backend controller paths
 const BOOKING_ENDPOINTS = {
-  CREATE: '/payment/sepay-webhook',
-  CREATE_ALT: '/payment/bookings/create',
-  SIMULATE_PAYMENT: '/payment/simulate',
-  GET_DETAILS: '/payment',
-  TEST: '/payment/test-booking'
+  CREATE: '/api/v1/payment/sepay-webhook',
+  CREATE_ALT: '/api/v1/payment/bookings/create',
+  SIMULATE_PAYMENT: '/api/v1/payment/simulate',
+  GET_DETAILS: '/api/v1/payment',
+  TEST: '/api/v1/payment/test-booking'
 };
 
 export const bookingService = {
@@ -349,35 +349,27 @@ export const bookingService = {
   // Lấy sơ đồ ghế cho một suất chiếu
   getSeatLayout: async (scheduleId: number, roomId: number): Promise<ApiResponse<Seat[]> | null> => {
     try {
-      // Cập nhật URL endpoint với tiền tố /api/v1/
-      const response = await axiosInstance.get<ApiResponse<Seat[]>>(`/api/v1/seats/layout?scheduleId=${scheduleId}&roomId=${roomId}`);
-      return response.data || null;
+      // Gọi API tới endpoint mới xử lý trong ShowtimeController
+      // Thêm timestamp để tránh cache
+      const timestamp = new Date().getTime();
+      const response = await axiosInstance.get<ApiResponse<Seat[]>>(`/api/v1/showtime/seats/layout`, {
+        params: {
+          scheduleId,
+          roomId,
+          _t: timestamp // Thêm timestamp để tránh cache
+        }
+      });
+      
+      if (!response.data) {
+        throw new Error('No data received from server');
+      }
+      
+      // Trả về dữ liệu từ server mà không sử dụng dữ liệu mẫu
+      return response.data;
     } catch (error: unknown) {
       console.error('Error fetching seat layout:', error);
       
-      // Trả về mock seat layout nếu API lỗi
-      const err = error as any; // Type assertion
-      if (err.response?.status === 500) {
-        const mockSeats: Seat[] = [];
-        const rows = ['A', 'B', 'C', 'D'];
-        let id = 1;
-        
-        rows.forEach(row => {
-          for (let i = 1; i <= 8; i++) {
-            mockSeats.push({
-              id: `seat-${id++}`,
-              row,
-              number: i,
-              status: Math.random() > 0.8 ? SeatStatus.Booked : SeatStatus.Available,
-              type: row === 'A' ? 'VIP' : 'REGULAR',
-              price: row === 'A' ? 100000 : 70000
-            });
-          }
-        });
-        
-        return { data: mockSeats };
-      }
-      
+      // Không sử dụng dữ liệu mẫu nữa mà thông báo lỗi để người dùng biết
       throw error;
     }
   },
@@ -395,6 +387,8 @@ export const bookingService = {
       const err = error as any; // Type assertion
       if (err.response?.status === 500) {
         return {
+          status: 'SUCCESS',
+          message: 'Successfully retrieved food items',
           data: [
             {
               id: '1',
@@ -427,36 +421,104 @@ export const bookingService = {
 
   // Đặt vé
   createBooking: async (bookingData: BookingRequest) => {
+    console.log('🔍 BOOKING DEBUG: Start createBooking with data:', bookingData);
+    console.log('🔍 BOOKING DEBUG: Using endpoint:', BOOKING_ENDPOINTS.CREATE);
+    
+    // Sử dụng axiosInstance thay vì fetch trực tiếp
     try {
-      const response = await axiosInstance.post(BOOKING_ENDPOINTS.CREATE, bookingData);
-      if (response.data?.result) {
-        return response.data.result;
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('🔍 BOOKING DEBUG: No authentication token found!');
+        throw new Error('No authentication token found');
       }
-      return response.data;
-    } catch (error) {
+      
+      console.log('🔍 BOOKING DEBUG: Sending POST request to:', BOOKING_ENDPOINTS.CREATE);
+      
       try {
-        const response = await axiosInstance.post(BOOKING_ENDPOINTS.CREATE_ALT, bookingData);
-        if (response.data?.result) {
-          return response.data.result;
+        const response = await axiosInstance.post(BOOKING_ENDPOINTS.CREATE, bookingData);
+        
+        console.log('🔍 BOOKING DEBUG: Response status:', response.status);
+        console.log('🔍 BOOKING DEBUG: Response status text:', response.statusText);
+        console.log('🔍 BOOKING DEBUG: Response headers:', response.headers);
+        
+        const responseData = response.data;
+        console.log('🔍 BOOKING DEBUG: Success response data:', responseData);
+        
+        // Return the appropriate data structure based on the response
+        if (responseData?.result) {
+          console.log('🔍 BOOKING DEBUG: Returning result:', responseData.result);
+          return responseData.result;
         }
-        return response.data;
-      } catch (altError) {
-        console.error('All booking attempts failed:', altError);
-        throw new Error('Could not create booking. Please try again.');
+        console.log('🔍 BOOKING DEBUG: Returning full response data');
+        return responseData;
+      } catch (error: any) {  // Type assertion for error
+        console.error('🔍 BOOKING DEBUG: Primary endpoint error:', error);
+        console.log('🔍 BOOKING DEBUG: Trying alternative endpoint:', BOOKING_ENDPOINTS.CREATE_ALT);
+        
+        // Try the alternative endpoint
+        const response = await axiosInstance.post(BOOKING_ENDPOINTS.CREATE_ALT, bookingData);
+        
+        console.log('🔍 BOOKING DEBUG: Alternative response status:', response.status);
+        
+        const responseData = response.data;
+        console.log('🔍 BOOKING DEBUG: Alternative success response:', responseData);
+        
+        if (responseData?.result) {
+          return responseData.result;
+        }
+        return responseData;
       }
+    } catch (error: any) {  // Type assertion for error
+      console.error('🔍 BOOKING DEBUG: All booking attempts failed:', error);
+      
+      // If the error is from axios, extract the error message for better details
+      if (error.response) {
+        console.error('🔍 BOOKING DEBUG: Error response data:', error.response.data);
+        console.error('🔍 BOOKING DEBUG: Error response status:', error.response.status);
+        throw new Error(`Booking failed: ${error.response.data?.message || error.message}`);
+      }
+      
+      throw new Error('Could not create booking. Please try again.');
     }
   },
 
   // Mô phỏng thanh toán (không cần tích hợp cổng thanh toán thật)
   simulatePayment: async (paymentData: any) => {
+    console.log('🔍 PAYMENT DEBUG: Start simulatePayment with data:', paymentData);
+    console.log('🔍 PAYMENT DEBUG: Using endpoint:', BOOKING_ENDPOINTS.SIMULATE_PAYMENT);
+    
     try {
-      const response = await axiosInstance.post(BOOKING_ENDPOINTS.SIMULATE_PAYMENT, paymentData);
-      if (response.data?.result) {
-        return response.data.result;
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('🔍 PAYMENT DEBUG: No authentication token found!');
+        throw new Error('No authentication token found');
       }
-      return response.data;
-    } catch (error) {
-      console.error('Payment simulation failed:', error);
+      
+      console.log('🔍 PAYMENT DEBUG: Sending POST request to:', BOOKING_ENDPOINTS.SIMULATE_PAYMENT);
+      
+      const response = await axiosInstance.post(BOOKING_ENDPOINTS.SIMULATE_PAYMENT, paymentData);
+      
+      console.log('🔍 PAYMENT DEBUG: Response status:', response.status);
+      console.log('🔍 PAYMENT DEBUG: Response status text:', response.statusText);
+      console.log('🔍 PAYMENT DEBUG: Response headers:', response.headers);
+      
+      const responseData = response.data;
+      console.log('🔍 PAYMENT DEBUG: Payment simulation response:', responseData);
+      
+      if (responseData?.result) {
+        return responseData.result;
+      }
+      return responseData;
+    } catch (error: any) {  // Type assertion for error
+      console.error('🔍 PAYMENT DEBUG: Payment simulation error:', error);
+      
+      // If the error is from axios, extract the error message for better details
+      if (error.response) {
+        console.error('🔍 PAYMENT DEBUG: Error response data:', error.response.data);
+        console.error('🔍 PAYMENT DEBUG: Error response status:', error.response.status);
+        throw new Error(`Payment simulation failed: ${error.response.data?.message || error.message}`);
+      }
+      
       throw new Error('Payment simulation failed. Please try again.');
     }
   },
@@ -474,8 +536,17 @@ export const bookingService = {
 
   // Lấy lịch sử đặt vé của người dùng
   getUserBookings: async () => {
-    const response = await axiosInstance.get(`${API_URL}/api/v1/user/bookings`);
-    return response.data;
+    try {
+      const response = await axiosInstance.get(`/user/bookings`);
+      console.log('🔍 BOOKING HISTORY DEBUG: Fetched user bookings:', response.data);
+      return response.data?.result || response.data;
+    } catch (error: any) {
+      console.error('🔍 BOOKING HISTORY DEBUG: Error fetching user bookings:', error);
+      if (error.response) {
+        console.error('🔍 BOOKING HISTORY DEBUG: Error response:', error.response.status, error.response.data);
+      }
+      throw new Error(`Could not fetch booking history: ${error.message}`);
+    }
   },
 
   // Test booking flow

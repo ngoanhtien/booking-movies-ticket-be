@@ -30,9 +30,13 @@ public enum ErrorCode {
     SHOWING_MOVIE_NOT_FOUND(1203, "Showing movie not found", HttpStatus.NOT_FOUND),
     UPCOMING_MOVIE_NOT_FOUND(1203, "Showing movie not found", HttpStatus.NOT_FOUND),
     BRANCH_NOT_FOUND(1204, "Brand not found", HttpStatus.NOT_FOUND),
-    ROOM_NOT_FOUND(1205, "Room not found", HttpStatus.NOT_FOUND),
-    ROOM_IS_UNASSIGNED(1205, "Room can not be status updated . Only accept AVAILABLE and MAINTENANCE status.", HttpStatus.NOT_FOUND),
-    ROOM_IS_NOT_UNASSIGNED(1205, "Room can not be removed. Only accept delete for UNASSIGNED status.", HttpStatus.NOT_FOUND),
+    SEAT_ALREADY_BOOKED(1205, "Seat already booked or not available", HttpStatus.CONFLICT),
+    USER_ALREADY_REVIEWED_MOVIE(1206, "User has already reviewed this movie", HttpStatus.CONFLICT),
+    USER_NOT_ELIGIBLE_TO_REVIEW(1207, "User is not eligible to review this movie", HttpStatus.FORBIDDEN),
+    ROOM_NOT_FOUND(1208, "Room not found", HttpStatus.NOT_FOUND),
+    ROOM_IS_UNASSIGNED(1209, "Room can not be status updated . Only accept AVAILABLE and MAINTENANCE status.", HttpStatus.NOT_FOUND),
+    ROOM_IS_NOT_UNASSIGNED(1210, "Room can not be removed. Only accept delete for UNASSIGNED status.", HttpStatus.NOT_FOUND),
+
     // Transaction Errors (1300-1399)
     BILL_NOT_FOUND(1300, "Bill not found", HttpStatus.NOT_FOUND),
     PAYMENT_FAILED(1301, "Payment processing failed", HttpStatus.PAYMENT_REQUIRED),
@@ -43,7 +47,15 @@ public enum ErrorCode {
 
     // General Errors (9000-9999)
     BAD_REQUEST(9000, "Bad request", HttpStatus.BAD_REQUEST),
-    UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR);
+    UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    // Booking related errors
+    BOOKING_NOT_FOUND(1310, "Booking not found", HttpStatus.NOT_FOUND),
+
+    // Review related errors
+    REVIEW_ALREADY_EXISTS(1311, "User has already reviewed this movie", HttpStatus.CONFLICT),
+    REVIEW_NOT_FOUND(1312, "Review not found", HttpStatus.NOT_FOUND),
+    INVALID_RATING(1313, "Rating must be between 1 and 5", HttpStatus.BAD_REQUEST);
 
 
     ErrorCode(String message) {

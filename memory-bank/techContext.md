@@ -91,7 +91,8 @@
        "recharts": "^2.6.2",
        "typescript": "^5.0.4",
        "yup": "^1.1.1",
-       "@tanstack/react-query": "^5.75.4"
+       "@tanstack/react-query": "^5.75.4",
+       "react-hot-toast": "^2.4.1"
      }
    }
    ```
@@ -119,6 +120,9 @@
    - Date format localization
    - Token refresh timing and session expiration
    - TypeScript type safety with axios interceptors
+   - QR code generation and display
+   - Payment status polling with optimized intervals
+   - React render optimization for timer components
 
 2. Backend
    - Database performance
@@ -343,3 +347,19 @@
    - Data analysis
    - Vietnamese analytics
    - Export tracking 
+
+## QR Payment Integration
+1. Backend Implementation
+   - REST endpoints for QR code generation and status checking
+   - Service layer for payment provider integration
+   - DTOs for payment requests and responses
+   - Security configuration for payment-related endpoints
+   - Payment status tracking and webhook handlers
+
+2. Frontend Implementation
+   - Modal component for QR display and countdown
+   - Payment status checking with polling mechanism
+   - useCallback and useEffect for performance optimization
+   - Type definitions for payment-related data structures
+   - Translations for payment UI
+   - Toast notifications for payment status updates 
