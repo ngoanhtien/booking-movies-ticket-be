@@ -8,6 +8,6 @@ import lombok.Setter;
 @Setter
 public class MovieCriteria {
 
-    private String name;
+    private String searchTerm;
     private StatusMovie status;
 }

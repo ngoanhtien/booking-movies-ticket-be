@@ -37,6 +37,8 @@
    - Stale time and cache time settings
    - Error boundary implementation
    - Loading state patterns
+   - **Deterministic Random Generation Strategy**: Sử dụng kỹ thuật `seededRandom` để tạo ra các giá trị ngẫu nhiên có tính quyết định (deterministic) dựa trên một seed cố định (như ID của suất chiếu và vị trí ghế). Điều này đảm bảo tính nhất quán trong hiển thị dữ liệu mô phỏng ngẫu nhiên giữa các phiên làm việc khác nhau.
+   - **Local Storage State Persistence**: Sử dụng localStorage như một "database client-side" để lưu trữ và duy trì trạng thái quan trọng (ví dụ: ghế đã đặt) giữa các lần tải trang, cho phép mô phỏng các tính năng cần database/server thực sự trong giai đoạn phát triển.
 
 2. Backend
    - Spring Boot 3.x
@@ -109,6 +111,23 @@
      - Comprehensive logging for API response troubleshooting
      - Default values for graceful handling of missing data
      - **TypeScript Interface Synchronization**: Maintaining strict synchronization between frontend TypeScript interfaces (e.g., `Movie`, `Actor` in `types/movie.ts`) and the actual structure of backend API responses is crucial. This includes defining interfaces for nested objects and ensuring array types match the data (e.g., `Actor[]` vs `string[]`).
+   - **React Performance Optimization Patterns**:
+     - Function memoization with useCallback
+     - Pure component rendering
+     - State update batching
+     - Effect dependency optimization
+     - Conditional rendering for performance
+     - Component tree optimization
+     - Event handler delegation
+     - Timer cleanup in useEffect
+   - **QR Payment Flow Pattern**:
+     - Modal-based presentation for focused user attention
+     - Countdown timer with visual feedback
+     - Polling-based status checking with exponential backoff
+     - Clear booking information display
+     - Payment provider abstraction
+     - Error handling with user-friendly messaging
+     - Automatic navigation on timeout or completion
 
 2. Backend
    - Repository pattern
@@ -182,6 +201,14 @@
    - Token Refresh Success → Retry Original Request
    - Token Refresh Failure → Redirect to Login
 
+5. QR Payment Flow
+   - `BookingForm` → `QrPaymentModal` (Parent-child relationship)
+   - `PaymentController` → `PaymentService` → `QrCodeResponse`
+   - `BookingService` ↔ `PaymentService` (Cross-service communication)
+   - Frontend Status Checking → Backend Status API
+   - Countdown Timer → Expiration Handler → Navigation Service
+   - QR Code Display → Styling System → Responsive Layout
+
 ## Critical Implementation Paths
 1. Report Generation
    - Date range selection
@@ -219,6 +246,15 @@
    - Token refresh → Access continuation
    - Refresh failure → Login redirect
    - User feedback → Clear messaging
+
+3. QR Payment Process
+   - QR code generation in backend
+   - Response mapping to frontend model
+   - Modal display with countdown timer
+   - Status checking via polling
+   - Timeout handling and user redirection
+   - Payment success processing
+   - Error handling and recovery
 
 ## Security Patterns
 1. Authentication
@@ -489,154 +525,40 @@ The system follows a modern React application architecture with TypeScript, focu
 - Status management
 - Export operations
 
+### 4. QR Payment Process
+- QR code generation in backend
+- Response mapping to frontend model
+- Modal display with countdown timer
+- Status checking via polling
+- Timeout handling and user redirection
+- Payment success processing
+- Error handling and recovery
+
 ## Component Relationships
 
 ### 1. Page Structure
-```
-Layout
-├── Sidebar (Vietnamese)
-├── Header (Vietnamese)
-└── Content
-    ├── Dashboard (Vietnamese)
-    ├── MovieManagement (Vietnamese)
-    │   ├── MovieList
-    │   └── MovieForm
-    ├── ShowtimeManagement (Vietnamese)
-    ├── UserManagement (Vietnamese)
-    │   ├── UserList
-    │   └── UserForm
-    └── BookingManagement (Vietnamese)
-        ├── BookingList
-        └── BookingDetails
-```
 
-### 2. Component Dependencies
-- Layout → Sidebar, Header, Content
-- UserManagement → UserList, UserForm
-- UserForm → FormFields, ImageUpload
-- UserList → DataGrid, StatusIndicator
-- BookingManagement → BookingList, BookingDetails
-- BookingDetails → StatusDialog, ExportButton
-- All components → TranslationProvider
+## Frontend Patterns
 
-## Implementation Guidelines
+### Real-time Communication Patterns
 
-### 1. Component Creation
-- Use TypeScript
-- Implement proper typing
-- Follow naming conventions
-- Add proper documentation
-- Include error handling
-- Support Vietnamese text
-- Add loading states
-- Implement status management
-
-### 2. State Management
-- Use Redux for global state
-- Local state for UI
-- Form state with Formik
-- Context for translations
-- Proper state updates
-- Language state handling
-- Loading state management
-- Error state handling
-
-### 3. Form Handling
-- Use Formik for forms
-- Implement Yup validation
-- Handle file uploads
-- Show validation errors
-- Provide feedback
-- Vietnamese error messages
-- Confirmation dialogs
-- Status management
-
-### 4. Data Display
-- Use DataGrid for tables
-- Implement sorting
-- Add filtering
-- Show loading states
-- Handle errors
-- Vietnamese labels
-- Export functionality
-- Status indicators
-
-## Best Practices
-
-### 1. Code Organization
-- Feature-based structure
-- Shared components
-- Type definitions
-- Utility functions
-- Constants
-- Translation files
-- API integration
-- Error handling
-
-### 2. Performance
-- Memoization
-- Lazy loading
-- Code splitting
-- Optimized renders
-- Proper cleanup
-- Translation caching
-- Loading states
-- Error boundaries
-
-### 3. Error Handling
-- Try-catch blocks
-- Error boundaries
-- User feedback
-- Logging
-- Recovery
-- Vietnamese error messages
-- Loading states
-- Status management
-
-### 4. Testing
-- Unit tests
-- Integration tests
-- Component tests
-- Form validation
-- Error cases
-- Translation tests
-- API integration tests
-- Status management tests
-
-## Translation Patterns
-1. Text Management
-   - Centralized translation files
-   - Vietnamese language support
-   - Dynamic text loading
-   - Fallback handling
-   - Status messages
-   - Dialog messages
-   - Export labels
-
-2. Formatting
-   - Date formatting
-   - Number formatting
-   - Currency formatting
-   - Vietnamese locale support
-   - Status formatting
-   - Error formatting
-   - Export formatting
-
-## Error Handling
-1. User Feedback
-   - Vietnamese error messages
-   - Success notifications
-   - Loading states
-   - Validation feedback
-   - Status messages
-   - Dialog messages
-   - Export feedback
-
-2. Validation
-   - Input validation
-   - Business rule validation
-   - Vietnamese error messages
-   - Form feedback
-   - Status validation
-   - Export validation
-   - API validation
+1. **WebSocket Integration for Seat Selection**
+   - **Mẫu Observer**: Hệ thống sử dụng mẫu Observer để theo dõi và phản ứng với các thay đổi trạng thái ghế từ nhiều người dùng.
+   - **Thành phần chính**:
+     - **Connection Management**: Khởi tạo, duy trì và đóng kết nối WebSocket khi cần thiết.
+     - **Message Processing**: Xử lý các tin nhắn đến và đi theo định dạng JSON.
+     - **State Synchronization**: Đồng bộ hóa trạng thái ghế giữa nhiều người dùng.
+     - **Visual Feedback**: Hiển thị trạng thái ghế với các hiệu ứng trực quan để người dùng dễ nhận biết (màu sắc, nhấp nháy).
+   - **Luồng dữ liệu**:
+     1. Người dùng chọn/bỏ chọn ghế trong giao diện
+     2. Ứng dụng gửi thông báo đến server thông qua WebSocket
+     3. Server phát sóng thông báo đến tất cả client đang kết nối
+     4. Các client khác cập nhật giao diện để hiển thị ghế đang được chọn
+     5. Nếu người dùng hoàn tất đặt vé, ghế được đánh dấu là "đã đặt" (Booked)
+   - **Xử lý lỗi kết nối**:
+     - Hiển thị trạng thái kết nối cho người dùng
+     - Thử kết nối lại tự động khi mất kết nối
+     - Duy trì trạng thái cục bộ cho đến khi kết nối được khôi phục
+   - **Tối ưu hóa**:
+     - Dùng bộ đếm thời gian để xóa ghế tạm thời đã quá thời gian timeout (60 giây)
+     - Định danh người dùng duy nhất để phân biệt ghế đang được chính người dùng chọn và ghế đang được người khác chọn

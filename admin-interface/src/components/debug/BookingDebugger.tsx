@@ -110,7 +110,7 @@ const BookingDebugger: React.FC<BookingDebuggerProps> = ({ movieId }) => {
         status: 'SUCCESS'
       };
       
-      const response = await fetch('/payments/simulate', {
+      const response = await fetch('/api/v1/payment/simulate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -195,7 +195,7 @@ const BookingDebugger: React.FC<BookingDebuggerProps> = ({ movieId }) => {
       <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
         <Button 
           variant="contained" 
-          onClick={() => testBookingEndpoint('/payment/sepay-webhook')}
+          onClick={() => testBookingEndpoint('/api/v1/payment/sepay-webhook')}
           disabled={isLoading}
           size="small"
         >
@@ -203,7 +203,7 @@ const BookingDebugger: React.FC<BookingDebuggerProps> = ({ movieId }) => {
         </Button>
         <Button 
           variant="contained" 
-          onClick={() => testBookingEndpoint('/bookings/create')}
+          onClick={() => testBookingEndpoint('/api/v1/payment/bookings/create')}
           disabled={isLoading}
           size="small"
         >

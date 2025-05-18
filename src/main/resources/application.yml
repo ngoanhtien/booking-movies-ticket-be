@@ -12,26 +12,23 @@ spring:
     password: Anhtien123.
     driver-class-name: org.postgresql.Driver
     hikari:
-      pool-name: Hikari
-      auto-commit: false
-    # Vô hiệu hóa tạm thời data SQL initialization
-    # initialization-mode: always
-    # data: classpath:data.sql
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 30000
+      max-lifetime: 2000000
+      connection-timeout: 30000
+      pool-name: Movie-Ticket-HikariPool
   jpa:
+    open-in-view: true
     hibernate:
       ddl-auto: update
-    show-sql: true
     properties:
       hibernate:
-        format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        jdbc:
-          batch_size: 50
-        order_inserts: true
-        order_updates: true
-        batch_versioned_data: true
-    # defer-datasource-initialization: true
+        format_sql: true
+        show-sql: true
   mail:
+    default-encoding: UTF-8
     host: smtp.gmail.com
     port: 587
     username: tien.ngo1@ntq-solution.com.vn
@@ -40,14 +37,35 @@ spring:
       protocol: smtp
     properties:
       mail:
-        debug: true
         smtp:
           auth: true
           starttls:
             enable: true
+            required: true
+        debug: true
   sql:
     init:
-      mode: never # Thay đổi mode từ always thành never
+      mode: never
+      data-locations: classpath:data.sql
+  mvc:
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
+
+cloudinary:
+  cloud_name: your-cloud-name
+  api_key: your-api-key
+  api_secret: your-api-secret
+  secure: true
+
+# Added SePay config at root level
+sepay:
+  merchant_id: 91e3bb76-c3f6-42e0-837b-765e5aba7062
+  terminal_id: 78aaa10d-32f8-4298-8a9c-f8d054a3d890
+  merchant_auth_code: 7cf57bc7-8640-416c-9294-01e1efbad5c3
+  callback_url: https://alive-bee-adequately.ngrok-free.app/payment/sepay-webhook
+
 logging:
   level:
     com:
@@ -57,29 +75,64 @@ logging:
       springframework:
         mail: DEBUG
         security: TRACE
+        web: DEBUG
     org.springframework.security.web.FilterChainProxy: TRACE
     org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+    com.booking.movieticket: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
 
 server:
   port: 8080
+  error:
+    include-stacktrace: never
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 
 security:
   jwt:
     secret: Y2JkN2M4NjU3NTM4Y2ZiNDEyMjU5NjM1ZGVhMDIwOGFiMzZiYjY0MTJmMDVlZTY3ZTQyMzZjMTA4YWIxODk3YzI4MTkxNTkzZjFmYmQ5ZGM5MTA1NmVmZjAyODExZTQxMGRlMWI1M2U5MDEzNDY1ZDJhMmZiODhmMDI0MWYyNWQ=
     # Token is valid 24 hours (86400)
     token-validity-in-seconds: 2629743
+    # Token is valid 30 days
+    token-validity-in-seconds-for-remember-me: 2629743
+    # Token refresh time in seconds (30 days)
     token-refresh-in-seconds: 2629743
 
-resetPasswordBody: "Dear {0},\n\nYou have requested to reset your account password using the \"Forgot Password\" feature.\nWe confirm that the password has been successfully changed for the account: {1}.\nIf you did not make this request, please contact us immediately to ensure the security of your account.\n\nThank you for using our services."
-resetPasswordSubject: "Password Change Notification"
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+  api-docs:
+    path: /api-docs
+  pathsToMatch: /**
 
-cloudinary:
-  cloud_name: dgpgct51a
-  api_key: 699739212132192
-  api_secret: 8GoUJ59v1jiRXtt6z2-R90vP2sc
-  secure: true
+cors:
+  allowed-origins: "*"
+  allowed-methods: GET, POST, PUT, DELETE, OPTIONS
+  allowed-headers: Authorization, Content-Type, X-Requested-With, Accept, X-Api-Key
+  allow-credentials: false
+  max-age: 3600
 
-sepay:
-  merchant_id: MOVIE_TICKET_MERCHANT
-  callback_url: https://alive-bee-adequately.ngrok-free.app/payment/sepay-webhook
+storage:
+  folder: ${STORAGE_FOLDER:C:\\movie-ticket-storage}
+
+default:
+  admin:
+    username: admin
+    password: ${ADMIN_PASSWORD:admin}
+    email: admin@example.com
+    displayName: Administrator
+  user:
+    password: ${DEFAULT_USER_PASSWORD:password}
+
+messagebroker:
+  host: ${MESSAGE_BROKER_HOST:localhost}
+  port: ${MESSAGE_BROKER_PORT:61613}
+  username: ${MESSAGE_BROKER_USERNAME:guest}
+  password: ${MESSAGE_BROKER_PASSWORD:guest}
+  virtualHost: ${MESSAGE_BROKER_VHOST:/}
 

@@ -46,6 +46,9 @@ public class Booking extends BaseEntity {
     @Column(nullable = false)
     private BookingStatus status;
 
+    @Column(name = "booking_code", unique = true)
+    private String bookingCode;
+
     @Column(name = "booking_time", nullable = false)
     private LocalDateTime bookingTime;
 

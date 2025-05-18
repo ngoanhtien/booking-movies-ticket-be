@@ -54,7 +54,7 @@ const MovieList: React.FC = () => {
   const [page, setPage] = useState(0);
   const [tabValue, setTabValue] = useState(0);
   const [filters, setFilters] = useState<MovieFilters>({
-    search: '',
+    searchTerm: '',
     status: 'SHOWING',
     genre: ''
   });
@@ -104,7 +104,7 @@ const MovieList: React.FC = () => {
   };
   
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters({ ...filters, search: event.target.value });
+    setFilters({ ...filters, searchTerm: event.target.value });
     setPage(0);
   };
   
@@ -804,7 +804,7 @@ const MovieList: React.FC = () => {
               variant="outlined"
               placeholder={t('common.search')}
               fullWidth={isMobile}
-              value={filters.search}
+              value={filters.searchTerm}
               onChange={handleSearchChange}
               InputProps={{
                 startAdornment: (
@@ -993,11 +993,11 @@ const MovieList: React.FC = () => {
           <Typography variant="body2" color="textSecondary" sx={{ maxWidth: 400, mx: 'auto', mb: 3 }}>
             Có vẻ như không có phim nào phù hợp với tìm kiếm của bạn. Hãy thử tìm kiếm khác hoặc điều chỉnh bộ lọc.
           </Typography>
-          {tabValue === 0 && filters.search !== '' && (
+          {tabValue === 0 && filters.searchTerm !== '' && (
             <Button 
               variant="outlined" 
               color="primary" 
-              onClick={() => setFilters({ ...filters, search: '' })}
+              onClick={() => setFilters({ ...filters, searchTerm: '' })}
               sx={{ mr: 2 }}
             >
               Xóa tìm kiếm
