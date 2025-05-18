@@ -2,6 +2,7 @@ package com.booking.movieticket.entity;
 
 import com.booking.movieticket.entity.base.BaseEntity;
 import com.booking.movieticket.entity.enums.TypeSeat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -41,11 +42,13 @@ public class Seat extends BaseEntity {
     @Column(name = "type_seat")
     private TypeSeat typeSeat;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JsonIgnore
     @JoinColumn(name = "room_id", referencedColumnName = "room_id")
     private Room room;
 
     @OneToMany(mappedBy = "seat")
+    @JsonIgnore
     private Set<ShowtimeSeat> showtimeSeats = new HashSet<>();
 
     public void addShowtimeSeat(ShowtimeSeat showtimeSeat) {

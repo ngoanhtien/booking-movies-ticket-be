@@ -26,9 +26,6 @@ public class RoomHasSeatsRequest {
     @NotNull(message = "Room type must not be null.")
     private RoomType roomType;
 
-    @NotNull(message = "Room status must not be null.")
-    private RoomStatus roomStatus;
-
     @NotNull(message = "Seat row numbers must not be null.")
     @Min(value = 1, message = "Seat row numbers must be at least 1.")
     @Max(value = 20, message = "Seat row numbers must not exceed 20.")
@@ -52,5 +49,5 @@ public class RoomHasSeatsRequest {
     @NotNull(message = "Branch ID must not be blank.")
     private Long branchId;
 
-    GenerateSeatsRequest generateSeatsRequest;
+    GenerateSeatsCompletedRequest generateSeatsCompletedRequest;
 }

@@ -30,8 +30,9 @@ public enum ErrorCode {
     SHOWING_MOVIE_NOT_FOUND(1203, "Showing movie not found", HttpStatus.NOT_FOUND),
     UPCOMING_MOVIE_NOT_FOUND(1203, "Showing movie not found", HttpStatus.NOT_FOUND),
     BRANCH_NOT_FOUND(1204, "Brand not found", HttpStatus.NOT_FOUND),
-        ROOM_NOT_FOUND(1205, "Room not found", HttpStatus.NOT_FOUND),
-
+    ROOM_NOT_FOUND(1205, "Room not found", HttpStatus.NOT_FOUND),
+    ROOM_IS_UNASSIGNED(1205, "Room can not be status updated . Only accept AVAILABLE and MAINTENANCE status.", HttpStatus.NOT_FOUND),
+    ROOM_IS_NOT_UNASSIGNED(1205, "Room can not be removed. Only accept delete for UNASSIGNED status.", HttpStatus.NOT_FOUND),
     // Transaction Errors (1300-1399)
     BILL_NOT_FOUND(1300, "Bill not found", HttpStatus.NOT_FOUND),
     PAYMENT_FAILED(1301, "Payment processing failed", HttpStatus.PAYMENT_REQUIRED),

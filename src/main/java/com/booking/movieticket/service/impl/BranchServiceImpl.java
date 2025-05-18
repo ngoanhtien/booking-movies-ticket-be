@@ -6,7 +6,6 @@ import com.booking.movieticket.dto.request.admin.update.BranchForUpdateRequest;
 import com.booking.movieticket.dto.response.admin.BranchResponse;
 import com.booking.movieticket.dto.response.admin.create.BranchCreatedResponse;
 import com.booking.movieticket.entity.Branch;
-import com.booking.movieticket.entity.Cinema;
 import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.exception.ErrorCode;
 import com.booking.movieticket.mapper.BranchMapper;
@@ -28,7 +27,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -52,7 +50,7 @@ public class BranchServiceImpl implements BranchService {
     }
 
     @Override
-    public Page<BranchResponse> getAllBranchByCinemaId(BranchCriteria branchCriteria, Pageable pageable) {
+    public Page<BranchResponse> getAllBranch(BranchCriteria branchCriteria, Pageable pageable) {
         return branchRepository.findAll(BranchSpecificationBuilder.findByCriteria(branchCriteria), pageable).map(branchMapper::convertEntityToBranchResponse);
     }
 

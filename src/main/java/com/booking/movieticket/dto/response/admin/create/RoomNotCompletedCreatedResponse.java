@@ -3,7 +3,13 @@ package com.booking.movieticket.dto.response.admin.create;
 import com.booking.movieticket.entity.enums.RoomStatus;
 import com.booking.movieticket.entity.enums.RoomType;
 import com.booking.movieticket.entity.enums.ScreenSize;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class RoomNotCompletedCreatedResponse {
     private Long id;
     private String name;
@@ -16,7 +22,6 @@ public class RoomNotCompletedCreatedResponse {
     private Integer aislePosition;
     private Integer aisleWidth;
     private Integer aisleHeight;
-    private Integer doubleSeatRowNumbers;
     private Long branchId;
     private String branchName;
 }

@@ -17,7 +17,7 @@ public interface BranchService {
 
     BranchResponse getBranchById(Long id);
 
-    Page<BranchResponse> getAllBranchByCinemaId(BranchCriteria branchCriteria, Pageable pageable);
+    Page<BranchResponse> getAllBranch(BranchCriteria branchCriteria, Pageable pageable);
 
     BranchCreatedResponse createBranch(BranchForCreateRequest branchRequest, MultipartFile imageUrl, BindingResult bindingResult) throws MethodArgumentNotValidException;
 

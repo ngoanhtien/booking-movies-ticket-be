@@ -36,10 +36,10 @@ public class RoomController {
     RoomService roomService;
 
     @GetMapping("")
-    public ResponseEntity<ApiResponse<Page<RoomDetailResponse>>> getAllRoomByBranchId(RoomCriteria roomCriteria,
+    public ResponseEntity<ApiResponse<Page<RoomDetailResponse>>> getAllRoom(RoomCriteria roomCriteria,
                                                                                       @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new ApiResponse<>("Rooms fetched successfully.", roomService.getAllRoomByBranchId(roomCriteria, pageable)));
+                .body(new ApiResponse<>("Rooms fetched successfully.", roomService.getAllRoom(roomCriteria, pageable)));
     }
 
     @GetMapping("/{id}")
@@ -53,7 +53,7 @@ public class RoomController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Room created successfully.", roomService.createNotCompletedRoom(branchRequest)));
     }
 
-    @PostMapping("/room/generate-seats")
+    @PostMapping("/generate-seats")
     public ResponseEntity<ApiResponse<String>> generateSeatsForRoom(@Valid @RequestBody GenerateSeatsRequest request) {
         roomService.generateSeatsForRoom(request);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -66,7 +66,7 @@ public class RoomController {
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<String>> updateRoom(@Valid @RequestPart RoomForUpdateRequest branchRequest) {
+    public ResponseEntity<ApiResponse<String>> updateRoom(@Valid @RequestBody RoomForUpdateRequest branchRequest) {
         roomService.updateRoom(branchRequest);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(new ApiResponse<>("Room updated successfully."));
