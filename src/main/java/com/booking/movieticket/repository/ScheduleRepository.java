@@ -1,5 +1,6 @@
 package com.booking.movieticket.repository;
 
+import com.booking.movieticket.entity.Movie;
 import com.booking.movieticket.entity.Schedule;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -22,4 +23,6 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             "AND st.isDeleted = false " +
             "ORDER BY s.date")
     List<LocalDate> findAvailableDatesByMovieId(@Param("movieId") Long movieId);
+
+    List<Schedule> findSchedulesByMovie(Movie movie);
 }
