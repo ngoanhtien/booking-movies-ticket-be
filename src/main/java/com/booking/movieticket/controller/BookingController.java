@@ -3,6 +3,7 @@ package com.booking.movieticket.controller;
 import com.booking.movieticket.dto.request.BookingRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.dto.response.BookingResponse;
+import com.booking.movieticket.dto.response.BookingHistoryResponse;
 import com.booking.movieticket.security.jwt.DomainUserDetails;
 import com.booking.movieticket.service.BookingService;
 import lombok.AccessLevel;
@@ -75,7 +76,7 @@ public class BookingController {
     public ResponseEntity<ApiResponse<?>> getUserBookingHistory(
             @AuthenticationPrincipal DomainUserDetails userDetails) {
         log.info("Getting booking history for user: {}", userDetails.getUserId());
-        List<BookingResponse> bookingHistory = bookingService.getUserBookingHistory(userDetails.getUserId());
+        List<BookingHistoryResponse> bookingHistory = bookingService.getUserBookingHistory(userDetails.getUserId());
         return ResponseEntity.ok(new ApiResponse<>("User booking history retrieved successfully", bookingHistory));
     }
 
