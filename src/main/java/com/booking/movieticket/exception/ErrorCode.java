@@ -9,8 +9,13 @@ public enum ErrorCode {
 
     REGISTRATION_FAILED(1000, "Registration failed", HttpStatus.INTERNAL_SERVER_ERROR),
     USER_NOT_FOUND(1001, "User not found", HttpStatus.NOT_FOUND),
+    EMAIL_IS_EXISTED(1001, "Email is existed", HttpStatus.NOT_FOUND),
+    USERNAME_IS_EXISTED(1001, "Username is existed", HttpStatus.NOT_FOUND),
+    PHONE_IS_EXISTED(1001, "Phone is existed", HttpStatus.NOT_FOUND),
     USER_ALREADY_EXISTS(1002, "User already exists", HttpStatus.CONFLICT),
     ROLE_NOT_FOUND(1003, "Role not found", HttpStatus.NOT_FOUND),
+    EMAIL_ALREADY_EXISTS(1004, "Email already exists", HttpStatus.CONFLICT),
+    INVALID_TOKEN(1005, "Invalid or expired token", HttpStatus.UNAUTHORIZED),
 
     // Content Errors (1100-1199)
     ACTOR_NOT_FOUND(1100, "Actor not found", HttpStatus.NOT_FOUND),
@@ -24,6 +29,13 @@ public enum ErrorCode {
     SHOWTIMESEAT_NOT_FOUND(1202, "Showtime seat not found", HttpStatus.NOT_FOUND),
     SHOWING_MOVIE_NOT_FOUND(1203, "Showing movie not found", HttpStatus.NOT_FOUND),
     UPCOMING_MOVIE_NOT_FOUND(1203, "Showing movie not found", HttpStatus.NOT_FOUND),
+    BRANCH_NOT_FOUND(1204, "Brand not found", HttpStatus.NOT_FOUND),
+    SEAT_ALREADY_BOOKED(1205, "Seat already booked or not available", HttpStatus.CONFLICT),
+    USER_ALREADY_REVIEWED_MOVIE(1206, "User has already reviewed this movie", HttpStatus.CONFLICT),
+    USER_NOT_ELIGIBLE_TO_REVIEW(1207, "User is not eligible to review this movie", HttpStatus.FORBIDDEN),
+    ROOM_NOT_FOUND(1208, "Room not found", HttpStatus.NOT_FOUND),
+    ROOM_IS_UNASSIGNED(1209, "Room can not be status updated . Only accept AVAILABLE and MAINTENANCE status.", HttpStatus.NOT_FOUND),
+    ROOM_IS_NOT_UNASSIGNED(1210, "Room can not be removed. Only accept delete for UNASSIGNED status.", HttpStatus.NOT_FOUND),
 
     // Transaction Errors (1300-1399)
     BILL_NOT_FOUND(1300, "Bill not found", HttpStatus.NOT_FOUND),
@@ -35,7 +47,15 @@ public enum ErrorCode {
 
     // General Errors (9000-9999)
     BAD_REQUEST(9000, "Bad request", HttpStatus.BAD_REQUEST),
-    UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR);
+    UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    // Booking related errors
+    BOOKING_NOT_FOUND(1310, "Booking not found", HttpStatus.NOT_FOUND),
+
+    // Review related errors
+    REVIEW_ALREADY_EXISTS(1311, "User has already reviewed this movie", HttpStatus.CONFLICT),
+    REVIEW_NOT_FOUND(1312, "Review not found", HttpStatus.NOT_FOUND),
+    INVALID_RATING(1313, "Rating must be between 1 and 5", HttpStatus.BAD_REQUEST);
 
 
     ErrorCode(String message) {

@@ -1,6 +1,7 @@
 package com.booking.movieticket.entity;
 
 import com.booking.movieticket.entity.base.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -32,10 +33,12 @@ public class Schedule extends BaseEntity {
     @Column(name = "schedule_time_start")
     private LocalTime timeStart;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "movie_id", referencedColumnName = "movie_id")
     private Movie movie;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "schedule")
     private Set<Showtime> showtimes = new HashSet<>();
 }

@@ -1,5 +1,6 @@
 package com.booking.movieticket.service;
 
+import com.booking.movieticket.dto.request.admin.create.ShowtimeForCreateRequest;
 import com.booking.movieticket.dto.response.ShowtimeDetailResponse;
 import com.booking.movieticket.dto.response.ShowtimeResponse;
 
@@ -39,4 +40,6 @@ public interface ShowtimeService {
      * @return Detailed showtime information including seats
      */
     ShowtimeDetailResponse getShowtimeDetail(Long scheduleId, Long roomId);
+
+    void createShowtime(ShowtimeForCreateRequest request);
 }

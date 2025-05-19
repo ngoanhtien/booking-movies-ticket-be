@@ -1,5 +1,6 @@
 package com.booking.movieticket.service.impl;
 
+import com.booking.movieticket.dto.request.admin.create.ShowtimeForCreateRequest;
 import com.booking.movieticket.dto.response.BranchWithShowtimesDTO;
 import com.booking.movieticket.dto.response.ShowtimeDTO;
 import com.booking.movieticket.dto.response.ShowtimeDetailResponse;
@@ -8,10 +9,7 @@ import com.booking.movieticket.entity.*;
 import com.booking.movieticket.entity.compositekey.ShowtimeId;
 import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.exception.ErrorCode;
-import com.booking.movieticket.repository.MovieRepository;
-import com.booking.movieticket.repository.ScheduleRepository;
-import com.booking.movieticket.repository.ShowtimeRepository;
-import com.booking.movieticket.repository.ShowtimeSeatRepository;
+import com.booking.movieticket.repository.*;
 import com.booking.movieticket.service.ShowtimeService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +33,7 @@ public class ShowtimeServiceImpl implements ShowtimeService {
     ScheduleRepository scheduleRepository;
     MovieRepository movieRepository;
     ShowtimeSeatRepository showtimeSeatRepository;
+    RoomRepository roomRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -289,5 +288,34 @@ public class ShowtimeServiceImpl implements ShowtimeService {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION,
                     "Error fetching showtime detail for scheduleId: " + scheduleId + " and roomId: " + roomId);
         }
+    }
+
+    @Override
+    @Transactional
+    public void createShowtime(ShowtimeForCreateRequest request) {
+        Room room = roomRepository.findById(request.getRoomId()).orElseThrow(() -> new AppException(ErrorCode.ROOM_NOT_FOUND));
+        Movie movie = movieRepository.findById(request.getMovieId()).orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
+        List<Schedule> schedule = scheduleRepository.findSchedulesByMovie(movie);
+        Showtime showtime = new Showtime();
+        ShowtimeId showtimeId = new ShowtimeId();
+        showtimeId.setRoomId(request.getRoomId());
+        for (Schedule scheduleItem : schedule) {
+            if (request.getStartTime().equals(scheduleItem.getTimeStart())) {
+                showtimeId.setScheduleId(scheduleItem.getId());
+                showtime.setSchedule(scheduleItem);
+                break;
+            }
+        }
+        if (showtimeId.getScheduleId() == null) {
+            Schedule newSchedule = new Schedule();
+            newSchedule.setMovie(movie);
+            showtimeId.setScheduleId(newSchedule.getId());
+            showtime.setSchedule(newSchedule);
+            scheduleRepository.save(newSchedule);
+        }
+        showtime.setId(showtimeId);
+        showtime.setRoom(room);
+        showtime.setFormat(request.getFormat());
+        showtimeRepository.save(showtime);
     }
 }

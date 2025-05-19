@@ -35,7 +35,10 @@ public class DomainUserDetailsService implements UserDetailsService {
     }
 
     private UserDetails getUserDetails(User userEntity) {
-        SimpleGrantedAuthority authority = new SimpleGrantedAuthority(userEntity.getRole().getName());
+        String roleName = "ROLE_" + userEntity.getRole().getName();
+        SimpleGrantedAuthority authority = new SimpleGrantedAuthority(roleName);
+        log.debug("Creating authority with role: {}", roleName);
+        
         return new DomainUserDetails(
                 userEntity.getId(),
                 userEntity.getUsername(),

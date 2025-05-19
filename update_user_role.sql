@@ -1,0 +1,1 @@
+UPDATE users SET role_id = 1 WHERE id = 302; 

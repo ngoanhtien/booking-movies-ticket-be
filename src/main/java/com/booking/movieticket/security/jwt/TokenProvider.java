@@ -78,6 +78,7 @@ public class TokenProvider {
     }
 
     public String generateRefreshToken(Authentication authentication) {
+        log.info("Generating refresh token for user: {}", authentication.getName());
         String authorities = authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.joining(","));
         Claims claims = Jwts.claims().setSubject(authentication.getName());
         claims.put(AUTHORITIES_KEY, authorities);
@@ -86,7 +87,21 @@ public class TokenProvider {
         claims.put(USER_ID_KEY, userId);
         Date now = new Date();
         Date validity = new Date(now.getTime() + tokenRefreshInSeconds);
+        log.info("Refresh token will expire at: {}", validity);
         return Jwts.builder().setClaims(claims).setIssuedAt(now).setExpiration(validity).signWith(SignatureAlgorithm.HS512, tokenSecretKey).compact();
+    }
+
+    public String getUsernameFromRefreshToken(String token) {
+        try {
+            log.info("Extracting username from refresh token");
+            Claims claims = Jwts.parser().setSigningKey(tokenSecretKey).parseClaimsJws(token).getBody();
+            String username = claims.getSubject();
+            log.info("Username extracted: {}", username);
+            return username;
+        } catch (Exception e) {
+            log.error("Error extracting username from refresh token: {}", e.getMessage(), e);
+            return null;
+        }
     }
 
 }

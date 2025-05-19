@@ -1,6 +1,7 @@
 package com.booking.movieticket.entity;
 
 import com.booking.movieticket.entity.base.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,6 +31,7 @@ public class Actor extends BaseEntity {
     @Column(name = "actor_name")
     private String actorName;
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "actors")
     private Set<Movie> movies = new HashSet<>();
 }

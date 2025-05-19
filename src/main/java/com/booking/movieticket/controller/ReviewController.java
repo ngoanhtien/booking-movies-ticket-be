@@ -42,6 +42,21 @@ public class ReviewController {
     }
 
     /**
+     * Check if the authenticated user can review a specific movie
+     * @param userDetails Authenticated user details
+     * @param movieId ID of the movie
+     * @return Boolean indicating if the user can review
+     */
+    @GetMapping("/movie/{movieId}/can-review")
+    public ResponseEntity<ApiResponse<Boolean>> canUserReviewMovie(
+            @AuthenticationPrincipal DomainUserDetails userDetails,
+            @PathVariable Long movieId) {
+        log.info("Checking if user {} can review movie: {}", userDetails.getUserId(), movieId);
+        boolean canReview = reviewService.canUserReviewMovie(userDetails.getUserId(), movieId);
+        return ResponseEntity.ok(new ApiResponse<>("Review eligibility check successful", canReview));
+    }
+
+    /**
      * Get all reviews for a specific movie
      * @param movieId ID of the movie
      * @return List of reviews for the movie

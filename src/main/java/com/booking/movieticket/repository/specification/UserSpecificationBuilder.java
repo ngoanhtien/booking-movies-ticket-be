@@ -20,4 +20,11 @@ public class UserSpecificationBuilder {
             return criteriaBuilder.like(criteriaBuilder.lower(root.get("username")), searchTerm);
         };
     }
+
+    private static Specification<User> notDeleted() {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.or(
+                criteriaBuilder.isNull(root.get("isDeleted")),
+                criteriaBuilder.notEqual(root.get("isDeleted"), true)
+        );
+    }
 }

@@ -38,6 +38,10 @@ public class ShowtimeSeat extends BaseEntity {
             @JoinColumn(name = "room_id", referencedColumnName = "room_id")})
     private Showtime showtime;
 
+    @ManyToOne
+    @JoinColumn(name = "booking_id", referencedColumnName = "booking_id")
+    private Booking booking;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private StatusSeat status;

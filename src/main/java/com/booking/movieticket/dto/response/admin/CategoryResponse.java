@@ -1,9 +1,14 @@
 package com.booking.movieticket.dto.response.admin;
 
-import lombok.Getter;
+import com.booking.movieticket.dto.response.BaseResponse;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-public class CategoryResponse {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class CategoryResponse extends BaseResponse {
 
     private Long id;
     private String name;

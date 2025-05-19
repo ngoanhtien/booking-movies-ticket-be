@@ -68,7 +68,7 @@ public class Movie extends BaseEntity {
     @OneToMany(mappedBy = "movie")
     private Set<Schedule> schedules;
 
-    @ManyToMany
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "category_movie",
             joinColumns = @JoinColumn(name = "movie_id", referencedColumnName = "movie_id"),
@@ -78,7 +78,7 @@ public class Movie extends BaseEntity {
     @OneToMany(mappedBy = "movie")
     private Set<Review> reviews = new HashSet<>();
 
-    @ManyToMany
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "actor_movie",
             joinColumns = @JoinColumn(name = "movie_id", referencedColumnName = "movie_id"),

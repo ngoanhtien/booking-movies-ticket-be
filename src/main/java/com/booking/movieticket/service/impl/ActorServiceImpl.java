@@ -1,8 +1,10 @@
 package com.booking.movieticket.service.impl;
 
 import com.booking.movieticket.dto.criteria.ActorCriteria;
-import com.booking.movieticket.dto.request.admin.ActorRequest;
+import com.booking.movieticket.dto.request.admin.update.ActorForUpdateRequest;
+import com.booking.movieticket.dto.request.admin.create.ActorForCreateRequest;
 import com.booking.movieticket.dto.response.admin.ActorResponse;
+import com.booking.movieticket.dto.response.admin.create.ActorCreatedResponse;
 import com.booking.movieticket.entity.Actor;
 import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.exception.ErrorCode;
@@ -16,6 +18,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,30 +33,29 @@ public class ActorServiceImpl implements ActorService {
     ActorMapper actorMapper;
 
     @Override
-    public Actor getActorById(Long id) {
+    public ActorResponse getActorById(Long id) {
         if (id == null) {
             throw new AppException(ErrorCode.ACTOR_NOT_FOUND);
         }
-        return actorRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.ACTOR_NOT_FOUND));
+        return actorMapper.convertEntityToActorResponse(actorRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.ACTOR_NOT_FOUND)));
     }
 
     @Override
-    public Page<Actor> getAllActors(ActorCriteria actorCriteria, Pageable pageable) {
-        return actorRepository.findAll(ActorSpecificationBuilder.findByCriteria(actorCriteria), pageable);
+    public Page<ActorResponse> getAllActors(ActorCriteria actorCriteria, Pageable pageable) {
+        return actorRepository.findAll(ActorSpecificationBuilder.findByCriteria(actorCriteria), pageable).map(actorMapper::convertEntityToActorResponse);
     }
 
     @Override
     @Transactional
-    public ActorResponse createActor(ActorRequest actorRequest) {
-        Actor actor = actorMapper.toActor(actorRequest);
-        actor.setId(null);
+    public ActorCreatedResponse createActor(ActorForCreateRequest actorRequest) {
+        Actor actor = actorMapper.convertRequestToActor(actorRequest);
         actor.setIsDeleted(false);
-        return actorMapper.toActorResponse(actorRepository.save(actor));
+        return actorMapper.convertEntityToActorCreatedResponse(actorRepository.save(actor));
     }
 
     @Override
     @Transactional
-    public void updateActor(ActorRequest actorRequest) {
+    public void updateActor(ActorForUpdateRequest actorRequest) {
         if (actorRequest.getId() == null) {
             throw new AppException(ErrorCode.ACTOR_NOT_FOUND);
         }

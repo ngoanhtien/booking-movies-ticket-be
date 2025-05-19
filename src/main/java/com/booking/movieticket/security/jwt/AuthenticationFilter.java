@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -26,12 +27,33 @@ public class AuthenticationFilter extends OncePerRequestFilter {
     public static final String AUTHORIZATION_HEADER = "Authorization";
 
     private final TokenProvider tokenProvider;
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     private final List<String> publicPaths = Arrays.asList(
             "/auth/login",
             "/auth/register",
-            "/account/resetPassword",
-            "/payment/sepay-webhook"
+            "/auth/refresh-token",
+            "/auth/refresh",
+            "/api/v1/auth/login",
+            "/api/v1/auth/register",
+            "/api/v1/auth/refresh-token",
+            "/api/v1/auth/refresh",
+            "/api/v1/account/resetPassword",
+            "/api/v1/payment/sepay-webhook",
+            "/api/v1/payment/webhook",
+            "/api/v1/payment/generate-qr",
+            "/api/v1/payment/status/*",
+            "/api/v1/payment/cancel/*",
+            "/api/v1/payment/**",
+            "/api/v1/bookings/**",
+            "/api/v1/booking/**",
+            "/api/v1/foods/**",
+            "/api/v1/movie/**",
+            "/api/v1/cinema/**",
+            "/api/v1/showtime/*/by-date",
+            "/api/v1/showtime/*/filter",
+            "/api/v1/showtime/*/*/detail",
+            "/api/v1/showtime/public/**"
     );
 
     public AuthenticationFilter(TokenProvider tokenProvider) {
@@ -44,10 +66,11 @@ public class AuthenticationFilter extends OncePerRequestFilter {
                                  FilterChain filterChain) throws IOException, ServletException {
         String requestURI = httpServletRequest.getRequestURI();
 
-        // Skip authentication for public paths
-        if (publicPaths.stream().anyMatch(requestURI::equals)) {
-            filterChain.doFilter(httpServletRequest, httpServletResponse);
-            return;
+        for (String path : publicPaths) {
+            if (pathMatcher.match(path, requestURI)) {
+                filterChain.doFilter(httpServletRequest, httpServletResponse);
+                return;
+            }
         }
 
         String jwt = resolveToken(httpServletRequest);

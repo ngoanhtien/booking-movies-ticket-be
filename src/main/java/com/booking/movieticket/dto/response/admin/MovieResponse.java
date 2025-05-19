@@ -1,18 +1,21 @@
 package com.booking.movieticket.dto.response.admin;
 
+import com.booking.movieticket.dto.response.BaseResponse;
 import com.booking.movieticket.entity.Actor;
 import com.booking.movieticket.entity.Category;
-import com.booking.movieticket.entity.Schedule;
 import com.booking.movieticket.entity.enums.StatusMovie;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.lang.management.LockInfo;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
-@Getter
-public class MovieResponse {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class MovieResponse extends BaseResponse {
 
     private Long id;
     private String name;
@@ -25,8 +28,6 @@ public class MovieResponse {
     private String language;
     private String trailerUrl;
     private StatusMovie status;
-    private String imageSmallUrl;
-    private String imageLargeUrl;
     private Set<Category> categories = new HashSet<>();
     private Set<Actor> actors = new HashSet<>();
 }

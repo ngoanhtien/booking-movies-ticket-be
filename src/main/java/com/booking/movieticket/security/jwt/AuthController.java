@@ -2,6 +2,7 @@ package com.booking.movieticket.security.jwt;
 
 import com.booking.movieticket.dto.request.LoginRequest;
 import com.booking.movieticket.dto.request.RegisterRequest;
+import com.booking.movieticket.dto.request.RefreshTokenRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.dto.response.LoginResponse;
 import jakarta.validation.Valid;
@@ -35,5 +36,19 @@ public class AuthController {
     public ResponseEntity<ApiResponse<String>> register(@Valid @RequestBody RegisterRequest registerRequest) {
         authService.register(registerRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Registration successful"));
+    }
+    
+    @PostMapping("/refresh-token")
+    public ResponseEntity<ApiResponse<LoginResponse>> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
+        log.info("Refreshing token at /auth/refresh-token");
+        LoginResponse loginResponse = authService.refreshToken(refreshTokenRequest);
+        return ResponseEntity.ok(new ApiResponse<>("Token refreshed successfully", loginResponse));
+    }
+    
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<LoginResponse>> refreshTokenLegacy(@RequestBody RefreshTokenRequest refreshTokenRequest) {
+        log.info("Refreshing token at legacy endpoint /auth/refresh");
+        LoginResponse loginResponse = authService.refreshToken(refreshTokenRequest);
+        return ResponseEntity.ok(new ApiResponse<>("Token refreshed successfully", loginResponse));
     }
 }

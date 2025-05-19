@@ -22,7 +22,6 @@ import java.time.Instant;
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
 @JsonIgnoreProperties(value = {"createdBy", "createdAt", "lastModifiedBy", "lastModifiedAt"}, allowGetters = true)
-@SQLRestriction("is_deleted IS DISTINCT FROM true")
 public class BaseEntity implements Serializable {
 
     @Serial

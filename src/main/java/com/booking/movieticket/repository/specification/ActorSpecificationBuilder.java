@@ -23,4 +23,11 @@ public class ActorSpecificationBuilder {
             );
         };
     }
+
+    private static Specification<Actor> notDeleted() {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.or(
+                criteriaBuilder.isNull(root.get("isDeleted")),
+                criteriaBuilder.notEqual(root.get("isDeleted"), true)
+        );
+    }
 }

@@ -20,4 +20,11 @@ public class CategorySpecificationBuilder {
             return criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), searchTerm);
         };
     }
+
+    private static Specification<Category> notDeleted() {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.or(
+                criteriaBuilder.isNull(root.get("isDeleted")),
+                criteriaBuilder.notEqual(root.get("isDeleted"), true)
+        );
+    }
 }

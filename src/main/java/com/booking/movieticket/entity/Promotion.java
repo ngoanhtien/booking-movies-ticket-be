@@ -2,6 +2,7 @@ package com.booking.movieticket.entity;
 
 import com.booking.movieticket.entity.base.BaseEntity;
 import com.booking.movieticket.entity.enums.StatusPromotion;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -41,6 +42,7 @@ public class Promotion extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private StatusPromotion statusPromotion;
 
+    @JsonBackReference("bill-promotion")
     @OneToMany(mappedBy = "promotion")
     private Set<Bill> bills = new HashSet<>();
 

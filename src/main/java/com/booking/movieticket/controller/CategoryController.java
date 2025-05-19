@@ -1,9 +1,11 @@
 package com.booking.movieticket.controller;
 
 import com.booking.movieticket.dto.criteria.CategoryCriteria;
-import com.booking.movieticket.dto.request.admin.CategoryRequest;
+import com.booking.movieticket.dto.request.admin.update.CategoryForUpdateRequest;
+import com.booking.movieticket.dto.request.admin.create.CategoryForCreateRequest;
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.dto.response.admin.CategoryResponse;
+import com.booking.movieticket.dto.response.admin.create.CategoryCreatedResponse;
 import com.booking.movieticket.entity.Category;
 import com.booking.movieticket.service.CategoryService;
 import jakarta.validation.Valid;
@@ -33,24 +35,24 @@ public class CategoryController {
     CategoryService categoryService;
 
     @GetMapping("")
-    public ResponseEntity<ApiResponse<Page<Category>>> getAllCategories(CategoryCriteria categoryCriteria,
-                                                                        @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+    public ResponseEntity<ApiResponse<Page<CategoryResponse>>> getAllCategories(CategoryCriteria categoryCriteria,
+                                                                                @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ApiResponse<>("Categories fetched successfully.", categoryService.getAllCategories(categoryCriteria, pageable)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Category>> getCategoryById(@PathVariable @Min(value = 1, message = "Id must be greater than or equal to 1.") Long id) {
+    public ResponseEntity<ApiResponse<CategoryResponse>> getCategoryById(@PathVariable @Min(value = 1, message = "Id must be greater than or equal to 1.") Long id) {
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("Category details fetched successfully.", categoryService.getCategoryById(id)));
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(@Valid @RequestBody CategoryRequest categoryRequest) {
+    public ResponseEntity<ApiResponse<CategoryCreatedResponse>> createCategory(@Valid @RequestBody CategoryForCreateRequest categoryRequest) {
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Category created successfully.", categoryService.createCategory(categoryRequest)));
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<String>> updateCategory(@Valid @RequestBody CategoryRequest categoryRequest) {
+    public ResponseEntity<ApiResponse<String>> updateCategory(@Valid @RequestBody CategoryForUpdateRequest categoryRequest) {
         categoryService.updateCategory(categoryRequest);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(new ApiResponse<>("Category updated successfully."));
