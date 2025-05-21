@@ -1,6 +1,7 @@
 package com.booking.movieticket.controller;
 
 import com.booking.movieticket.dto.response.ApiResponse;
+import com.booking.movieticket.dto.response.FoodResponse;
 import com.booking.movieticket.entity.Food;
 import com.booking.movieticket.repository.FoodRepository;
 import com.booking.movieticket.service.FoodService;
@@ -26,7 +27,13 @@ public class FoodController {
     @GetMapping
     public ResponseEntity<ApiResponse<?>> getAllFoods() {
         log.info("Getting all foods");
-        List<Food> foods = foodService.listFoods();
+        List<FoodResponse> foods = foodService.listFoods();
         return ResponseEntity.ok(new ApiResponse<>("Foods retrieved successfully", foods));
+    }
+
+    @PostMapping()
+    public ResponseEntity<ApiResponse<?>> creatFood(@RequestBody FoodResponse foodResponse) {
+        log.info("Creating a food");
+        return ResponseEntity.ok(new ApiResponse<>("Creating a food successfully", foodService.createFood(foodResponse)));
     }
 }
