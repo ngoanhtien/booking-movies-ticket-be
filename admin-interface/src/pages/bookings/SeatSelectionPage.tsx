@@ -17,6 +17,13 @@ import { alpha, useTheme } from '@mui/material/styles';
 import axiosInstance from '../../utils/axios';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-hot-toast';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import IconButton from '@mui/material/IconButton';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 
 // Định nghĩa enums và interfaces
 enum SeatStatus {
@@ -52,13 +59,31 @@ interface RootState {
   };
 }
 
+// Mock combo data
+const comboList = [
+  {
+    id: 'combo1',
+    name: 'Beta Combo 69oz',
+    price: 68000,
+    description: 'TIẾT KIỆM 28K!!! Gồm: 1 Bắp (69oz) + 1 Nước có gaz (22oz)',
+    image: 'https://i.imgur.com/0Q9QZbK.png', // Example image
+  },
+  {
+    id: 'combo2',
+    name: 'Sweet Combo 69oz',
+    price: 88000,
+    description: 'TIẾT KIỆM 46K!!! Gồm: 1 Bắp (69oz) + 2 Nước có gaz (22oz)',
+    image: 'https://i.imgur.com/0Q9QZbK.png', // Example image
+  },
+];
+
 const SeatSelectionPage: React.FC = () => {
   const { showtimeId } = useParams<{ showtimeId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
   const { t } = useTranslation();
-  
+  console.log(location.state);
   // Extract parameters from location state
   const branchId = location.state?.branchId;
   const roomType = location.state?.roomType;
@@ -71,6 +96,10 @@ const SeatSelectionPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showtimeInfo, setShowtimeInfo] = useState<ShowtimeInfo | null>(null);
+  const [comboModalOpen, setComboModalOpen] = useState(false);
+  const [selectedCombos, setSelectedCombos] = useState<{ [id: string]: number }>({});
+  const [timer, setTimer] = useState<number>(600); // 10 minutes in seconds
+  const [timerActive, setTimerActive] = useState(false);
   
   // Get authentication state
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
@@ -278,6 +307,61 @@ const SeatSelectionPage: React.FC = () => {
     fetchSeatLayout();
   }, [showtimeId, selectedDate]);
 
+  // On mount, restore selectedCombos from location.state if present, otherwise from localStorage
+  useEffect(() => {
+    let restoredCombos = {};
+    if (location.state && location.state.selectedCombos) {
+      restoredCombos = location.state.selectedCombos;
+    } else {
+      restoredCombos = JSON.parse(localStorage.getItem('selectedCombos') || '{}');
+    }
+    setSelectedCombos(restoredCombos);
+
+    const savedSeats = JSON.parse(localStorage.getItem('selectedSeats') || '[]');
+    const savedTimer = parseInt(localStorage.getItem('seatTimer') || '600', 10);
+    const savedActive = localStorage.getItem('seatTimerActive') === '1';
+    if (savedSeats.length > 0) {
+      setSelectedSeats(savedSeats);
+      setTimer(savedTimer);
+      setTimerActive(savedActive);
+    }
+  }, []);
+
+  // Save selectedSeats, timer, and selectedCombos to localStorage on change
+  useEffect(() => {
+    localStorage.setItem('selectedSeats', JSON.stringify(selectedSeats));
+    localStorage.setItem('seatTimer', timer.toString());
+    localStorage.setItem('seatTimerActive', timerActive ? '1' : '0');
+    localStorage.setItem('selectedCombos', JSON.stringify(selectedCombos));
+  }, [selectedSeats, timer, timerActive, selectedCombos]);
+
+  // Start timer when first seat is selected, reset if all seats are cleared
+  useEffect(() => {
+    if (selectedSeats.length > 0 && !timerActive) {
+      setTimerActive(true);
+    }
+    if (selectedSeats.length === 0 && timerActive) {
+      setTimerActive(false);
+      setTimer(600);
+    }
+  }, [selectedSeats]);
+
+  // Countdown effect
+  useEffect(() => {
+    if (!timerActive) return;
+    if (timer === 0) {
+      setSelectedSeats([]);
+      setTimerActive(false);
+      setTimer(600);
+      toast.error('Hết thời gian giữ ghế. Vui lòng chọn lại!');
+      return;
+    }
+    const interval = setInterval(() => {
+      setTimer((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timerActive, timer]);
+
   // Handle seat selection
   const handleSeatSelection = (seat: Seat) => {
     if (seat.status === SeatStatus.Booked || seat.status === SeatStatus.Unavailable) {
@@ -335,12 +419,28 @@ const SeatSelectionPage: React.FC = () => {
     }
   };
 
-  // Handle proceed to payment
-  const handleProceedToPayment = () => {
+  const handleComboChange = (id: string, delta: number) => {
+    setSelectedCombos(prev => {
+      const newValue = Math.max(0, (prev[id] || 0) + delta);
+      return { ...prev, [id]: newValue };
+    });
+  };
+
+  // Calculate comboTotal for ComboModal rendering
+  const comboTotal = Object.entries(selectedCombos).reduce(
+    (sum, [id, qty]) => sum + (comboList.find(c => c.id === id)?.price || 0) * qty,
+    0
+  );
+
+  const handleProceedToPaymentWithCombo = () => {
     if (selectedSeats.length === 0) {
       toast.error('Vui lòng chọn ít nhất một ghế');
       return;
     }
+
+    // Calculate combo total here!
+    const ticketTotal = calculateTotalPrice();
+    const total = ticketTotal + comboTotal;
 
     // Get seat labels
     const seatLabels = selectedSeats.map(seatId => {
@@ -353,25 +453,187 @@ const SeatSelectionPage: React.FC = () => {
       return "";
     }).filter(label => label !== "");
 
-    // Lưu ghế đã chọn vào localStorage để duy trì trạng thái
-    saveBookedSeats(selectedSeats);
-    
-    // Here we would navigate to the payment page
-    // For now, just show a success message
-    toast.success('Đặt ghế thành công: ' + seatLabels.join(', '));
-    
-    // Navigate to a hypothetical payment confirmation page
+    // Do NOT save booked seats here!
+    // saveBookedSeats(selectedSeats);
+
+    // Proceed to confirmation page, pass combo info
+    console.log(movieId);
     if (movieId) {
       navigate(`/booking-confirmation/${showtimeId}`, {
         state: {
           selectedSeats: seatLabels,
-          totalPrice: calculateTotalPrice(),
+          totalPrice: total,
           showtimeInfo,
-          movieId
+          movieId,
+          selectedCombos,
+          comboTotal,
+          ticketTotal,
         }
       });
     }
   };
+
+  const ComboModal = (
+    <Dialog
+      open={comboModalOpen}
+      onClose={() => setComboModalOpen(false)}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 4,
+          boxShadow: 8,
+          background: 'linear-gradient(135deg, #fff 80%, #ffe0f7 100%)',
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          fontWeight: 'bold',
+          fontSize: 24,
+          textAlign: 'center',
+          color: '#d81b60',
+          letterSpacing: 1,
+          pb: 1,
+        }}
+      >
+        Combo - Bắp nước
+      </DialogTitle>
+      <DialogContent sx={{ px: 3, pt: 1, pb: 2 }}>
+        {comboList.map(combo => (
+          <Box
+            key={combo.id}
+            display="flex"
+            alignItems="center"
+            mb={2}
+            sx={{
+              background: '#fff',
+              borderRadius: 3,
+              boxShadow: '0 2px 8px rgba(216,27,96,0.08)',
+              p: 2,
+              transition: 'box-shadow 0.2s',
+              '&:hover': {
+                boxShadow: '0 4px 16px rgba(216,27,96,0.15)',
+              },
+            }}
+          >
+            <Box
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: 2,
+                overflow: 'hidden',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                mr: 2,
+                flexShrink: 0,
+                background: '#f8bbd0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <img
+                src={combo.image}
+                alt={combo.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </Box>
+            <Box flex={1} minWidth={0}>
+              <Typography fontWeight="bold" fontSize={18} color="#ad1457" noWrap>
+                {combo.name} - {combo.price.toLocaleString('vi-VN')}đ
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                {combo.description}
+              </Typography>
+            </Box>
+            <Box display="flex" alignItems="center" ml={2}>
+              <IconButton
+                onClick={() => handleComboChange(combo.id, -1)}
+                sx={{
+                  color: '#d81b60',
+                  border: '1px solid #f8bbd0',
+                  background: '#fff',
+                  '&:hover': { background: '#fce4ec' },
+                  mx: 0.5,
+                }}
+                size="small"
+              >
+                <RemoveIcon />
+              </IconButton>
+              <Typography
+                sx={{
+                  minWidth: 28,
+                  textAlign: 'center',
+                  fontWeight: 'bold',
+                  color: '#d81b60',
+                  fontSize: 18,
+                  mx: 0.5,
+                  borderRadius: 1,
+                  background: selectedCombos[combo.id] ? '#f8bbd0' : '#f3e5f5',
+                  px: 1,
+                  py: 0.2,
+                  boxShadow: selectedCombos[combo.id] ? '0 1px 4px #f06292' : 'none',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {selectedCombos[combo.id] || 0}
+              </Typography>
+              <IconButton
+                onClick={() => handleComboChange(combo.id, 1)}
+                sx={{
+                  color: '#d81b60',
+                  border: '1px solid #f8bbd0',
+                  background: '#fff',
+                  '&:hover': { background: '#fce4ec' },
+                  mx: 0.5,
+                }}
+                size="small"
+              >
+                <AddIcon />
+              </IconButton>
+            </Box>
+          </Box>
+        ))}
+      </DialogContent>
+      <DialogActions
+        sx={{
+          justifyContent: 'space-between',
+          px: 4,
+          pb: 3,
+          pt: 2,
+          background: 'linear-gradient(90deg, #fff, #fce4ec 80%)',
+          borderBottomLeftRadius: 16,
+          borderBottomRightRadius: 16,
+        }}
+      >
+        <Typography fontWeight="bold" fontSize={18} color="#ad1457">
+          Tổng cộng: {comboTotal.toLocaleString('vi-VN')}đ
+        </Typography>
+        <Button
+          variant="contained"
+          sx={{
+            background: 'linear-gradient(90deg, #d81b60 60%, #f06292 100%)',
+            color: '#fff',
+            fontWeight: 'bold',
+            fontSize: 18,
+            px: 4,
+            py: 1.2,
+            borderRadius: 3,
+            boxShadow: '0 2px 8px #f06292',
+            '&:hover': {
+              background: 'linear-gradient(90deg, #ad1457 60%, #f06292 100%)',
+            },
+          }}
+          onClick={() => {
+            setComboModalOpen(false);
+            handleProceedToPaymentWithCombo();
+          }}
+        >
+          Tiếp tục
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -430,6 +692,15 @@ const SeatSelectionPage: React.FC = () => {
                 >
                   <Typography variant="caption" color="textSecondary">MÀN HÌNH</Typography>
                 </Box>
+                
+                {/* Timer */}
+                {timerActive && (
+                  <Box sx={{ mb: 2, textAlign: 'center' }}>
+                    <Typography color="error" fontWeight="bold">
+                      Thời gian giữ ghế: {Math.floor(timer / 60).toString().padStart(2, '0')}:{(timer % 60).toString().padStart(2, '0')}
+                    </Typography>
+                  </Box>
+                )}
                 
                 {/* Seat Layout */}
                 <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4, overflowX: 'auto' }}>
@@ -556,7 +827,7 @@ const SeatSelectionPage: React.FC = () => {
                         color="primary" 
                         size="large"
                         disabled={selectedSeats.length === 0}
-                        onClick={handleProceedToPayment}
+                        onClick={() => setComboModalOpen(true)}
                         sx={{ 
                           px: 4, 
                           py: 1.5,
@@ -581,6 +852,7 @@ const SeatSelectionPage: React.FC = () => {
           Vui lòng đăng nhập để chọn ghế.
         </Alert>
       )}
+      {ComboModal}
     </Container>
   );
 };
