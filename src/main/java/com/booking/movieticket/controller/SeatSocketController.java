@@ -6,7 +6,7 @@ import com.booking.movieticket.entity.ShowtimeSeat;
 import com.booking.movieticket.entity.compositekey.ShowtimeId;
 import com.booking.movieticket.entity.enums.StatusSeat;
 import com.booking.movieticket.repository.ShowtimeSeatRepository;
-import com.booking.movieticket.security.jwt.DomainUserDetails;
+import com.booking.movieticket.service.SeatSocketService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -14,7 +14,6 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,15 +28,18 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 @Slf4j
 public class SeatSocketController {
+
+    private final SeatSocketService seatSocketService;
+
     private final SimpMessagingTemplate messagingTemplate;
     private final ShowtimeSeatRepository showtimeSeatRepository;
-    
+
     // Map to track temporary seat reservations: roomId-scheduleId-seatId -> {userId, timestamp}
     private final ConcurrentHashMap<String, Map<String, Object>> temporaryReservations = new ConcurrentHashMap<>();
-    
+
     // Timeout for temporary reservations (in minutes)
     private static final int RESERVATION_TIMEOUT_MINUTES = 5;
-    
+
     /**
      * Handle temporary seat reservation requests from clients
      */
@@ -46,107 +48,10 @@ public class SeatSocketController {
     public SeatReservationResponse reserveSeat(@DestinationVariable Long roomId, 
                                              @DestinationVariable Long scheduleId,
                                              SeatReservationRequest request) {
-        try {
-            String userId = request.getUserId();
-            Long seatId = request.getSeatId();
-            StatusSeat status = request.getStatus();
-            
-            log.debug("Received seat reservation: Room={}, Schedule={}, Seat={}, User={}, Status={}", 
-                roomId, scheduleId, seatId, userId, status);
-            
-            // Create a unique key for this seat
-            String seatKey = roomId + "-" + scheduleId + "-" + seatId;
-            
-            // If reservation is being made (SELECTED status)
-            if (status == StatusSeat.SELECTED) {
-                // Store the reservation with timestamp
-                Map<String, Object> reservationInfo = new HashMap<>();
-                reservationInfo.put("userId", userId);
-                reservationInfo.put("timestamp", Instant.now().toEpochMilli());
-                temporaryReservations.put(seatKey, reservationInfo);
-                
-                log.debug("Temporary reservation created for seat {}", seatKey);
-            } 
-            // If seat is being released (AVAILABLE status)
-            else if (status == StatusSeat.AVAILABLE) {
-                // Only allow if this user made the reservation
-                Map<String, Object> existing = temporaryReservations.get(seatKey);
-                if (existing != null && existing.get("userId").equals(userId)) {
-                    temporaryReservations.remove(seatKey);
-                    log.debug("Temporary reservation removed for seat {}", seatKey);
-                } else {
-                    log.warn("User {} attempted to release seat {} reserved by another user", userId, seatKey);
-                    // Don't allow the action, return current status
-                    return createCurrentStatusResponse(roomId, scheduleId, seatId, userId);
-                }
-            }
-            
-            // Return the response to broadcast to all clients
-            return SeatReservationResponse.builder()
-                    .seatId(seatId)
-                    .status(status)
-                    .userId(userId)
-                    .roomId(roomId)
-                    .scheduleId(scheduleId)
-                    .timestamp(Instant.now().toEpochMilli())
-                    .build();
-        } catch (Exception e) {
-            log.error("Error processing seat reservation", e);
-            return SeatReservationResponse.builder()
-                    .error("Error processing reservation: " + e.getMessage())
-                    .build();
-        }
+        return seatSocketService.sendSeatReservationResponse(request, roomId, scheduleId);
     }
-    
-    /**
-     * Check seat status before allowing action
-     */
-    private SeatReservationResponse createCurrentStatusResponse(Long roomId, Long scheduleId, Long seatId, String userId) {
-        String seatKey = roomId + "-" + scheduleId + "-" + seatId;
-        Map<String, Object> reservationInfo = temporaryReservations.get(seatKey);
-        
-        if (reservationInfo != null) {
-            String currentUserId = (String) reservationInfo.get("userId");
-            return SeatReservationResponse.builder()
-                    .seatId(seatId)
-                    .status(StatusSeat.SELECTED)
-                    .userId(currentUserId)
-                    .roomId(roomId)
-                    .scheduleId(scheduleId)
-                    .timestamp((Long) reservationInfo.get("timestamp"))
-                    .build();
-        }
-        
-        // Check database for permanent status
-        try {
-            List<ShowtimeSeat> seats = showtimeSeatRepository.findByShowtimeId(scheduleId, roomId);
-            for (ShowtimeSeat seat : seats) {
-                if (seat.getId().equals(seatId)) {
-                    return SeatReservationResponse.builder()
-                            .seatId(seatId)
-                            .status(seat.getStatus())
-                            .userId("system")  // System-set status
-                            .roomId(roomId)
-                            .scheduleId(scheduleId)
-                            .timestamp(Instant.now().toEpochMilli())
-                            .build();
-                }
-            }
-        } catch (Exception e) {
-            log.error("Error checking seat status in database", e);
-        }
-        
-        // Default to available if not found
-        return SeatReservationResponse.builder()
-                .seatId(seatId)
-                .status(StatusSeat.AVAILABLE)
-                .userId("system")
-                .roomId(roomId)
-                .scheduleId(scheduleId)
-                .timestamp(Instant.now().toEpochMilli())
-                .build();
-    }
-    
+
+
     /**
      * Regularly clean up expired temporary reservations
      */

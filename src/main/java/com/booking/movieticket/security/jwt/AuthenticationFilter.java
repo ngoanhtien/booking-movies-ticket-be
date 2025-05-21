@@ -30,6 +30,7 @@ public class AuthenticationFilter extends OncePerRequestFilter {
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     private final List<String> publicPaths = Arrays.asList(
+            "/api/v1/websocket",
             "/auth/login",
             "/auth/register",
             "/auth/refresh-token",
@@ -65,7 +66,10 @@ public class AuthenticationFilter extends OncePerRequestFilter {
                                  HttpServletResponse httpServletResponse,
                                  FilterChain filterChain) throws IOException, ServletException {
         String requestURI = httpServletRequest.getRequestURI();
-
+        if (requestURI.startsWith("/api/v1/websocket") || requestURI.startsWith("/ws")) {
+            filterChain.doFilter(httpServletRequest, httpServletResponse);
+            return;
+        }
         for (String path : publicPaths) {
             if (pathMatcher.match(path, requestURI)) {
                 filterChain.doFilter(httpServletRequest, httpServletResponse);
