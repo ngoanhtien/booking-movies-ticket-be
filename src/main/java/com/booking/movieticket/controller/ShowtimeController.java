@@ -570,4 +570,9 @@ public class ShowtimeController {
         showtimeService.createShowtime(request);
         return ResponseEntity.ok(new ApiResponse<>("Successfully create showtime"));
     }
+
+    @GetMapping("/{roomId}")
+    public ResponseEntity<ApiResponse<?>> listShowtimeByRoomId(@PathVariable Long roomId) {
+        return ResponseEntity.ok(new ApiResponse<>("Successfully retrieved showtimes by roomId: " + roomId));
+    }
 }

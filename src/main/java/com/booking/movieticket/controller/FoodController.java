@@ -3,6 +3,7 @@ package com.booking.movieticket.controller;
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.entity.Food;
 import com.booking.movieticket.repository.FoodRepository;
+import com.booking.movieticket.service.FoodService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -20,12 +21,12 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class FoodController {
 
-    FoodRepository foodRepository;
+    FoodService foodService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<?>> getAllFoods() {
         log.info("Getting all foods");
-        List<Food> foods = foodRepository.findByIsDeletedFalse();
+        List<Food> foods = foodService.listFoods();
         return ResponseEntity.ok(new ApiResponse<>("Foods retrieved successfully", foods));
     }
 }
