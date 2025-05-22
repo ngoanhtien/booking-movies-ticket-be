@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
 
 @Data
 @Builder
@@ -15,4 +16,6 @@ public class SeatReservationRequest {
     private String userId;
     private StatusSeat status;
     private Long timestamp;
+    private Long roomId;
+    private Long scheduleId;
 } 

@@ -43,13 +43,15 @@ public class SeatSocketController {
     /**
      * Handle temporary seat reservation requests from clients
      */
-    @MessageMapping("/seats/reserve/{roomId}/{scheduleId}")
-    @SendTo("/topic/seats/{roomId}/{scheduleId}")
-    public SeatReservationResponse reserveSeat(@DestinationVariable Long roomId, 
-                                             @DestinationVariable Long scheduleId,
-                                             SeatReservationRequest request) {
+    @MessageMapping("/send")
+    @SendTo("/topic/seats")
+    public SeatReservationResponse reserveSeat(SeatReservationRequest request) {
+        Long roomId = request.getRoomId();
+        Long scheduleId = request.getScheduleId(); // dùng đúng getter
+
         return seatSocketService.sendSeatReservationResponse(request, roomId, scheduleId);
     }
+
 
 
     /**
