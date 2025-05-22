@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { 
   Box, 
   Container, 
@@ -24,6 +24,7 @@ import DialogActions from '@mui/material/DialogActions';
 import IconButton from '@mui/material/IconButton';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
+import { SocketContext } from '../../App';
 
 // Định nghĩa enums và interfaces
 enum SeatStatus {
@@ -83,7 +84,6 @@ const SeatSelectionPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const { t } = useTranslation();
-  console.log(location.state);
   // Extract parameters from location state
   const branchId = location.state?.branchId;
   const roomType = location.state?.roomType;
@@ -103,6 +103,8 @@ const SeatSelectionPage: React.FC = () => {
   
   // Get authentication state
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+
+  const socket = useContext(SocketContext);
 
   // Thêm hàm để lưu ghế đã đặt vào localStorage
   const saveBookedSeats = (seatsToSave: string[]) => {
@@ -370,11 +372,23 @@ const SeatSelectionPage: React.FC = () => {
 
     setSelectedSeats(prev => {
       const isSelected = prev.includes(seat.id);
+      let updatedSeats;
       if (isSelected) {
-        return prev.filter(id => id !== seat.id);
+        updatedSeats = prev.filter(id => id !== seat.id);
       } else {
-        return [...prev, seat.id];
+        updatedSeats = [...prev, seat.id];
       }
+
+      // Emit CHOOSE_SEAT event to server via socket.io
+      if (socket) {
+        socket.emit('CHOOSE_SEAT', {
+          seatId: seat.id,
+          showtimeId: showtimeId,
+          status: isSelected ? 'DESELECTED' : 'SELECTED',
+        });
+      }
+
+      return updatedSeats;
     });
   };
 
@@ -457,7 +471,6 @@ const SeatSelectionPage: React.FC = () => {
     // saveBookedSeats(selectedSeats);
 
     // Proceed to confirmation page, pass combo info
-    console.log(movieId);
     if (movieId) {
       navigate(`/booking-confirmation/${showtimeId}`, {
         state: {

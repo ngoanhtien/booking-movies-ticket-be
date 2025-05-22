@@ -10,7 +10,7 @@ import { store } from './store';
 import AuthCheck from './components/AuthCheck';
 import './i18n';
 import './utils/axios'; // Chỉ cần import để đảm bảo cấu hình được áp dụng
-import SockJS from 'sockjs-client';
+import { io, Socket } from 'socket.io-client';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,20 +22,31 @@ const queryClient = new QueryClient({
   },
 });
 
-// Create a context for the socket
-export const SocketContext = createContext<SockJS | null>(null);
+// Create a context for the socket.io socket
+export const SocketContext = createContext<Socket | null>(null);
 
 const App: React.FC = () => {
-  const socketRef = useRef<SockJS | null>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    // Connect to the SockJS server (update endpoint as needed)
-    const sock = new SockJS('/api/v1/websocket');
-    socketRef.current = sock;
-    // Optionally, add event listeners here (onopen, onclose, onmessage)
+    // Connect to the socket.io server (update endpoint as needed)
+    const socket = io('http://localhost:8080/api/v1/websocket',{
+      transports: ['websocket']
+    });
+    socketRef.current = socket;
+
+    // Log connection events
+    socket.on('connect', () => {
+      console.log('Socket connected');
+    });
+    socket.on('connect_error', (err) => {
+      console.log('Socket connection error:', err);
+    });
+
+    // Optionally, add event listeners here (connect, disconnect, message)
     return () => {
       if (socketRef.current) {
-        socketRef.current.close();
+        socketRef.current.disconnect();
       }
     };
   }, []);
