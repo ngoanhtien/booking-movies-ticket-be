@@ -18,12 +18,12 @@ public class BillFood extends BaseEntity {
 
     @MapsId("billId")
     @ManyToOne
-    @JoinColumn(name = "bill_id", insertable = false, updatable = false)
+    @JoinColumn(name = "bill_id")
     private Bill bill;
 
     @MapsId("foodId")
     @ManyToOne
-    @JoinColumn(name = "food_id", insertable = false, updatable = false)
+    @JoinColumn(name = "food_id")
     private Food food;
 
     private Integer quantity;

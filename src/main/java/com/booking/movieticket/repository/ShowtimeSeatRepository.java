@@ -31,7 +31,10 @@ public interface ShowtimeSeatRepository extends JpaRepository<ShowtimeSeat, Long
      * @param ids List of ShowtimeSeat IDs to find and lock.
      * @return List of locked ShowtimeSeat entities.
      */
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT ss FROM ShowtimeSeat ss WHERE ss.id IN :ids")
-    List<ShowtimeSeat> findAllByIdsForUpdate(@Param("ids") List<Long> ids);
+    @Query("SELECT ss FROM ShowtimeSeat ss WHERE ss.seat.id IN :ids" +
+            " and  ss.showtime.schedule.id = :scheduleId " +
+            "AND ss.seat.room.id = :roomId " )
+    List<ShowtimeSeat> findAllByIdsForUpdate(@Param("ids") List<Long> ids,
+                                              @Param("scheduleId") Long scheduleId,
+                                              @Param("roomId") Long roomId);
 }

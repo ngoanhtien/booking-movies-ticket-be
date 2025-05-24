@@ -5,7 +5,10 @@ import com.booking.movieticket.dto.response.SeatReservationResponse;
 import com.booking.movieticket.entity.ShowtimeSeat;
 import com.booking.movieticket.entity.enums.StatusSeat;
 import com.booking.movieticket.repository.ShowtimeSeatRepository;
+import com.booking.movieticket.service.CacheSeatService;
 import com.booking.movieticket.service.SeatSocketService;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -17,7 +20,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 
 @Service
@@ -27,10 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SeatSocketServiceImpl implements SeatSocketService {
     private final SimpMessagingTemplate messagingTemplate;
     private final ShowtimeSeatRepository showtimeSeatRepository;
-
-    // Map to track temporary seat reservations: roomId-scheduleId-seatId -> {userId, timestamp}
-    private final ConcurrentHashMap<String, Map<String, Object>> temporaryReservations = new ConcurrentHashMap<>();
-
+    private final CacheSeatService temporaryReservations;
     // Timeout for temporary reservations (in minutes)
     private static final int RESERVATION_TIMEOUT_MINUTES = 5;
 

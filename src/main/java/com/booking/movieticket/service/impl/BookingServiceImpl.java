@@ -1,8 +1,10 @@
 package com.booking.movieticket.service.impl;
 
 import com.booking.movieticket.dto.request.BookingRequest;
+import com.booking.movieticket.dto.request.SeatReservationRequest;
 import com.booking.movieticket.dto.response.BookingResponse;
 import com.booking.movieticket.dto.response.BookingHistoryResponse;
+import com.booking.movieticket.dto.response.SeatReservationResponse;
 import com.booking.movieticket.entity.*;
 import com.booking.movieticket.entity.compositekey.BillFoodId;
 import com.booking.movieticket.entity.compositekey.ShowtimeId;
@@ -13,15 +15,16 @@ import com.booking.movieticket.exception.AppException;
 import com.booking.movieticket.exception.ErrorCode;
 import com.booking.movieticket.repository.*;
 import com.booking.movieticket.service.BookingService;
+import com.booking.movieticket.service.CacheSeatService;
+import com.booking.movieticket.service.SeatSocketService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,7 +38,9 @@ public class BookingServiceImpl implements BookingService {
     private final BillRepository billRepository;
     private final FoodRepository foodRepository;
     private final BookingRepository bookingRepository;
-
+    private final SeatSocketService seatSocketService;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final BillFoodRepository billFoodRepository;
     @Override
     @Transactional
     public BookingResponse createBooking(Long userId, BookingRequest bookingRequest) {
@@ -67,16 +72,28 @@ public class BookingServiceImpl implements BookingService {
 
             log.info("Retrieving selected ShowtimeSeats...");
             List<Long> selectedShowtimeSeatIds = bookingRequest.getSeatIds();
-            List<ShowtimeSeat> seatsToBook = showtimeSeatRepository.findAllByIdsForUpdate(selectedShowtimeSeatIds);
-            
+            List<ShowtimeSeat> seatsToBook = showtimeSeatRepository.findAllByIdsForUpdate(selectedShowtimeSeatIds,
+                    bookingRequest.getScheduleId(),
+                    bookingRequest.getRoomId());
+
             // NEW LOGGING: Check if all seats were found
             log.info("Found {} seats out of {} requested", seatsToBook.size(), selectedShowtimeSeatIds.size());
-            
-            if (seatsToBook.size() != selectedShowtimeSeatIds.size()) {
+
+            if (!seatsToBook.isEmpty()) {
                 log.error("CRITICAL: Not all requested seats were found. Requested: {}, Found: {}", selectedShowtimeSeatIds.size(), seatsToBook.size());
                 throw new AppException(ErrorCode.SHOWTIMESEAT_NOT_FOUND);
             }
 
+            for (Long seatId : selectedShowtimeSeatIds) {
+                ShowtimeSeat showtimeSeat = new ShowtimeSeat();
+                Seat seat = new Seat();
+                seat.setId(seatId);
+                showtimeSeat.setSeat(seat);
+                showtimeSeat.setShowtime(showtime);
+                showtimeSeat.setPrice(0.0);
+                showtimeSeat.setStatus(StatusSeat.AVAILABLE);
+                seatsToBook.add(showtimeSeat);
+            }
             // Validate that all seats are available
             log.info("Validating seat availability...");
             for (ShowtimeSeat seat : seatsToBook) {
@@ -96,11 +113,23 @@ public class BookingServiceImpl implements BookingService {
 
             log.info("Calculating seat prices...");
             for (ShowtimeSeat seat : seatsToBook) {
-                totalSeatPrice += seat.getPrice();
+                    totalSeatPrice += seat.getPrice();
                 seat.setStatus(StatusSeat.BOOKED);
                 log.debug("Marked seat {} as BOOKED, price: {}", seat.getId(), seat.getPrice());
             }
             log.info("Total seat price: {}", totalSeatPrice);
+            try {
+                seatsToBook = showtimeSeatRepository.saveAll(seatsToBook);
+                log.info("SUCCESS: All {} ShowtimeSeat entities updated and saved.", seatsToBook.size());
+                for (ShowtimeSeat seat : seatsToBook) {
+                    log.info("  PERSISTED ShowtimeSeat ID: {}, Status: {}, Linked Booking ID (from seat.getBooking()): {}",
+                            seat.getId(), seat.getStatus(), (seat.getBooking() != null ? seat.getBooking().getId() : "NULL"));
+                }
+            } catch (Exception e) {
+                log.error("CRITICAL ERROR saving seats: {}", e.getMessage(), e);
+                throw e;
+            }
+
 
             log.info("Processing food items...");
             if (bookingRequest.getFoodItems() != null && !bookingRequest.getFoodItems().isEmpty()) {
@@ -156,7 +185,7 @@ public class BookingServiceImpl implements BookingService {
             
             log.info("Attempting to save Booking entity (ID will be generated by DB)...");
             try {
-                savedBooking = bookingRepository.save(newBooking);
+                savedBooking = bookingRepository.saveAndFlush(newBooking);
                 log.info("SUCCESS: Booking entity saved. Generated Booking ID: {}, Booking Code: {}", savedBooking.getId(), savedBooking.getBookingCode());
                 
                 // NEW LOGGING: Check post-save relationship
@@ -173,18 +202,6 @@ public class BookingServiceImpl implements BookingService {
                 throw e;
             }
 
-            log.info("Attempting to save all {} updated ShowtimeSeat entities (this will persist Booking FK)...", updatedShowtimeSeatsForBookingObject.size());
-            try {
-                savedSeats = showtimeSeatRepository.saveAll(updatedShowtimeSeatsForBookingObject);
-                log.info("SUCCESS: All {} ShowtimeSeat entities updated and saved.", savedSeats.size());
-                for (ShowtimeSeat seat : savedSeats) {
-                    log.info("  PERSISTED ShowtimeSeat ID: {}, Status: {}, Linked Booking ID (from seat.getBooking()): {}",
-                        seat.getId(), seat.getStatus(), (seat.getBooking() != null ? seat.getBooking().getId() : "NULL"));
-                }
-            } catch (Exception e) {
-                log.error("CRITICAL ERROR saving seats: {}", e.getMessage(), e);
-                throw e;
-            }
 
             log.info("Creating new Bill entity for Booking ID: {}...", savedBooking.getId());
             Bill bill = new Bill();
@@ -197,10 +214,11 @@ public class BookingServiceImpl implements BookingService {
                 savedBooking.getId(), user.getId(), bill.getBillCode());
 
             log.info("Attempting to save Bill entity...");
-            Bill savedBill = billRepository.save(bill);
+            Bill savedBill = billRepository.saveAndFlush(bill);
             log.info("SUCCESS: Bill entity saved. Generated Bill ID: {}, Linked to Booking ID: {}", savedBill.getId(), savedBill.getBooking().getId());
 
             List<BookingResponse.FoodItem> foodItemsResponse = new ArrayList<>();
+            Set<BillFood> billFoods = new HashSet<>();
             if (bookingRequest.getFoodItems() != null && !bookingRequest.getFoodItems().isEmpty()) {
                 log.info("Processing {} food items for the Bill ID: {}...", bookingRequest.getFoodItems().size(), savedBill.getId());
                 for (BookingRequest.FoodOrderItem foodItemRequest : bookingRequest.getFoodItems()) {
@@ -223,8 +241,10 @@ public class BookingServiceImpl implements BookingService {
                             .price(food.getPrice() * quantity)
                             .build());
                 }
+                List<BillFood> billFoodList = billFoodRepository.saveAllAndFlush(billFoods);
+                savedBill.setBillFoods(new HashSet<>(billFoodList));
                 log.info("Attempting to save Bill (ID: {}) again to persist BillFoods...", savedBill.getId());
-                billRepository.save(savedBill);
+                billRepository.saveAndFlush(savedBill);
                 log.info("SUCCESS: Bill (ID: {}) re-saved with {} BillFoods.", savedBill.getId(), savedBill.getBillFoods().size());
             } else {
                 log.info("No food items in this booking request.");
@@ -232,6 +252,18 @@ public class BookingServiceImpl implements BookingService {
 
             log.info("Processing BillDetails for {} seats for Bill ID: {}...", updatedShowtimeSeatsForBookingObject.size(), savedBill.getId());
             for (ShowtimeSeat seat : updatedShowtimeSeatsForBookingObject) {
+                socketSeatBooking(
+                        SeatReservationRequest.builder()
+                                .seatId(seat.getSeat().getId())
+                                .userId(user.getId().toString())
+                                .status(StatusSeat.BOOKED)
+                                .timestamp(System.currentTimeMillis())
+                                .roomId(bookingRequest.getRoomId())
+                                .scheduleId(bookingRequest.getScheduleId())
+                                .build(),
+                    bookingRequest.getRoomId(),
+                    bookingRequest.getScheduleId()
+                );
                 BillDetail billDetail = new BillDetail();
                 billDetail.setBill(savedBill);
                 billDetail.setShowtimeSeat(seat);
@@ -240,7 +272,7 @@ public class BookingServiceImpl implements BookingService {
                 log.debug("Populated BillDetail (pre-save Bill again): BillID={}, ShowtimeSeatID={}", savedBill.getId(), seat.getId());
             }
             log.info("Attempting to save Bill (ID: {}) again to persist BillDetails...", savedBill.getId());
-            billRepository.save(savedBill);
+            billRepository.saveAndFlush(savedBill);
             log.info("SUCCESS: Bill (ID: {}) re-saved with {} BillDetails.", savedBill.getId(), savedBill.getBillDetails().size());
 
             log.info("Booking process completed successfully for Booking Code: {}. Preparing response...", savedBooking.getBookingCode());
@@ -281,7 +313,6 @@ public class BookingServiceImpl implements BookingService {
             log.info("========= END CREATE BOOKING PROCESS FOR USER ID: {} =========", userId);
         }
     }
-
     @Override
     @Transactional(readOnly = true)
     public BookingResponse getBookingDetails(Long bookingId) {
@@ -429,5 +460,16 @@ public class BookingServiceImpl implements BookingService {
 
     private String generateBookingCode() {
         return "MV" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
+    
+    
+    public void socketSeatBooking( 
+            SeatReservationRequest request,
+            Long roomId,
+            Long scheduleId
+    ) {
+        SeatReservationResponse seatReservationResponse = seatSocketService.sendSeatReservationResponse(request, roomId, scheduleId);
+        messagingTemplate.convertAndSend("/topic/seats", seatReservationResponse); //messagingTemplate;
+
     }
 }
