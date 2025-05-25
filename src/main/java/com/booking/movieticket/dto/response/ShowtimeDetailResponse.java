@@ -92,5 +92,6 @@ public class ShowtimeDetailResponse {
         private TypeSeat typeSeat;
         private StatusSeat status;
         private Double price;
+        private Long userId;
     }
 }

@@ -4,41 +4,30 @@ import com.booking.movieticket.dto.request.admin.create.ShowtimeForCreateRequest
 import com.booking.movieticket.dto.response.ApiResponse;
 import com.booking.movieticket.dto.response.ShowtimeDetailResponse;
 import com.booking.movieticket.dto.response.ShowtimeResponse;
+import com.booking.movieticket.entity.*;
+import com.booking.movieticket.entity.compositekey.ShowtimeId;
+import com.booking.movieticket.entity.enums.StatusMovie;
+import com.booking.movieticket.entity.enums.StatusSeat;
+import com.booking.movieticket.entity.enums.TypeSeat;
+import com.booking.movieticket.exception.AppException;
+import com.booking.movieticket.security.jwt.DomainUserDetails;
+import com.booking.movieticket.service.CacheSeatService;
 import com.booking.movieticket.service.ShowtimeService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
-import jakarta.persistence.Query;
-import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collections;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.Arrays;
-
-import com.booking.movieticket.entity.Movie;
-import com.booking.movieticket.entity.Room;
-import com.booking.movieticket.entity.Schedule;
-import com.booking.movieticket.entity.Seat;
-import com.booking.movieticket.entity.Showtime;
-import com.booking.movieticket.entity.ShowtimeSeat;
-import com.booking.movieticket.entity.compositekey.ShowtimeId;
-import com.booking.movieticket.entity.enums.StatusSeat;
-import com.booking.movieticket.entity.enums.StatusMovie;
-import com.booking.movieticket.entity.enums.TypeSeat;
-import com.booking.movieticket.exception.AppException;
 
 @Slf4j
 @RestController
@@ -51,6 +40,7 @@ public class ShowtimeController {
     @Autowired
     private EntityManager entityManager;
 
+    private CacheSeatService cacheSeatService;
     @Autowired
     public ShowtimeController(ShowtimeService showtimeService) {
         this.showtimeService = showtimeService;
@@ -531,22 +521,27 @@ public class ShowtimeController {
     @GetMapping("/seats/layout")
     public ResponseEntity<ApiResponse<?>> getSeatLayout(
             @RequestParam Long scheduleId,
-            @RequestParam Long roomId) {
+            @RequestParam Long roomId,
+            DomainUserDetails domainUserDetails) {
         log.info("Getting seat layout for scheduleId: {} and roomId: {}", scheduleId, roomId);
-
         try {
             // Lấy thông tin chi tiết showtime bằng service đã có
             ShowtimeDetailResponse showtimeDetail = showtimeService.getShowtimeDetail(scheduleId, roomId);
 
             // Lấy danh sách ghế từ ShowtimeDetailResponse
             List<ShowtimeDetailResponse.SeatInfo> seats = showtimeDetail.getSeats();
-
-            // Kiểm tra xem còn ghế trống hay không
-            boolean hasAvailableSeats = seats.stream()
-                    .anyMatch(seat -> seat.getStatus() == StatusSeat.AVAILABLE);
-
-            if (!hasAvailableSeats) {
-                log.warn("All seats are booked for scheduleId: {} and roomId: {}", scheduleId, roomId);
+            Long userId = domainUserDetails.getUserId();
+            Long seatId = 0L;
+            //Loop seatId
+            for (ShowtimeDetailResponse.SeatInfo seat : seats) {
+                seatId = seat.getId();
+                String seatKey = String.format("%d-%d-%d", roomId, scheduleId, seatId);
+                Map<String, Object> cached = cacheSeatService.get(seatKey);
+                if (cached != null) {
+                    // Ghế này đang được giữ tạm thời
+                    seat.setStatus(StatusSeat.SELECTED);
+                    seat.setUserId((Long) cached.get("userId"));
+                }
             }
 
             log.info("Successfully retrieved seat layout with {} seats", seats.size());
